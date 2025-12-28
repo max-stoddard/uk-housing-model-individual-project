@@ -6,5 +6,4 @@ Tax rates: https://www.gov.uk/government/statistics/rates-of-income-statistics
 
 Personal allowances: https://www.gov.uk/government/statistics/income-tax-personal-allowances-and-reliefs
 
-National Insurance Contributions: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/792494/Table-a4.pdf (last accessed 15.04.2020)
-    Other sources: https://www.gov.uk/government/statistics/main-features-of-national-insurance-contributions
+National Insurance Contributions: https://www.gov.uk/government/statistics/main-features-of-national-insurance-contributions
