@@ -27,6 +27,7 @@ def getNetFromGross(net_income, allowance):
 
 
 # Read Wealth and Assets Survey data for households
+# TODO: Check once WAS updated data acquired
 root = r""  # ADD HERE PATH TO WAS DATA FOLDER
 chunk = pd.read_csv(root + r"/was_wave_3_hhold_eul_final.dta", usecols={"w3xswgt", "DVTotGIRw3", "DVTotNIRw3",
                                                                         "DVGrsRentAmtAnnualw3_aggr",
@@ -60,11 +61,12 @@ max_gross_total_income = chunk_ord_by_gross.iloc[-one_per_cent]["GrossTotalIncom
 chunk = chunk[chunk["NetTotalIncome"] >= min_net_total_income]
 chunk = chunk[chunk["GrossTotalIncome"] <= max_gross_total_income]
 
-# Compute logarithmic difference between predicted and actual net income for a single personal allowance
-singleAllowanceDiff = sum((np.log(getNetFromGross(g, 7475)) - np.log(n))**2
+# Compute logarithmic difference between predicted and actual net income for the 2025-2026 personal allowance
+PERSONAL_ALLOWANCE_2025_26 = 12570
+singleAllowanceDiff = sum((np.log(getNetFromGross(g, PERSONAL_ALLOWANCE_2025_26)) - np.log(n))**2
                           for g, n in zip(chunk["GrossTotalIncome"].values, chunk["NetTotalIncome"].values))
 # Compute logarithmic difference between predicted and actual net income for a double personal allowance
-doubleAllowanceDiff = sum((np.log(getNetFromGross(g, 2 * 7475)) - np.log(n))**2
+doubleAllowanceDiff = sum((np.log(getNetFromGross(g, 2 * PERSONAL_ALLOWANCE_2025_26)) - np.log(n))**2
                           for g, n in zip(chunk["GrossTotalIncome"].values, chunk["NetTotalIncome"].values))
 # Print results to screen
 print("Logarithmic difference between predicted and actual net income for a single personal allowance {:.2f}"

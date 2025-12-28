@@ -2,8 +2,7 @@ Note that the income bands for income tax are after personal allowance, i.e., th
 
 Tax data addresses:
 
-Tax rates: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/792502/Table-a2.pdf (last accessed 15.04.2020)
-    Other sources: https://www.gov.uk/government/statistics/rates-of-income-statistics
+Tax rates: https://www.gov.uk/government/statistics/rates-of-income-statistics
 
 Personal allowances: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/792497/Table-a1.pdf (last accessed 15.04.2020)
     Other sources: https://www.gov.uk/government/statistics/income-tax-personal-allowances-and-reliefs
