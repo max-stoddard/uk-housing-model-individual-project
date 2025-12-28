@@ -1,6 +1,6 @@
-# Income tax bands and rates for the tax year 2011-2012
-# Document available at https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/792502/Table-a2.pdf
+# Income tax bands and rates for the tax year 2025-2026
+# Document available at https://www.gov.uk/government/statistics/rates-of-income-tax-statistics
 # Tax bands after personal allowance, Tax rates
 0, 0.20
-35000, 0.40
-150000, 0.50
+37700, 0.40
+125140, 0.45
