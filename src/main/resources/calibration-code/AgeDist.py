@@ -7,8 +7,22 @@ Class to study households' age distribution based on Wealth and Assets Survey da
 """
 
 from __future__ import division
+import os
+import sys
+
 import pandas as pd
 import numpy as np
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from WealthAssetsSurveyConstants import (
+    WAS_COLUMN_MAP,
+    WAS_COLUMN_RENAME_MAP,
+    WAS_DATASET,
+    WAS_DATA_FILENAME,
+    WAS_DATA_SEPARATOR,
+    WAS_WEIGHT,
+    WAS_DATASET_AGE_BAND_MAPS,
+)
 
 
 # Read Wealth and Assets Survey data for households
