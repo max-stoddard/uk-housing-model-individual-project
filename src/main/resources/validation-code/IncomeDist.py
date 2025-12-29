@@ -18,9 +18,17 @@ def readResults(file_name, _start_time, _end_time):
     data_float = []
     with open(file_name, "r") as _f:
         for line in _f:
-            if _start_time <= int(line.split(',')[0]) <= _end_time:
-                for column in line.split(',')[1:]:
-                    data_float.append(float(column))
+            stripped_line = line.strip()
+            if not stripped_line:
+                continue
+            delimiter = ";" if ";" in stripped_line else ","
+            columns = [column.strip() for column in stripped_line.split(delimiter)]
+            if not columns[0]:
+                continue
+            if _start_time <= int(columns[0]) <= _end_time:
+                for column in columns[1:]:
+                    if column:
+                        data_float.append(float(column))
     return data_float
 
 
