@@ -20,7 +20,6 @@ from WealthAssetsSurveyConstants import (
     WAS_COLUMN_RENAME_MAP,
     WAS_DATA_FILENAME,
     WAS_DATA_SEPARATOR,
-
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
     WAS_GROSS_ANNUAL_INCOME,
@@ -31,9 +30,12 @@ from WealthAssetsSurveyConstants import (
 GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
 NET_NON_RENT_INCOME = "NetNonRentIncome"
 
-tax_rates = pd.read_csv(TAX_RATE_FILE, comment="#", header=None, names=["band_start", "rate"])
+tax_rates = pd.read_csv(
+    TAX_RATE_FILE, comment="#", header=None, names=["band_start", "rate"]
+)
 TAX_BANDS_AFTER_ALLOWANCE = list(zip(tax_rates["band_start"], tax_rates["rate"]))
 TAX_BANDS_AFTER_ALLOWANCE.sort(key=lambda band: band[0])
+
 
 def getNetFromGross(gross_income, allowance):
     """Implements tax bands and rates corresponding to the tax year 2025-26 from TaxRates.csv"""
@@ -41,11 +43,17 @@ def getNetFromGross(gross_income, allowance):
 
     tax_due = 0
     for index, (band_start, rate) in enumerate(TAX_BANDS_AFTER_ALLOWANCE):
-        next_band_start = TAX_BANDS_AFTER_ALLOWANCE[index + 1][0] if index + 1 < len(TAX_BANDS_AFTER_ALLOWANCE) else None
+        next_band_start = (
+            TAX_BANDS_AFTER_ALLOWANCE[index + 1][0]
+            if index + 1 < len(TAX_BANDS_AFTER_ALLOWANCE)
+            else None
+        )
         if taxable_income <= band_start:
             continue
 
-        band_upper_limit = next_band_start if next_band_start is not None else taxable_income
+        band_upper_limit = (
+            next_band_start if next_band_start is not None else taxable_income
+        )
         taxable_in_band = min(taxable_income, band_upper_limit) - band_start
         tax_due += taxable_in_band * rate
 
@@ -69,12 +77,25 @@ chunk = pd.read_csv(
 
 # Rename columns to internal names and add all necessary extra columns
 chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
-chunk[GROSS_NON_RENT_INCOME] = chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
-chunk[NET_NON_RENT_INCOME] = chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
+chunk[GROSS_NON_RENT_INCOME] = (
+    chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
+)
+chunk[NET_NON_RENT_INCOME] = (
+    chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
+)
 
 # Filter down to keep only columns of interest
-chunk = chunk[[WAS_GROSS_ANNUAL_INCOME, WAS_NET_ANNUAL_INCOME, WAS_GROSS_ANNUAL_RENTAL_INCOME,
-               WAS_NET_ANNUAL_RENTAL_INCOME, GROSS_NON_RENT_INCOME, NET_NON_RENT_INCOME, WAS_WEIGHT]]
+chunk = chunk[
+    [
+        WAS_GROSS_ANNUAL_INCOME,
+        WAS_NET_ANNUAL_INCOME,
+        WAS_GROSS_ANNUAL_RENTAL_INCOME,
+        WAS_NET_ANNUAL_RENTAL_INCOME,
+        GROSS_NON_RENT_INCOME,
+        NET_NON_RENT_INCOME,
+        WAS_WEIGHT,
+    ]
+]
 
 # Filter out the 1% with highest GrossTotalIncome and the 1% with lowest NetTotalIncome
 one_per_cent = int(round(len(chunk.index) / 100))
@@ -87,15 +108,27 @@ chunk = chunk[chunk[WAS_GROSS_ANNUAL_INCOME] <= max_gross_total_income]
 
 # Compute logarithmic difference between predicted and actual net income for the 2025-2026 personal allowance
 PERSONAL_ALLOWANCE_2025_26 = 12570
-singleAllowanceDiff = sum((np.log(getNetFromGross(g, PERSONAL_ALLOWANCE_2025_26)) - np.log(n))**2
-                          for g, n in zip(chunk[WAS_GROSS_ANNUAL_INCOME].values,
-                                          chunk[WAS_NET_ANNUAL_INCOME].values))
+singleAllowanceDiff = sum(
+    (np.log(getNetFromGross(g, PERSONAL_ALLOWANCE_2025_26)) - np.log(n)) ** 2
+    for g, n in zip(
+        chunk[WAS_GROSS_ANNUAL_INCOME].values, chunk[WAS_NET_ANNUAL_INCOME].values
+    )
+)
 # Compute logarithmic difference between predicted and actual net income for a double personal allowance
-doubleAllowanceDiff = sum((np.log(getNetFromGross(g, 2 * PERSONAL_ALLOWANCE_2025_26)) - np.log(n))**2
-                          for g, n in zip(chunk[WAS_GROSS_ANNUAL_INCOME].values,
-                                          chunk[WAS_NET_ANNUAL_INCOME].values))
+doubleAllowanceDiff = sum(
+    (np.log(getNetFromGross(g, 2 * PERSONAL_ALLOWANCE_2025_26)) - np.log(n)) ** 2
+    for g, n in zip(
+        chunk[WAS_GROSS_ANNUAL_INCOME].values, chunk[WAS_NET_ANNUAL_INCOME].values
+    )
+)
 # Print results to screen
-print("Logarithmic difference between predicted and actual net income for a single personal allowance {:.2f}"
-      .format(singleAllowanceDiff))
-print("Logarithmic difference between predicted and actual net income for a double personal allowance {:.2f}"
-      .format(doubleAllowanceDiff))
+print(
+    "Logarithmic difference between predicted and actual net income for a single personal allowance {:.2f}".format(
+        singleAllowanceDiff
+    )
+)
+print(
+    "Logarithmic difference between predicted and actual net income for a double personal allowance {:.2f}".format(
+        doubleAllowanceDiff
+    )
+)
