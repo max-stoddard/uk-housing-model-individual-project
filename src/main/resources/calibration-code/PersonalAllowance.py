@@ -15,7 +15,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 TAX_RATE_FILE = os.path.join(os.path.dirname(__file__), "..", "TaxRates.csv")
-from WASConstants import (
+from WealthAssetsSurveyConstants import (
     WAS_COLUMN_MAP,
     WAS_COLUMN_RENAME_MAP,
     WAS_DATA_FILENAME,

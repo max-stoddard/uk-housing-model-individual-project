@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Class to study households' age distribution based on Wealth and Assets Survey data. This is the code used to create file
-"Age9-Weighted.csv".
+Class to study households' age distribution based on Wealth and Assets Survey data.
+Creates weighted distributions for each age band as "<AgeBand>-<WAS_DATASET>-Weighted.csv".
 
 @author: Adrian Carro
 """
@@ -27,43 +27,47 @@ from WealthAssetsSurveyConstants import (
 
 # Read Wealth and Assets Survey data for households
 root = r""
-chunk = pd.read_csv(root + r"/WAS/was_wave_3_hhold_eul_final.dta", usecols={"w3xswgt", "HRPDVAge9W3", "HRPDVAge15w3"})
-pd.set_option('display.max_columns', None)
-
-# List of household variables currently used
-# HRPDVAge9W3                 Age of HRP or partner [0-15, 16-24, 25-34, 35-44, 45-54, 55-64, 65-74, 75-84, 85+]
-# HRPDVAge15w3                Age of HRP/Partner Banded (15) [0-16, 17-19, 20-24, 25-29, 30-34, 35-39, 40-44, 45-49,
-#                             50-54, 55-59, 60-64, 65-69, 70-74, 75-79, 80+]
+age_columns = list(WAS_DATASET_AGE_BAND_MAPS.keys())
+chunk = pd.read_csv(
+    os.path.join(root, WAS_DATA_FILENAME),
+    usecols=[WAS_COLUMN_MAP[WAS_WEIGHT]]
+    + [WAS_COLUMN_MAP[age_column] for age_column in age_columns],
+    sep=WAS_DATA_SEPARATOR,
+)
+pd.set_option("display.max_columns", None)
 
 # Rename columns to be used
-chunk.rename(columns={"w3xswgt": "Weight"}, inplace=True)
-chunk.rename(columns={"HRPDVAge9W3": "Age9"}, inplace=True)
-chunk.rename(columns={"HRPDVAge15w3": "Age15"}, inplace=True)
+chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
+chunk = chunk[age_columns + [WAS_WEIGHT]]
 
-# Filter down to keep only columns of interest
-chunk = chunk[["Age9", "Age15", "Weight"]]
+for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():
+    bucket_mapping = {
+        **bucket_data["TEXT_MAPPING"],
+        **bucket_data["WAS_VALUE_MAPPING"],
+    }
+    chunk[age_column] = chunk[age_column].map(bucket_mapping)
 
-# Map age buckets to middle of bucket value by creating the corresponding dictionary
-chunk["Age9"] = chunk["Age9"].map({"16-24": 20, "25-34": 30, "35-44": 40, "45-54": 50, "55-64": 60, "65-74": 70,
-                                   "75-84": 80, "85+": 90})
-chunk["Age15"] = chunk["Age15"].map({"17-19": 17.5, "20-24": 22.5, "25-29": 27.5, "30-34": 32.5, "35-39": 37.5,
-                                     "40-44": 42.5, "45-49": 47.5, "50-54": 52.5, "55-59": 57.5, "60-64": 62.5,
-                                     "65-69": 67.5, "70-74": 72.5, "75-79": 77.5, "80+": 82.5})
-age9_bin_edges = [15, 25, 35, 45, 55, 65, 75, 85, 95]
-age15_bin_edges = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85]
+# Filter down to keep only columns of interest & drop missing/invalid codes
+chunk = chunk.dropna(subset=age_columns + [WAS_WEIGHT])
+chunk = chunk[chunk[WAS_WEIGHT] > 0]
 
-# Create a histogram of the data
-frequency9, xBins9 = np.histogram(chunk["Age9"].values, bins=age9_bin_edges, density=True,
-                                  weights=chunk["Weight"].values)
-frequency15, xBins15 = np.histogram(chunk["Age15"].values, bins=age15_bin_edges, density=True,
-                                    weights=chunk["Weight"].values)
+for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():
+    # Map age buckets to middle of bucket value by using the corresponding dictionary
+    bin_edges = bucket_data["BIN_EDGES"]
+    frequency, histogram_bin_edges = np.histogram(
+        chunk[age_column].values,
+        bins=bin_edges,
+        density=True,
+        weights=chunk[WAS_WEIGHT].values,
+    )
 
-# Print distributions to file
-with open("Age9-Weighted.csv", "w") as f:
-    f.write("# Age (lower edge), Age (upper edge), Probability\n")
-    for element, lowerEdge, upperEdge in zip(frequency9, xBins9[:-1], xBins9[1:]):
-        f.write("{}, {}, {}\n".format(lowerEdge, upperEdge, element))
-with open("Age15-Weighted.csv", "w") as f:
-    f.write("# Age (lower edge), Age (upper edge), Probability\n")
-    for element, lowerEdge, upperEdge in zip(frequency15, xBins15[:-1], xBins15[1:]):
-        f.write("{}, {}, {}\n".format(lowerEdge, upperEdge, element))
+    # Print distributions to file
+    output_filename = f"{age_column}-{WAS_DATASET}-Weighted.csv"
+    with open(output_filename, "w") as f:
+        f.write("# Age (lower edge), Age (upper edge), Probability\n")
+        for element, lower_edge, upper_edge in zip(
+            frequency, histogram_bin_edges[:-1], histogram_bin_edges[1:]
+        ):
+            if lower_edge == bin_edges[0] and element == 0:
+                continue
+            f.write(f"{lower_edge}, {upper_edge}, {element}\n")
