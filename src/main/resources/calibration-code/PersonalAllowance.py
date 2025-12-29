@@ -3,71 +3,97 @@
 Class to show that a single personal allowance produces a better fit of the net income of households as a function of
 their gross income, based on Wealth and Assets Survey data.
 
-@author: Adrian Carro
+@author: Adrian Carro, Max Stoddard
 """
 
 from __future__ import division
+import os
+import sys
+
 import pandas as pd
 import numpy as np
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+TAX_RATE_FILE = os.path.join(os.path.dirname(__file__), "..", "TaxRates.csv")
+from WASConstants import (
+    WAS_COLUMN_MAP,
+    WAS_COLUMN_RENAME_MAP,
+    WAS_DATA_FILENAME,
+    WAS_DATA_SEPARATOR,
 
-def getNetFromGross(net_income, allowance):
-    """Implements tax bands and rates corresponding to the tax year 2011-2012"""
-    if net_income <= allowance:
-        return net_income
-    else:
-        net_income_without_allowance = net_income - allowance
-        if net_income_without_allowance <= 35000:
-            return allowance + net_income_without_allowance * (1 - 0.2)
-        elif net_income_without_allowance <= 150000:
-            return allowance + 35000 * (1 - 0.2) + (net_income_without_allowance - 35000) * (1 - 0.4)
-        else:
-            return allowance + 35000 * (1 - 0.2) + (150000 - 35000) * (1 - 0.4)\
-                   + (net_income_without_allowance - 150000) * (1 - 0.5)
+    WAS_WEIGHT,
+    WAS_NET_ANNUAL_INCOME,
+    WAS_GROSS_ANNUAL_INCOME,
+    WAS_NET_ANNUAL_RENTAL_INCOME,
+    WAS_GROSS_ANNUAL_RENTAL_INCOME,
+)
+
+GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
+NET_NON_RENT_INCOME = "NetNonRentIncome"
+
+tax_rates = pd.read_csv(TAX_RATE_FILE, comment="#", header=None, names=["band_start", "rate"])
+TAX_BANDS_AFTER_ALLOWANCE = list(zip(tax_rates["band_start"], tax_rates["rate"]))
+TAX_BANDS_AFTER_ALLOWANCE.sort(key=lambda band: band[0])
+
+def getNetFromGross(gross_income, allowance):
+    """Implements tax bands and rates corresponding to the tax year 2025-26 from TaxRates.csv"""
+    taxable_income = max(0, gross_income - allowance)
+
+    tax_due = 0
+    for index, (band_start, rate) in enumerate(TAX_BANDS_AFTER_ALLOWANCE):
+        next_band_start = TAX_BANDS_AFTER_ALLOWANCE[index + 1][0] if index + 1 < len(TAX_BANDS_AFTER_ALLOWANCE) else None
+        if taxable_income <= band_start:
+            continue
+
+        band_upper_limit = next_band_start if next_band_start is not None else taxable_income
+        taxable_in_band = min(taxable_income, band_upper_limit) - band_start
+        tax_due += taxable_in_band * rate
+
+    return gross_income - tax_due
 
 
 # Read Wealth and Assets Survey data for households
-# TODO: Check once WAS updated data acquired
 root = r""  # ADD HERE PATH TO WAS DATA FOLDER
-chunk = pd.read_csv(root + r"/was_wave_3_hhold_eul_final.dta", usecols={"w3xswgt", "DVTotGIRw3", "DVTotNIRw3",
-                                                                        "DVGrsRentAmtAnnualw3_aggr",
-                                                                        "DVNetRentAmtAnnualw3_aggr"})
+use_columns = [
+    WAS_WEIGHT,
+    WAS_NET_ANNUAL_INCOME,
+    WAS_GROSS_ANNUAL_INCOME,
+    WAS_NET_ANNUAL_RENTAL_INCOME,
+    WAS_GROSS_ANNUAL_RENTAL_INCOME,
+]
+chunk = pd.read_csv(
+    os.path.join(root, WAS_DATA_FILENAME),
+    usecols=[WAS_COLUMN_MAP[column] for column in use_columns],
+    sep=WAS_DATA_SEPARATOR,
+)
 
-# List of household variables currently used
-# DVTotGIRw3                  Household Gross Annual (regular) income
-# DVTotNIRw3                  Household Net Annual (regular) income
-# DVGrsRentAmtAnnualw3_aggr   Household Gross Annual income from rent
-# DVNetRentAmtAnnualw3_aggr   Household Net Annual income from rent
-
-# Rename columns to be used and add all necessary extra columns
-chunk.rename(columns={"w3xswgt": "Weight"}, inplace=True)
-chunk.rename(columns={"DVTotGIRw3": "GrossTotalIncome"}, inplace=True)
-chunk.rename(columns={"DVTotNIRw3": "NetTotalIncome"}, inplace=True)
-chunk.rename(columns={"DVGrsRentAmtAnnualw3_aggr": "GrossRentalIncome"}, inplace=True)
-chunk.rename(columns={"DVNetRentAmtAnnualw3_aggr": "NetRentalIncome"}, inplace=True)
-chunk["GrossNonRentIncome"] = chunk["GrossTotalIncome"] - chunk["GrossRentalIncome"]
-chunk["NetNonRentIncome"] = chunk["NetTotalIncome"] - chunk["NetRentalIncome"]
+# Rename columns to internal names and add all necessary extra columns
+chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
+chunk[GROSS_NON_RENT_INCOME] = chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
+chunk[NET_NON_RENT_INCOME] = chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
 
 # Filter down to keep only columns of interest
-chunk = chunk[["GrossTotalIncome", "NetTotalIncome", "GrossRentalIncome", "NetRentalIncome",
-               "GrossNonRentIncome", "NetNonRentIncome", "Weight"]]
+chunk = chunk[[WAS_GROSS_ANNUAL_INCOME, WAS_NET_ANNUAL_INCOME, WAS_GROSS_ANNUAL_RENTAL_INCOME,
+               WAS_NET_ANNUAL_RENTAL_INCOME, GROSS_NON_RENT_INCOME, NET_NON_RENT_INCOME, WAS_WEIGHT]]
 
 # Filter out the 1% with highest GrossTotalIncome and the 1% with lowest NetTotalIncome
 one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_net = chunk.sort_values("NetTotalIncome")
-chunk_ord_by_gross = chunk.sort_values("GrossTotalIncome")
-min_net_total_income = chunk_ord_by_net.iloc[one_per_cent]["NetTotalIncome"]
-max_gross_total_income = chunk_ord_by_gross.iloc[-one_per_cent]["GrossTotalIncome"]
-chunk = chunk[chunk["NetTotalIncome"] >= min_net_total_income]
-chunk = chunk[chunk["GrossTotalIncome"] <= max_gross_total_income]
+chunk_ord_by_net = chunk.sort_values(WAS_NET_ANNUAL_INCOME)
+chunk_ord_by_gross = chunk.sort_values(WAS_GROSS_ANNUAL_INCOME)
+min_net_total_income = chunk_ord_by_net.iloc[one_per_cent][WAS_NET_ANNUAL_INCOME]
+max_gross_total_income = chunk_ord_by_gross.iloc[-one_per_cent][WAS_GROSS_ANNUAL_INCOME]
+chunk = chunk[chunk[WAS_NET_ANNUAL_INCOME] >= min_net_total_income]
+chunk = chunk[chunk[WAS_GROSS_ANNUAL_INCOME] <= max_gross_total_income]
 
 # Compute logarithmic difference between predicted and actual net income for the 2025-2026 personal allowance
 PERSONAL_ALLOWANCE_2025_26 = 12570
 singleAllowanceDiff = sum((np.log(getNetFromGross(g, PERSONAL_ALLOWANCE_2025_26)) - np.log(n))**2
-                          for g, n in zip(chunk["GrossTotalIncome"].values, chunk["NetTotalIncome"].values))
+                          for g, n in zip(chunk[WAS_GROSS_ANNUAL_INCOME].values,
+                                          chunk[WAS_NET_ANNUAL_INCOME].values))
 # Compute logarithmic difference between predicted and actual net income for a double personal allowance
 doubleAllowanceDiff = sum((np.log(getNetFromGross(g, 2 * PERSONAL_ALLOWANCE_2025_26)) - np.log(n))**2
-                          for g, n in zip(chunk["GrossTotalIncome"].values, chunk["NetTotalIncome"].values))
+                          for g, n in zip(chunk[WAS_GROSS_ANNUAL_INCOME].values,
+                                          chunk[WAS_NET_ANNUAL_INCOME].values))
 # Print results to screen
 print("Logarithmic difference between predicted and actual net income for a single personal allowance {:.2f}"
       .format(singleAllowanceDiff))
