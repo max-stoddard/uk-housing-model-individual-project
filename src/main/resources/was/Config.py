@@ -14,7 +14,7 @@ ROUND_8_DATA = "R8"  # Round 8 covers April 2020 to March 2022.
 
 # Pick which WAS wave/round to dictate configuration.
 # Must be either WAVE_3_DATA or ROUND_8_DATA.
-WAS_DATASET = WAVE_3_DATA
+WAS_DATASET = ROUND_8_DATA
 
 # Shared data and results roots (optional overrides).
 WAS_DATA_ROOT = os.getenv("WAS_DATA_ROOT", "")
