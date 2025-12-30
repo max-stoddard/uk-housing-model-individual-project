@@ -9,10 +9,16 @@ Datasets used can be found at: https://datacatalogue.ukdataservice.ac.uk/studies
 # Must be either "W3" (wave 3) or "R8" (round 8).
 WAS_DATASET = "W3"
 
-# All WAS columns used
-WAS_WEIGHT = "Weight"  # Household Weight
+### WAS Columns: ###
+
+# Household Weight
+WAS_WEIGHT = "Weight"
+
+# Household Total Incomes
 WAS_NET_ANNUAL_INCOME = "NetTotalIncome"  # Household Gross Annual (regular) income
 WAS_GROSS_ANNUAL_INCOME = "GrossTotalIncome"  # Household Net Annual (regular) income
+
+# Household Rental Incomes
 WAS_NET_ANNUAL_RENTAL_INCOME = (
     "NetRentalIncome"  # Household Gross Annual income from rent
 )
@@ -20,6 +26,32 @@ WAS_GROSS_ANNUAL_RENTAL_INCOME = (
     "GrossRentalIncome"  # Household Net Annual income from rent
 )
 
+# Household Total Wealth
+WAS_GROSS_FINANCIAL_WEALTH = "GrossFinancialWealth"  # Gross Financial Wealth
+WAS_NET_FINANCIAL_WEALTH = "NetFinancialWealth"  # Net Finanacial Wealth
+WAS_NATIONAL_SAVINGS_VALUE = (
+    "NationalSavingsValue"  # Household value of National Savings Product
+)
+WAS_CHILD_TRUST_FUND_VALUE = (
+    "ChildTrustFundValue"  # Household value of children's trust funds
+)
+WAS_CHILD_OTHER_SAVINGS_VALUE = (
+    "ChildOtherSavingsValue"  # Household value of other childrens savings
+)
+WAS_SAVINGS_ACCOUNTS_VALUE = (
+    "SavingAccountsValue"  # Household value of savings accounts
+)
+WAS_CASH_ISA_VALUE = "CashISAValue"  # Household value of Cash ISA
+WAS_CURRENT_ACCOUNT_CREDIT_VALUE = (
+    "CurrentAccountCreditValue"  # Household value of current account in credit
+)
+WAS_TOTAL_PROPERTY_WEALTH = "TotalPropertyWealth"  # Total property wealth
+WAS_PROPERTY_VALUE_SUM = "PropertyValueSum"  # Sum of all property values
+WAS_MAIN_RESIDENCE_VALUE = "MainResidenceValue"  # Value of main residence
+WAS_OTHER_HOUSES_TOTAL_VALUE = "OtherHousesTotalValue"  # Total value of other houses
+WAS_BTL_HOUSES_TOTAL_VALUE = "BTLHousesTotalValue"  # Total value of buy to let houses
+
+### WAS Dataset Files ###
 WAS_DATA_FILENAME = {
     "W3": "was_wave_3_hhold_eul_final.dta",
     "R8": "was_round_8_hhold_eul_may_2025.privdata",
@@ -29,6 +61,8 @@ WAS_DATA_SEPARATOR = {
     "W3": ",",
     "R8": "\t",
 }[WAS_DATASET]
+
+### WAS Column maps ###
 
 # Map of internal column constants to survey column names.
 WAS_COLUMN_MAP = {
@@ -40,6 +74,19 @@ WAS_COLUMN_MAP = {
         WAS_GROSS_ANNUAL_RENTAL_INCOME: "DVGrsRentAmtAnnualw3_aggr",
         "Age9": "HRPDVAge9W3",
         "Age15": "HRPDVAge15w3",
+        WAS_GROSS_FINANCIAL_WEALTH: "HFINWW3_sum",
+        WAS_NET_FINANCIAL_WEALTH: "HFINWNTw3_sum",
+        WAS_NATIONAL_SAVINGS_VALUE: "DVFNSValW3_aggr",
+        WAS_CHILD_TRUST_FUND_VALUE: "DVCACTvW3_aggr",
+        WAS_CHILD_OTHER_SAVINGS_VALUE: "DVCASVVW3_aggr",
+        WAS_SAVINGS_ACCOUNTS_VALUE: "DVSaValW3_aggr",
+        WAS_CASH_ISA_VALUE: "DVCISAVW3_aggr",
+        WAS_CURRENT_ACCOUNT_CREDIT_VALUE: "DVCaCrValW3_aggr",
+        WAS_TOTAL_PROPERTY_WEALTH: "HPROPWW3",
+        WAS_PROPERTY_VALUE_SUM: "DVPropertyW3",
+        WAS_MAIN_RESIDENCE_VALUE: "DVHValueW3",
+        WAS_OTHER_HOUSES_TOTAL_VALUE: "DVHseValW3_sum",
+        WAS_BTL_HOUSES_TOTAL_VALUE: "DVBltValW3_sum",
     },
     "R8": {
         WAS_WEIGHT: "R8xshhwgt",
@@ -48,6 +95,19 @@ WAS_COLUMN_MAP = {
         WAS_NET_ANNUAL_RENTAL_INCOME: "DVNetRentAmtAnnualR8_aggr",
         WAS_GROSS_ANNUAL_RENTAL_INCOME: "DVGrsRentAmtAnnualR8_aggr",
         "Age8": "HRPDVAge8R8",
+        WAS_GROSS_FINANCIAL_WEALTH: "HFINWR8_SUM",
+        WAS_NET_FINANCIAL_WEALTH: "HFINWNTR8_Sum",
+        WAS_NATIONAL_SAVINGS_VALUE: "DVFNSValR8_aggr",
+        WAS_CHILD_TRUST_FUND_VALUE: "DVCACTvR8_aggr",
+        WAS_CHILD_OTHER_SAVINGS_VALUE: "DVCASVVR8_aggr",
+        WAS_SAVINGS_ACCOUNTS_VALUE: "DVSaValR8_aggr",
+        WAS_CASH_ISA_VALUE: "DVCISAVR8_aggr",
+        WAS_CURRENT_ACCOUNT_CREDIT_VALUE: "DVCaCrValR8_aggr",
+        WAS_TOTAL_PROPERTY_WEALTH: "HPropWR8",
+        WAS_PROPERTY_VALUE_SUM: "DVPropertyR8",
+        WAS_MAIN_RESIDENCE_VALUE: "DVHValueR8",
+        WAS_OTHER_HOUSES_TOTAL_VALUE: "DVHseValR8_sum",
+        WAS_BTL_HOUSES_TOTAL_VALUE: "DVBltValR8_sum",
     },
 }[WAS_DATASET]
 
@@ -56,6 +116,8 @@ WAS_COLUMN_RENAME_MAP = {
     **WAS_COLUMN_MAP,
     **{v: k for k, v in WAS_COLUMN_MAP.items()},
 }
+
+### WAS Age Maps ###
 
 # Age of HRP or partner [0-15, 16-24, 25-34, 35-44, 45-54, 55-64, 65-74, 75+]
 AGE_8_BUCKET_DATA = {
