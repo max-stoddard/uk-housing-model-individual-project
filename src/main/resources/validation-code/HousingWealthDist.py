@@ -15,6 +15,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.DerivedColumns import (
+    GROSS_HOUSING_WEALTH,
+    derive_gross_housing_wealth_column,
+)
 from was.IO import read_results, read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -24,8 +28,6 @@ from was.Constants import (
     WAS_OTHER_HOUSES_TOTAL_VALUE,
     WAS_BTL_HOUSES_TOTAL_VALUE,
 )
-
-WAS_GROSS_HOUSING_WEALTH = "GrossHousingWealth"
 
 
 # Set control variables and addresses. Available variables to print and plot are:
@@ -59,17 +61,14 @@ chunk = read_was_data(rootData, use_column_constants)
 # DVHseValW3_sum                Total value of other houses
 # DVBltValW3_sum                Total value of buy to let houses
 
-chunk[WAS_GROSS_HOUSING_WEALTH] = (
-    chunk[WAS_MAIN_RESIDENCE_VALUE].astype(float)
-    + chunk[WAS_OTHER_HOUSES_TOTAL_VALUE].astype(float)
-    + chunk[WAS_BTL_HOUSES_TOTAL_VALUE].astype(float)
-)
+# Derive gross housing wealth column for distribution.
+derive_gross_housing_wealth_column(chunk)
 # Filter down to keep only housing wealth
 chunk = chunk[
     [
         WAS_TOTAL_PROPERTY_WEALTH,
         WAS_PROPERTY_VALUE_SUM,
-        WAS_GROSS_HOUSING_WEALTH,
+        GROSS_HOUSING_WEALTH,
         WAS_WEIGHT,
     ]
 ]
@@ -77,7 +76,7 @@ chunk = chunk[
 chunk = chunk[
     (chunk[WAS_TOTAL_PROPERTY_WEALTH] > 0.0)
     & (chunk[WAS_PROPERTY_VALUE_SUM] > 0.0)
-    & (chunk[WAS_GROSS_HOUSING_WEALTH] > 0.0)
+    & (chunk[GROSS_HOUSING_WEALTH] > 0.0)
 ]
 
 # Define bin edges and widths
@@ -90,7 +89,7 @@ if printResults:
     for variable in [
         WAS_TOTAL_PROPERTY_WEALTH,
         WAS_PROPERTY_VALUE_SUM,
-        WAS_GROSS_HOUSING_WEALTH,
+        GROSS_HOUSING_WEALTH,
     ]:
         hist = np.histogram(
             chunk[variable].values,

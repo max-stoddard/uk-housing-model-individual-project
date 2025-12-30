@@ -14,6 +14,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.DerivedColumns import (
+    GROSS_NON_RENT_INCOME,
+    NET_NON_RENT_INCOME,
+    derive_non_rent_income_columns,
+)
 from was.IO import read_results, read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -22,9 +27,6 @@ from was.Constants import (
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
-
-GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
-NET_NON_RENT_INCOME = "NetNonRentIncome"
 
 
 # Set control variables and addresses. Note that available variables to print and plot are "GrossTotalIncome",
@@ -55,13 +57,8 @@ chunk = read_was_data(rootData, use_columns)
 # DVGrsRentAmtAnnualw3_aggr   Household Gross Annual income from rent
 # DVNetRentAmtAnnualw3_aggr   Household Net Annual income from rent
 
-# Add all necessary extra columns
-chunk[GROSS_NON_RENT_INCOME] = (
-    chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
-)
-chunk[NET_NON_RENT_INCOME] = (
-    chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
-)
+# Derive non-rent income columns for filtering and plots.
+derive_non_rent_income_columns(chunk)
 
 # Filter down to keep only columns of interest
 chunk = chunk[

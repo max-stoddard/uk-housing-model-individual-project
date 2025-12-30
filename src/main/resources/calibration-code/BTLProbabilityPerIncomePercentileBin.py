@@ -14,6 +14,10 @@ import pandas as pd
 from scipy import stats
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.DerivedColumns import (
+    GROSS_NON_RENT_INCOME,
+    derive_non_rent_income_columns,
+)
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -23,8 +27,6 @@ from was.Constants import (
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
 
-GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
-NET_NON_RENT_INCOME = "NetNonRentIncome"
 GROSS_NON_RENT_INCOME_PERCENTILE = "GrossNonRentIncomePercentile"
 
 # List of household variables currently used
@@ -45,13 +47,8 @@ use_columns = [
 chunk = read_was_data(root, use_columns)
 pd.set_option("display.max_columns", None)
 
-# Add all necessary extra columns
-chunk[GROSS_NON_RENT_INCOME] = (
-    chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
-)
-chunk[NET_NON_RENT_INCOME] = (
-    chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
-)
+# Derive non-rent income columns for percentile calculation.
+derive_non_rent_income_columns(chunk)
 
 # Filter out the 1% with highest GrossTotalIncome and the 1% with lowest NetTotalIncome
 one_per_cent = int(round(len(chunk.index) / 100))

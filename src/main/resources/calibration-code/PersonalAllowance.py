@@ -15,6 +15,11 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 TAX_RATE_FILE = os.path.join(os.path.dirname(__file__), "..", "TaxRates.csv")
+from was.DerivedColumns import (
+    GROSS_NON_RENT_INCOME,
+    NET_NON_RENT_INCOME,
+    derive_non_rent_income_columns,
+)
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -23,9 +28,6 @@ from was.Constants import (
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
-
-GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
-NET_NON_RENT_INCOME = "NetNonRentIncome"
 
 tax_rates = pd.read_csv(
     TAX_RATE_FILE, comment="#", header=None, names=["band_start", "rate"]
@@ -68,13 +70,8 @@ use_columns = [
 ]
 chunk = read_was_data(root, use_columns)
 
-# Add all necessary extra columns
-chunk[GROSS_NON_RENT_INCOME] = (
-    chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
-)
-chunk[NET_NON_RENT_INCOME] = (
-    chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
-)
+# Derive non-rent income columns for analysis.
+derive_non_rent_income_columns(chunk)
 
 # Filter down to keep only columns of interest
 chunk = chunk[

@@ -13,6 +13,13 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.DerivedColumns import (
+    GROSS_NON_RENT_INCOME,
+    NET_NON_RENT_INCOME,
+    LIQ_FINANCIAL_WEALTH,
+    derive_non_rent_income_columns,
+    derive_liquid_financial_wealth_column,
+)
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -29,10 +36,6 @@ from was.Constants import (
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
 )
-
-WAS_GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
-WAS_NET_NON_RENT_INCOME = "NetNonRentIncome"
-WAS_LIQ_FINANCIAL_WEALTH = "LiqFinancialWealth"
 
 
 def write_joint_distribution(
@@ -125,53 +128,38 @@ chunk = read_was_data(root, use_column_constants)
 # DVGrsRentAmtAnnualw3_aggr   Household Gross annual income from rent
 # DVNetRentAmtAnnualw3_aggr   Household Net annual income from rent
 
-# Add column with total gross income, except rental income (gross)
-chunk[WAS_GROSS_NON_RENT_INCOME] = (
-    chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
-)
-# Add column with total net income, except rental income (net)
-chunk[WAS_NET_NON_RENT_INCOME] = (
-    chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
-)
-# Rename the different measures of financial wealth
-chunk[WAS_LIQ_FINANCIAL_WEALTH] = (
-    chunk[WAS_NATIONAL_SAVINGS_VALUE].astype(float)
-    + chunk[WAS_CHILD_TRUST_FUND_VALUE].astype(float)
-    + chunk[WAS_CHILD_OTHER_SAVINGS_VALUE].astype(float)
-    + chunk[WAS_SAVINGS_ACCOUNTS_VALUE].astype(float)
-    + chunk[WAS_CASH_ISA_VALUE].astype(float)
-    + chunk[WAS_CURRENT_ACCOUNT_CREDIT_VALUE].astype(float)
-)
+# Derive non-rent income columns for income bins.
+derive_non_rent_income_columns(chunk)
+# Derive liquid financial wealth for wealth bins.
+derive_liquid_financial_wealth_column(chunk)
 # Filter down to keep only financial wealth and total annual gross employee income
 chunk = chunk[
     [
-        WAS_GROSS_NON_RENT_INCOME,
-        WAS_NET_NON_RENT_INCOME,
+        GROSS_NON_RENT_INCOME,
+        NET_NON_RENT_INCOME,
         WAS_GROSS_FINANCIAL_WEALTH,
         WAS_NET_FINANCIAL_WEALTH,
-        WAS_LIQ_FINANCIAL_WEALTH,
+        LIQ_FINANCIAL_WEALTH,
         WAS_WEIGHT,
     ]
 ]
 # Filter out the 1% with highest GrossNonRentIncome and the 1% with lowest NetNonRentIncome
 one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_gross = chunk.sort_values(WAS_GROSS_NON_RENT_INCOME)
-chunk_ord_by_net = chunk.sort_values(WAS_NET_NON_RENT_INCOME)
-max_gross_income = chunk_ord_by_gross.iloc[-one_per_cent][WAS_GROSS_NON_RENT_INCOME]
-min_net_income = chunk_ord_by_net.iloc[one_per_cent][WAS_NET_NON_RENT_INCOME]
-chunk = chunk[chunk[WAS_GROSS_NON_RENT_INCOME] <= max_gross_income]
-chunk = chunk[chunk[WAS_NET_NON_RENT_INCOME] >= min_net_income]
+chunk_ord_by_gross = chunk.sort_values(GROSS_NON_RENT_INCOME)
+chunk_ord_by_net = chunk.sort_values(NET_NON_RENT_INCOME)
+max_gross_income = chunk_ord_by_gross.iloc[-one_per_cent][GROSS_NON_RENT_INCOME]
+min_net_income = chunk_ord_by_net.iloc[one_per_cent][NET_NON_RENT_INCOME]
+chunk = chunk[chunk[GROSS_NON_RENT_INCOME] <= max_gross_income]
+chunk = chunk[chunk[NET_NON_RENT_INCOME] >= min_net_income]
 # For logarithmic binning, drop any non-positive income values
-chunk = chunk[
-    (chunk[WAS_GROSS_NON_RENT_INCOME] > 0.0) & (chunk[WAS_NET_NON_RENT_INCOME] > 0.0)
-]
-max_gross_income = chunk[WAS_GROSS_NON_RENT_INCOME].max()
-min_net_income = chunk[WAS_NET_NON_RENT_INCOME].min()
+chunk = chunk[(chunk[GROSS_NON_RENT_INCOME] > 0.0) & (chunk[NET_NON_RENT_INCOME] > 0.0)]
+max_gross_income = chunk[GROSS_NON_RENT_INCOME].max()
+min_net_income = chunk[NET_NON_RENT_INCOME].min()
 # For the sake of plotting in logarithmic scales, filter out any zero and negative values from all wealth columns
 chunk = chunk[
     (chunk[WAS_GROSS_FINANCIAL_WEALTH] > 0.0)
     & (chunk[WAS_NET_FINANCIAL_WEALTH] > 0.0)
-    & (chunk[WAS_LIQ_FINANCIAL_WEALTH] > 0.0)
+    & (chunk[LIQ_FINANCIAL_WEALTH] > 0.0)
 ]
 if chunk.empty:
     raise ValueError("No rows left after income and wealth filters.")
@@ -183,23 +171,23 @@ income_bin_edges = np.linspace(np.log(min_net_income), np.log(max_gross_income),
 min_wealth = min(
     min(chunk[WAS_GROSS_FINANCIAL_WEALTH]),
     min(chunk[WAS_NET_FINANCIAL_WEALTH]),
-    min(chunk[WAS_LIQ_FINANCIAL_WEALTH]),
+    min(chunk[LIQ_FINANCIAL_WEALTH]),
 )
 max_wealth = max(
     max(chunk[WAS_GROSS_FINANCIAL_WEALTH]),
     max(chunk[WAS_NET_FINANCIAL_WEALTH]),
-    max(chunk[WAS_LIQ_FINANCIAL_WEALTH]),
+    max(chunk[LIQ_FINANCIAL_WEALTH]),
 )
 wealth_bin_edges = np.linspace(np.log(min_wealth), np.log(max_wealth), 21)
 weights = chunk[WAS_WEIGHT].values
 income_columns = {
-    "gross": WAS_GROSS_NON_RENT_INCOME,
-    "net": WAS_NET_NON_RENT_INCOME,
+    "gross": GROSS_NON_RENT_INCOME,
+    "net": NET_NON_RENT_INCOME,
 }
 wealth_columns = {
     "gross": WAS_GROSS_FINANCIAL_WEALTH,
     "net": WAS_NET_FINANCIAL_WEALTH,
-    "liq": WAS_LIQ_FINANCIAL_WEALTH,
+    "liq": LIQ_FINANCIAL_WEALTH,
 }
 frequencies = {}
 xBins = None

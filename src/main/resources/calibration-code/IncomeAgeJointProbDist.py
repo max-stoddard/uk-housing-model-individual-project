@@ -13,6 +13,11 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.DerivedColumns import (
+    GROSS_NON_RENT_INCOME,
+    NET_NON_RENT_INCOME,
+    derive_non_rent_income_columns,
+)
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -36,26 +41,20 @@ use_column_constants = [
     age_column_key,
 ]
 chunk = read_was_data(root, use_column_constants)
-# Add column with total gross income, except rental income (gross)
-chunk["GrossNonRentIncome"] = (
-    chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
-)
-# Add column with total net income, except rental income (net)
-chunk["NetNonRentIncome"] = (
-    chunk[WAS_NET_ANNUAL_INCOME] - chunk[WAS_NET_ANNUAL_RENTAL_INCOME]
-)
+# Derive non-rent income columns for the joint distribution.
+derive_non_rent_income_columns(chunk)
 # Rename column with age as "Age"
 chunk.rename(columns={age_column_key: "Age"}, inplace=True)
 # Filter down to keep only columns of interest
-chunk = chunk[["Age", "GrossNonRentIncome", "NetNonRentIncome", WAS_WEIGHT]]
+chunk = chunk[["Age", GROSS_NON_RENT_INCOME, NET_NON_RENT_INCOME, WAS_WEIGHT]]
 # Filter out the 1% with highest GrossNonRentIncome and the 1% with lowest NetNonRentIncome
 one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_gross = chunk.sort_values("GrossNonRentIncome")
-chunk_ord_by_net = chunk.sort_values("NetNonRentIncome")
-max_gross_income = chunk_ord_by_gross.iloc[-one_per_cent]["GrossNonRentIncome"]
-min_net_income = chunk_ord_by_net.iloc[one_per_cent]["NetNonRentIncome"]
-chunk = chunk[chunk["GrossNonRentIncome"] <= max_gross_income]
-chunk = chunk[chunk["NetNonRentIncome"] >= min_net_income]
+chunk_ord_by_gross = chunk.sort_values(GROSS_NON_RENT_INCOME)
+chunk_ord_by_net = chunk.sort_values(NET_NON_RENT_INCOME)
+max_gross_income = chunk_ord_by_gross.iloc[-one_per_cent][GROSS_NON_RENT_INCOME]
+min_net_income = chunk_ord_by_net.iloc[one_per_cent][NET_NON_RENT_INCOME]
+chunk = chunk[chunk[GROSS_NON_RENT_INCOME] <= max_gross_income]
+chunk = chunk[chunk[NET_NON_RENT_INCOME] >= min_net_income]
 # Map age buckets to middle of bucket value by creating the corresponding dictionary
 age_bucket_data = WAS_DATASET_AGE_BAND_MAPS[age_column_key]
 age_from_text = chunk["Age"].map(age_bucket_data["TEXT_MAPPING"])
@@ -70,14 +69,14 @@ income_bin_edges = np.linspace(np.log(min_net_income), np.log(max_gross_income),
 age_bin_edges = age_bucket_data["BIN_EDGES"][1:]
 frequency_gross = np.histogram2d(
     chunk["Age"].values,
-    np.log(chunk["GrossNonRentIncome"].values),
+    np.log(chunk[GROSS_NON_RENT_INCOME].values),
     bins=[age_bin_edges, income_bin_edges],
     density=True,
     weights=chunk[WAS_WEIGHT].values,
 )[0]
 frequency_net = np.histogram2d(
     chunk["Age"].values,
-    np.log(chunk["NetNonRentIncome"].values),
+    np.log(chunk[NET_NON_RENT_INCOME].values),
     bins=[age_bin_edges, income_bin_edges],
     density=True,
     weights=chunk[WAS_WEIGHT].values,

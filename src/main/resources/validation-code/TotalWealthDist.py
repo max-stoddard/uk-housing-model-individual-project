@@ -31,11 +31,14 @@ from was.Constants import (
     WAS_OTHER_HOUSES_TOTAL_VALUE,
     WAS_BTL_HOUSES_TOTAL_VALUE,
 )
-
-# Make class constants for calculated columns
-WAS_LIQ_FINANCIAL_WEALTH = "LiqFinancialWealth"
-WAS_GROSS_HOUSING_WEALTH = "GrossHousingWealth"
-WAS_TOTAL_WEALTH = "TotalWealth"
+from was.DerivedColumns import (
+    GROSS_HOUSING_WEALTH,
+    LIQ_FINANCIAL_WEALTH,
+    TOTAL_WEALTH,
+    derive_gross_housing_wealth_column,
+    derive_liquid_financial_wealth_column,
+    derive_total_wealth_column,
+)
 
 
 # Read Wealth and Assets Survey data for households
@@ -62,29 +65,19 @@ chunk = read_was_data(root, use_column_constants)
 # HFINWW3_sum                   Gross Financial Wealth (financial assets only)
 # HFINWNTW3_sum                 Household Net financial Wealth (financial assets minus financial liabilities)
 
-chunk[WAS_LIQ_FINANCIAL_WEALTH] = (
-    chunk[WAS_NATIONAL_SAVINGS_VALUE].astype(float)
-    + chunk[WAS_CHILD_TRUST_FUND_VALUE].astype(float)
-    + chunk[WAS_CHILD_OTHER_SAVINGS_VALUE].astype(float)
-    + chunk[WAS_SAVINGS_ACCOUNTS_VALUE].astype(float)
-    + chunk[WAS_CASH_ISA_VALUE].astype(float)
-    + chunk[WAS_CURRENT_ACCOUNT_CREDIT_VALUE].astype(float)
-)
-chunk[WAS_GROSS_HOUSING_WEALTH] = (
-    chunk[WAS_MAIN_RESIDENCE_VALUE].astype(float)
-    + chunk[WAS_OTHER_HOUSES_TOTAL_VALUE].astype(float)
-    + chunk[WAS_BTL_HOUSES_TOTAL_VALUE].astype(float)
-)
+# Derive liquid financial wealth and gross housing wealth columns.
+derive_liquid_financial_wealth_column(chunk)
+derive_gross_housing_wealth_column(chunk)
 # Filter down to keep only these columns
 chunk = chunk[
     [
         WAS_WEIGHT,
         WAS_NET_FINANCIAL_WEALTH,
         WAS_GROSS_FINANCIAL_WEALTH,
-        WAS_LIQ_FINANCIAL_WEALTH,
+        LIQ_FINANCIAL_WEALTH,
         WAS_TOTAL_PROPERTY_WEALTH,
         WAS_PROPERTY_VALUE_SUM,
-        WAS_GROSS_HOUSING_WEALTH,
+        GROSS_HOUSING_WEALTH,
     ]
 ]
 
@@ -97,24 +90,25 @@ wealth_bin_edges = np.linspace(min_wealth_bin, max_wealth_bin, 57)
 financial_wealth_measures = [
     WAS_NET_FINANCIAL_WEALTH,
     WAS_GROSS_FINANCIAL_WEALTH,
-    WAS_LIQ_FINANCIAL_WEALTH,
+    LIQ_FINANCIAL_WEALTH,
 ]
 housing_wealth_measures = [
     WAS_TOTAL_PROPERTY_WEALTH,
     WAS_PROPERTY_VALUE_SUM,
-    WAS_GROSS_HOUSING_WEALTH,
+    GROSS_HOUSING_WEALTH,
 ]
 for financial_wealth_measure in financial_wealth_measures:
     for housing_wealth_measure in housing_wealth_measures:
         # ...add total wealth column
-        chunk[WAS_TOTAL_WEALTH] = chunk[financial_wealth_measure].astype(float) + chunk[
-            housing_wealth_measure
-        ].astype(float)
+        # Derive total wealth from financial and housing measures.
+        derive_total_wealth_column(
+            chunk, financial_wealth_measure, housing_wealth_measure
+        )
         # For the sake of using logarithmic scales, filter out any zero and negative values
-        temp_chunk = chunk[(chunk[WAS_TOTAL_WEALTH] > 0.0)]
+        temp_chunk = chunk[(chunk[TOTAL_WEALTH] > 0.0)]
         # ...create a histogram
         frequency = np.histogram(
-            np.log(temp_chunk[WAS_TOTAL_WEALTH].values),
+            np.log(temp_chunk[TOTAL_WEALTH].values),
             bins=wealth_bin_edges,
             density=True,
             weights=temp_chunk[WAS_WEIGHT].values,
