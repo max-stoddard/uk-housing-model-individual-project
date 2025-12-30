@@ -40,6 +40,7 @@ from was.DerivedColumns import (
     derive_total_wealth_column,
 )
 from was.RowFilters import filter_positive_values
+from was.CSVWrite import write_1d_distribution
 
 
 # Read Wealth and Assets Survey data for households
@@ -115,24 +116,11 @@ for financial_wealth_measure in financial_wealth_measures:
             weights=temp_chunk[WAS_WEIGHT].values,
         )[0]
         # ...and print the distribution to a file
-        with open(
+        label = f"Total Wealth ({financial_wealth_measure} + {housing_wealth_measure})"
+        write_1d_distribution(
             financial_wealth_measure + "-" + housing_wealth_measure + "-Weighted.csv",
-            "w",
-        ) as f:
-            f.write(
-                "# Log Total Wealth ("
-                + financial_wealth_measure
-                + " + "
-                + housing_wealth_measure
-                + ") (lower edge), Log Total Wealth ("
-                + financial_wealth_measure
-                + " + "
-                + housing_wealth_measure
-                + ") (upper edge), Probability\n"
-            )
-            for element, wealthLowerEdge, wealthUpperEdge in zip(
-                frequency, wealth_bin_edges[:-1], wealth_bin_edges[1:]
-            ):
-                f.write(
-                    "{}, {}, {}\n".format(wealthLowerEdge, wealthUpperEdge, element)
-                )
+            label,
+            wealth_bin_edges,
+            frequency,
+            log_label=True,
+        )

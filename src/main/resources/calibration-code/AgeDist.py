@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.CSVWrite import write_rows
 from was.IO import read_was_data
 from was.RowFilters import drop_missing_rows, filter_positive_values
 from was.Constants import (
@@ -55,11 +56,16 @@ for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():
 
     # Print distributions to file
     output_filename = f"{age_column}-{WAS_DATASET}-Weighted.csv"
-    with open(output_filename, "w") as f:
-        f.write("# Age (lower edge), Age (upper edge), Probability\n")
-        for element, lower_edge, upper_edge in zip(
-            frequency, histogram_bin_edges[:-1], histogram_bin_edges[1:]
-        ):
-            if lower_edge == bin_edges[0] and element == 0:
-                continue
-            f.write(f"{lower_edge}, {upper_edge}, {element}\n")
+    # Write weighted age distribution for calibration.
+    rows = []
+    for element, lower_edge, upper_edge in zip(
+        frequency, histogram_bin_edges[:-1], histogram_bin_edges[1:]
+    ):
+        if lower_edge == bin_edges[0] and element == 0:
+            continue
+        rows.append((lower_edge, upper_edge, element))
+    write_rows(
+        output_filename,
+        "# Age (lower edge), Age (upper edge), Probability\n",
+        rows,
+    )

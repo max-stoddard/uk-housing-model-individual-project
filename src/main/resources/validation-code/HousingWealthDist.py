@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.CSVWrite import write_1d_distribution
 from was.DerivedColumns import (
     GROSS_HOUSING_WEALTH,
     derive_gross_housing_wealth_column,
@@ -97,18 +98,14 @@ if printResults:
             density=True,
             weights=chunk[WAS_WEIGHT].values,
         )[0]
-        with open("{}-Weighted.csv".format(variable), "w") as f:
-            f.write(
-                "# Log {} (lower edge), Log {} (upper edge), Probability\n".format(
-                    variable, variable
-                )
-            )
-            for element, wealthLowerEdge, wealthUpperEdge in zip(
-                hist, bin_edges[:-1], bin_edges[1:]
-            ):
-                f.write(
-                    "{}, {}, {}\n".format(wealthLowerEdge, wealthUpperEdge, element)
-                )
+        # Write housing wealth distribution for validation.
+        write_1d_distribution(
+            "{}-Weighted.csv".format(variable),
+            variable,
+            bin_edges,
+            hist,
+            log_label=True,
+        )
 
 # If plotting data and results is required, read model results, histogram data and results and plot them
 if plotResults:

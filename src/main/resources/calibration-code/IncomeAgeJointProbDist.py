@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.CSVWrite import write_joint_distribution
 from was.DerivedColumns import (
     GROSS_NON_RENT_INCOME,
     NET_NON_RENT_INCOME,
@@ -85,43 +86,25 @@ frequency_net = np.histogram2d(
 )[0]
 
 # Print joint distributions to files
-with open("AgeGrossIncomeJointDist.csv", "w") as f:
-    f.write(
-        "# Age (lower edge), Age (upper edge), Log Gross Income (lower edge), Log Gross Income (upper edge), "
-        "Probability\n"
-    )
-    for line, ageLowerEdge, ageUpperEdge in zip(
-        frequency_gross, age_bin_edges[:-1], age_bin_edges[1:]
-    ):
-        for element, incomeLowerEdge, incomeUpperEdge in zip(
-            line, income_bin_edges[:-1], income_bin_edges[1:]
-        ):
-            f.write(
-                "{}, {}, {}, {}, {}\n".format(
-                    ageLowerEdge,
-                    ageUpperEdge,
-                    incomeLowerEdge,
-                    incomeUpperEdge,
-                    element / sum(line),
-                )
-            )
-with open("AgeNetIncomeJointDist.csv", "w") as f:
-    f.write(
-        "# Age (lower edge), Age (upper edge), Log Net Income (lower edge), Log Net Income (upper edge), "
-        "Probability\n"
-    )
-    for line, ageLowerEdge, ageUpperEdge in zip(
-        frequency_net, age_bin_edges[:-1], age_bin_edges[1:]
-    ):
-        for element, incomeLowerEdge, incomeUpperEdge in zip(
-            line, income_bin_edges[:-1], income_bin_edges[1:]
-        ):
-            f.write(
-                "{}, {}, {}, {}, {}\n".format(
-                    ageLowerEdge,
-                    ageUpperEdge,
-                    incomeLowerEdge,
-                    incomeUpperEdge,
-                    element / sum(line),
-                )
-            )
+# Write age vs gross income distribution for calibration.
+write_joint_distribution(
+    "AgeGrossIncomeJointDist.csv",
+    "Age",
+    "Gross Income",
+    frequency_gross,
+    age_bin_edges,
+    income_bin_edges,
+    x_is_log=False,
+    y_is_log=True,
+)
+# Write age vs net income distribution for calibration.
+write_joint_distribution(
+    "AgeNetIncomeJointDist.csv",
+    "Age",
+    "Net Income",
+    frequency_net,
+    age_bin_edges,
+    income_bin_edges,
+    x_is_log=False,
+    y_is_log=True,
+)

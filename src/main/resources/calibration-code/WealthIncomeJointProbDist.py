@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     derive_non_rent_income_columns,
     derive_liquid_financial_wealth_column,
 )
+from was.CSVWrite import write_joint_distribution
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_was_data
 from was.Constants import (
@@ -37,53 +38,6 @@ from was.Constants import (
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
 )
-
-
-def write_joint_distribution(
-    file_name,
-    income_label,
-    wealth_label,
-    frequency,
-    income_bins,
-    wealth_bins,
-    zero_ok=False,
-):
-    header = (
-        "# Log {} (lower edge), Log {} (upper edge), Log {} (lower edge), "
-        "Log {} (upper edge), Probability\n"
-    ).format(income_label, income_label, wealth_label, wealth_label)
-    with open(file_name, "w") as f:
-        f.write(header)
-        for line, incomeLowerEdge, incomeUpperEdge in zip(
-            frequency, income_bins[:-1], income_bins[1:]
-        ):
-            line_sum = sum(line)
-            if line_sum == 0:
-                for wealthLowerEdge, wealthUpperEdge in zip(
-                    wealth_bins[:-1], wealth_bins[1:]
-                ):
-                    f.write(
-                        "{}, {}, {}, {}, {}\n".format(
-                            incomeLowerEdge,
-                            incomeUpperEdge,
-                            wealthLowerEdge,
-                            wealthUpperEdge,
-                            0.0,
-                        )
-                    )
-            else:
-                for element, wealthLowerEdge, wealthUpperEdge in zip(
-                    line, wealth_bins[:-1], wealth_bins[1:]
-                ):
-                    f.write(
-                        "{}, {}, {}, {}, {}\n".format(
-                            incomeLowerEdge,
-                            incomeUpperEdge,
-                            wealthLowerEdge,
-                            wealthUpperEdge,
-                            element / line_sum,
-                        )
-                    )
 
 
 def log_histogram2d(
@@ -203,6 +157,7 @@ for income_key, income_column in income_columns.items():
         frequencies[(income_key, wealth_key)] = frequency
 
 # Print joint distributions to files
+# Write joint income/wealth distributions for calibration.
 write_joint_distribution(
     "GrossIncomeGrossWealthJointDist.csv",
     "Gross Income",
@@ -210,6 +165,8 @@ write_joint_distribution(
     frequencies[("gross", "gross")],
     xBins,
     yBins,
+    x_is_log=True,
+    y_is_log=True,
 )
 write_joint_distribution(
     "GrossIncomeNetWealthJointDist.csv",
@@ -218,6 +175,8 @@ write_joint_distribution(
     frequencies[("gross", "net")],
     xBins,
     yBins,
+    x_is_log=True,
+    y_is_log=True,
 )
 write_joint_distribution(
     "GrossIncomeLiqWealthJointDist.csv",
@@ -226,6 +185,8 @@ write_joint_distribution(
     frequencies[("gross", "liq")],
     xBins,
     yBins,
+    x_is_log=True,
+    y_is_log=True,
 )
 write_joint_distribution(
     "NetIncomeGrossWealthJointDist.csv",
@@ -234,6 +195,8 @@ write_joint_distribution(
     frequencies[("net", "gross")],
     xBins,
     yBins,
+    x_is_log=True,
+    y_is_log=True,
     zero_ok=True,
 )
 write_joint_distribution(
@@ -243,6 +206,8 @@ write_joint_distribution(
     frequencies[("net", "net")],
     xBins,
     yBins,
+    x_is_log=True,
+    y_is_log=True,
     zero_ok=True,
 )
 write_joint_distribution(
@@ -252,5 +217,7 @@ write_joint_distribution(
     frequencies[("net", "liq")],
     xBins,
     yBins,
+    x_is_log=True,
+    y_is_log=True,
     zero_ok=True,
 )

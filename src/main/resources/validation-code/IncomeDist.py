@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.CSVWrite import write_1d_distribution
 from was.DerivedColumns import (
     GROSS_NON_RENT_INCOME,
     NET_NON_RENT_INCOME,
@@ -110,14 +111,14 @@ if printResults:
             density=True,
             weights=positive_chunk[WAS_WEIGHT].values,
         )[0]
-        with open(name + "-Weighted.csv", "w") as f:
-            f.write(
-                "# " + name + " (lower edge), " + name + " (upper edge), Probability\n"
-            )
-            for element, lowerEdge, upperEdge in zip(
-                frequency, income_bin_edges[:-1], income_bin_edges[1:]
-            ):
-                f.write("{}, {}, {}\n".format(lowerEdge, upperEdge, element))
+        # Write income distribution for validation output.
+        write_1d_distribution(
+            name + "-Weighted.csv",
+            name,
+            income_bin_edges,
+            frequency,
+            log_label=False,
+        )
 
 # If plotting data and results is required, read model results, histogram data and results and plot them
 if plotResults:

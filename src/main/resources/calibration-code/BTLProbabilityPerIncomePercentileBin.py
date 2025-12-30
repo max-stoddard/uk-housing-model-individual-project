@@ -14,6 +14,7 @@ import pandas as pd
 from scipy import stats
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.CSVWrite import write_rows
 from was.DerivedColumns import (
     GROSS_NON_RENT_INCOME,
     derive_non_rent_income_columns,
@@ -65,23 +66,25 @@ chunk[GROSS_NON_RENT_INCOME_PERCENTILE] = [
 ]
 
 # Write to file probability of being a BTL investor for each percentile bin (of width 1%)
-with open("BTLProbabilityPerIncomePercentileBin.csv", "w") as f:
-    f.write(
-        "# Gross non-rental income percentile (lower edge), gross non-rental income percentile (upper edge), "
-        "BTL probability\n"
+rows = []
+for a in range(100):
+    n_total = len(
+        chunk[
+            (a < chunk[GROSS_NON_RENT_INCOME_PERCENTILE])
+            & (chunk[GROSS_NON_RENT_INCOME_PERCENTILE] <= a + 1.0)
+        ]
     )
-    for a in range(100):
-        n_total = len(
-            chunk[
-                (a < chunk[GROSS_NON_RENT_INCOME_PERCENTILE])
-                & (chunk[GROSS_NON_RENT_INCOME_PERCENTILE] <= a + 1.0)
-            ]
-        )
-        n_BTL = len(
-            chunk[
-                (a < chunk[GROSS_NON_RENT_INCOME_PERCENTILE])
-                & (chunk[GROSS_NON_RENT_INCOME_PERCENTILE] <= a + 1.0)
-                & (chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME] > 0.0)
-            ]
-        )
-        f.write("{}, {}, {}\n".format(a / 100, (a + 1) / 100, n_BTL / n_total))
+    n_BTL = len(
+        chunk[
+            (a < chunk[GROSS_NON_RENT_INCOME_PERCENTILE])
+            & (chunk[GROSS_NON_RENT_INCOME_PERCENTILE] <= a + 1.0)
+            & (chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME] > 0.0)
+        ]
+    )
+    rows.append((a / 100, (a + 1) / 100, n_BTL / n_total))
+write_rows(
+    "BTLProbabilityPerIncomePercentileBin.csv",
+    "# Gross non-rental income percentile (lower edge), gross non-rental income percentile (upper edge), "
+    "BTL probability\n",
+    rows,
+)
