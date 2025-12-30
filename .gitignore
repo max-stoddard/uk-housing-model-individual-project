@@ -21,6 +21,9 @@
 # ignore python pyc files
 *.pyc
 
+# ignore root-level CSV outputs
+/*.csv
+
 # ignore all private data
 *.privdata
 *.dta
