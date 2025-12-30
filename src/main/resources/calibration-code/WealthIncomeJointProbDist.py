@@ -13,10 +13,8 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
     WAS_GROSS_ANNUAL_INCOME,
@@ -117,12 +115,7 @@ use_column_constants = [
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
 ]
-use_columns = [WAS_COLUMN_MAP[column] for column in use_column_constants]
-chunk = pd.read_csv(
-    os.path.join(root, WAS_DATA_FILENAME),
-    usecols=use_columns,
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(root, use_column_constants)
 
 # List of household variables currently used
 # HFINWNTW3_sum               Household Net financial Wealth (financial assets minus financial liabilities)
@@ -132,11 +125,6 @@ chunk = pd.read_csv(
 # DVGrsRentAmtAnnualw3_aggr   Household Gross annual income from rent
 # DVNetRentAmtAnnualw3_aggr   Household Net annual income from rent
 
-# Rename columns to their constant names
-chunk.rename(
-    columns={WAS_COLUMN_MAP[column]: column for column in use_column_constants},
-    inplace=True,
-)
 # Add column with total gross income, except rental income (gross)
 chunk[WAS_GROSS_NON_RENT_INCOME] = (
     chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]

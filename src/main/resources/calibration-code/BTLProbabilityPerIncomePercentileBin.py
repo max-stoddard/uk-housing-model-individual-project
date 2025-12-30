@@ -14,11 +14,8 @@ import pandas as pd
 from scipy import stats
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_COLUMN_RENAME_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
     WAS_GROSS_ANNUAL_INCOME,
@@ -45,15 +42,10 @@ use_columns = [
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
     WAS_NET_ANNUAL_RENTAL_INCOME,
 ]
-chunk = pd.read_csv(
-    os.path.join(root, WAS_DATA_FILENAME),
-    usecols=[WAS_COLUMN_MAP[column] for column in use_columns],
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(root, use_columns)
 pd.set_option("display.max_columns", None)
 
-# Rename columns to be used and add all necessary extra columns
-chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
+# Add all necessary extra columns
 chunk[GROSS_NON_RENT_INCOME] = (
     chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
 )

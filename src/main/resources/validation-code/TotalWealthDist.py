@@ -14,10 +14,8 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_GROSS_FINANCIAL_WEALTH,
     WAS_NET_FINANCIAL_WEALTH,
@@ -58,22 +56,12 @@ use_column_constants = [
     WAS_OTHER_HOUSES_TOTAL_VALUE,
     WAS_BTL_HOUSES_TOTAL_VALUE,
 ]
-use_columns = [WAS_COLUMN_MAP[column] for column in use_column_constants]
-chunk = pd.read_csv(
-    os.path.join(root, WAS_DATA_FILENAME),
-    usecols=use_columns,
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(root, use_column_constants)
 
 # List of household variables currently used
 # HFINWW3_sum                   Gross Financial Wealth (financial assets only)
 # HFINWNTW3_sum                 Household Net financial Wealth (financial assets minus financial liabilities)
 
-# Rename columns to their constant names
-chunk.rename(
-    columns={WAS_COLUMN_MAP[column]: column for column in use_column_constants},
-    inplace=True,
-)
 chunk[WAS_LIQ_FINANCIAL_WEALTH] = (
     chunk[WAS_NATIONAL_SAVINGS_VALUE].astype(float)
     + chunk[WAS_CHILD_TRUST_FUND_VALUE].astype(float)

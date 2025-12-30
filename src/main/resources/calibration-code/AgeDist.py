@@ -14,12 +14,9 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_COLUMN_RENAME_MAP,
+from was.IO import read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_DATASET,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
     WAS_WEIGHT,
     WAS_DATASET_AGE_BAND_MAPS,
 )
@@ -28,16 +25,9 @@ from WealthAssetsSurveyConstants import (
 # Read Wealth and Assets Survey data for households
 root = r""
 age_columns = list(WAS_DATASET_AGE_BAND_MAPS.keys())
-chunk = pd.read_csv(
-    os.path.join(root, WAS_DATA_FILENAME),
-    usecols=[WAS_COLUMN_MAP[WAS_WEIGHT]]
-    + [WAS_COLUMN_MAP[age_column] for age_column in age_columns],
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(root, [WAS_WEIGHT] + age_columns)
 pd.set_option("display.max_columns", None)
 
-# Rename columns to be used
-chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
 chunk = chunk[age_columns + [WAS_WEIGHT]]
 
 for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():

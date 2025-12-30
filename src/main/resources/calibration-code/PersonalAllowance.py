@@ -15,11 +15,8 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 TAX_RATE_FILE = os.path.join(os.path.dirname(__file__), "..", "TaxRates.csv")
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_COLUMN_RENAME_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
     WAS_GROSS_ANNUAL_INCOME,
@@ -69,14 +66,9 @@ use_columns = [
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 ]
-chunk = pd.read_csv(
-    os.path.join(root, WAS_DATA_FILENAME),
-    usecols=[WAS_COLUMN_MAP[column] for column in use_columns],
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(root, use_columns)
 
-# Rename columns to internal names and add all necessary extra columns
-chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
+# Add all necessary extra columns
 chunk[GROSS_NON_RENT_INCOME] = (
     chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
 )

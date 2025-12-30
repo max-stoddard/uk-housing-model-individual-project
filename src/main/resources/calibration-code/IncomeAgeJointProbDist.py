@@ -13,10 +13,8 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
     WAS_GROSS_ANNUAL_INCOME,
@@ -37,18 +35,7 @@ use_column_constants = [
     WAS_NET_ANNUAL_RENTAL_INCOME,
     age_column_key,
 ]
-use_columns = [WAS_COLUMN_MAP[column] for column in use_column_constants]
-chunk = pd.read_csv(
-    os.path.join(root, WAS_DATA_FILENAME),
-    usecols=use_columns,
-    sep=WAS_DATA_SEPARATOR,
-)
-
-# Rename columns to their constant names
-chunk.rename(
-    columns={WAS_COLUMN_MAP[column]: column for column in use_column_constants},
-    inplace=True,
-)
+chunk = read_was_data(root, use_column_constants)
 # Add column with total gross income, except rental income (gross)
 chunk["GrossNonRentIncome"] = (
     chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]

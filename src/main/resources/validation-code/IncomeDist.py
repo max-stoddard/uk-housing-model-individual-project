@@ -14,11 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_COLUMN_RENAME_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_results, read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
     WAS_GROSS_ANNUAL_INCOME,
@@ -28,27 +25,6 @@ from WealthAssetsSurveyConstants import (
 
 GROSS_NON_RENT_INCOME = "GrossNonRentIncome"
 NET_NON_RENT_INCOME = "NetNonRentIncome"
-
-
-def readResults(file_name, _start_time, _end_time):
-    """Read micro-data from file_name, structured on a separate line per year. In particular, read from start_year until
-    end_year, both inclusive"""
-    # Read list of float values, one per household
-    data_float = []
-    with open(file_name, "r") as _f:
-        for line in _f:
-            stripped_line = line.strip()
-            if not stripped_line:
-                continue
-            delimiter = ";" if ";" in stripped_line else ","
-            columns = [column.strip() for column in stripped_line.split(delimiter)]
-            if not columns[0]:
-                continue
-            if _start_time <= int(columns[0]) <= _end_time:
-                for column in columns[1:]:
-                    if column:
-                        data_float.append(float(column))
-    return data_float
 
 
 # Set control variables and addresses. Note that available variables to print and plot are "GrossTotalIncome",
@@ -71,11 +47,7 @@ use_columns = [
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
     WAS_NET_ANNUAL_RENTAL_INCOME,
 ]
-chunk = pd.read_csv(
-    os.path.join(rootData, WAS_DATA_FILENAME),
-    usecols=[WAS_COLUMN_MAP[column] for column in use_columns],
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(rootData, use_columns)
 
 # List of household variables currently used
 # DVTotGIRw3                  Household Gross Annual (regular) income
@@ -83,8 +55,7 @@ chunk = pd.read_csv(
 # DVGrsRentAmtAnnualw3_aggr   Household Gross Annual income from rent
 # DVNetRentAmtAnnualw3_aggr   Household Net Annual income from rent
 
-# Rename columns to be used and add all necessary extra columns
-chunk.rename(columns=WAS_COLUMN_RENAME_MAP, inplace=True)
+# Add all necessary extra columns
 chunk[GROSS_NON_RENT_INCOME] = (
     chunk[WAS_GROSS_ANNUAL_INCOME] - chunk[WAS_GROSS_ANNUAL_RENTAL_INCOME]
 )
@@ -161,7 +132,7 @@ if plotResults:
         b - a for a, b in zip(income_bin_edges[:-1], income_bin_edges[1:])
     ]
     # Read model results
-    results = readResults(results_file, start_time, end_time)
+    results = read_results(results_file, start_time, end_time)
     # Histogram model results
     model_hist = np.histogram(
         [12.0 * x for x in results if x > 0.0], bins=income_bin_edges, density=False

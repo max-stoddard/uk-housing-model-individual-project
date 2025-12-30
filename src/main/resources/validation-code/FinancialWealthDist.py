@@ -15,10 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_results, read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_GROSS_FINANCIAL_WEALTH,
     WAS_NET_FINANCIAL_WEALTH,
@@ -31,19 +29,6 @@ from WealthAssetsSurveyConstants import (
 )
 
 WAS_LIQ_FINANCIAL_WEALTH = "LiqFinancialWealth"
-
-
-def readResults(file_name, _start_time, _end_time):
-    """Read micro-data from file_name, structured on a separate line per year. In particular, read from start_year until
-    end_year, both inclusive"""
-    # Read list of float values, one per household
-    data_float = []
-    with open(file_name, "r") as _f:
-        for line in _f:
-            if _start_time <= int(line.split(";")[0]) <= _end_time:
-                for column in line.split(";")[1:]:
-                    data_float.append(float(column))
-    return data_float
 
 
 # Set control variables and addresses. Available variables to print and plot are:
@@ -70,22 +55,12 @@ use_column_constants = [
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
 ]
-use_columns = [WAS_COLUMN_MAP[column] for column in use_column_constants]
-chunk = pd.read_csv(
-    os.path.join(rootData, WAS_DATA_FILENAME),
-    usecols=use_columns,
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(rootData, use_column_constants)
 
 # List of household variables currently used
 # HFINWNTW3_sum               Household Net financial Wealth (financial assets minus financial liabilities)
 # HFINWW3_sum                 Gross Financial Wealth (financial assets only)
 
-# Rename columns to their constant names
-chunk.rename(
-    columns={WAS_COLUMN_MAP[column]: column for column in use_column_constants},
-    inplace=True,
-)
 chunk[WAS_LIQ_FINANCIAL_WEALTH] = (
     chunk[WAS_NATIONAL_SAVINGS_VALUE].astype(float)
     + chunk[WAS_CHILD_TRUST_FUND_VALUE].astype(float)
@@ -144,7 +119,7 @@ if printResults:
 # If plotting data and results is required, read model results, histogram data and results and plot them
 if plotResults:
     # Read model results
-    results = readResults(
+    results = read_results(
         os.path.join(rootResults, "test", "BankBalance-run1.csv"),
         start_time,
         end_time,

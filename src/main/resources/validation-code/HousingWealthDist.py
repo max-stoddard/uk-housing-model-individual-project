@@ -15,10 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from WealthAssetsSurveyConstants import (
-    WAS_COLUMN_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
+from was.IO import read_results, read_was_data
+from was.WealthAssetsSurveyConstants import (
     WAS_WEIGHT,
     WAS_TOTAL_PROPERTY_WEALTH,
     WAS_PROPERTY_VALUE_SUM,
@@ -28,19 +26,6 @@ from WealthAssetsSurveyConstants import (
 )
 
 WAS_GROSS_HOUSING_WEALTH = "GrossHousingWealth"
-
-
-def readResults(file_name, _start_time, _end_time):
-    """Read micro-data from file_name, structured on a separate line per year. In particular, read from start_year until
-    end_year, both inclusive"""
-    # Read list of float values, one per household
-    data_float = []
-    with open(file_name, "r") as _f:
-        for line in _f:
-            if _start_time <= int(line.split(";")[0]) <= _end_time:
-                for column in line.split(";")[1:]:
-                    data_float.append(float(column))
-    return data_float
 
 
 # Set control variables and addresses. Available variables to print and plot are:
@@ -65,12 +50,7 @@ use_column_constants = [
     WAS_OTHER_HOUSES_TOTAL_VALUE,
     WAS_BTL_HOUSES_TOTAL_VALUE,
 ]
-use_columns = [WAS_COLUMN_MAP[column] for column in use_column_constants]
-chunk = pd.read_csv(
-    os.path.join(rootData, WAS_DATA_FILENAME),
-    usecols=use_columns,
-    sep=WAS_DATA_SEPARATOR,
-)
+chunk = read_was_data(rootData, use_column_constants)
 
 # List of household variables currently used
 # HPROPWW3                      Total (net) property wealth (net, i.e., = DVPropertyW3 - HMORTGW3)
@@ -79,11 +59,6 @@ chunk = pd.read_csv(
 # DVHseValW3_sum                Total value of other houses
 # DVBltValW3_sum                Total value of buy to let houses
 
-# Rename columns to their constant names
-chunk.rename(
-    columns={WAS_COLUMN_MAP[column]: column for column in use_column_constants},
-    inplace=True,
-)
 chunk[WAS_GROSS_HOUSING_WEALTH] = (
     chunk[WAS_MAIN_RESIDENCE_VALUE].astype(float)
     + chunk[WAS_OTHER_HOUSES_TOTAL_VALUE].astype(float)
@@ -139,7 +114,7 @@ if printResults:
 # If plotting data and results is required, read model results, histogram data and results and plot them
 if plotResults:
     # Read model results
-    results = readResults(
+    results = read_results(
         os.path.join(rootResults, "test", "HousingWealth-run1.csv"),
         start_time,
         end_time,
