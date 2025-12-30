@@ -17,15 +17,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from was.CSVWrite import write_rows
 from was.IO import read_was_data
 from was.RowFilters import drop_missing_rows, filter_positive_values
-from was.Constants import (
-    WAS_DATASET,
-    WAS_WEIGHT,
-    WAS_DATASET_AGE_BAND_MAPS,
-)
+from was.Config import WAS_DATASET, WAS_DATA_ROOT
+from was.Constants import WAS_WEIGHT, WAS_DATASET_AGE_BAND_MAPS
 
 
 # Read Wealth and Assets Survey data for households
-root = r""
+root = WAS_DATA_ROOT
 age_columns = list(WAS_DATASET_AGE_BAND_MAPS.keys())
 chunk = read_was_data(root, [WAS_WEIGHT] + age_columns)
 pd.set_option("display.max_columns", None)

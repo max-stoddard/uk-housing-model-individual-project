@@ -1,13 +1,11 @@
 """
-Constants for using the Wealth and Assets Survey dataset.
+Dataset column constants and mappings for the Wealth and Assets Survey.
 Datasets used can be found at: https://datacatalogue.ukdataservice.ac.uk/studies/study/7215
 
 @author: Max Stoddard
 """
 
-# Pick which WAS wave/round to dictate constants.
-# Must be either "W3" (wave 3) or "R8" (round 8).
-WAS_DATASET = "W3"
+from was.Config import WAS_DATASET, WAVE_3_DATA, ROUND_8_DATA
 
 ### WAS Columns: ###
 
@@ -51,22 +49,11 @@ WAS_MAIN_RESIDENCE_VALUE = "MainResidenceValue"  # Value of main residence
 WAS_OTHER_HOUSES_TOTAL_VALUE = "OtherHousesTotalValue"  # Total value of other houses
 WAS_BTL_HOUSES_TOTAL_VALUE = "BTLHousesTotalValue"  # Total value of buy to let houses
 
-### WAS Dataset Files ###
-WAS_DATA_FILENAME = {
-    "W3": "was_wave_3_hhold_eul_final.dta",
-    "R8": "was_round_8_hhold_eul_may_2025.privdata",
-}[WAS_DATASET]
-
-WAS_DATA_SEPARATOR = {
-    "W3": ",",
-    "R8": "\t",
-}[WAS_DATASET]
-
 ### WAS Column maps ###
 
 # Map of internal column constants to survey column names.
 WAS_COLUMN_MAP = {
-    "W3": {
+    WAVE_3_DATA: {
         WAS_WEIGHT: "w3xswgt",
         WAS_NET_ANNUAL_INCOME: "DVTotNIRw3",
         WAS_GROSS_ANNUAL_INCOME: "DVTotGIRw3",
@@ -88,7 +75,7 @@ WAS_COLUMN_MAP = {
         WAS_OTHER_HOUSES_TOTAL_VALUE: "DVHseValW3_sum",
         WAS_BTL_HOUSES_TOTAL_VALUE: "DVBltValW3_sum",
     },
-    "R8": {
+    ROUND_8_DATA: {
         WAS_WEIGHT: "R8xshhwgt",
         WAS_NET_ANNUAL_INCOME: "DVTotInc_BHCR8",
         WAS_GROSS_ANNUAL_INCOME: "DVTotGIRR8",
@@ -212,11 +199,11 @@ AGE_15_BUCKET_DATA = {
 
 
 WAS_DATASET_AGE_BAND_MAPS = {
-    "W3": {
+    WAVE_3_DATA: {
         "Age9": AGE_9_BUCKET_DATA,
         "Age15": AGE_15_BUCKET_DATA,
     },
-    "R8": {
+    ROUND_8_DATA: {
         "Age8": AGE_8_BUCKET_DATA,
     },
 }[WAS_DATASET]

@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
 from was.Plotting import plot_hist_overlay
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
@@ -41,8 +42,8 @@ end_time = 2000
 min_log_income_bin_edge = 4.0
 max_log_income_bin_edge = 12.25
 variableToPlot = GROSS_NON_RENT_INCOME
-rootData = r""  # ADD HERE PATH TO WAS DATA FOLDER
-rootResults = r""  # ADD HERE PATH TO RESULTS FOLDER
+rootData = WAS_DATA_ROOT
+rootResults = WAS_RESULTS_ROOT
 
 # Read Wealth and Assets Survey data for households
 use_columns = [

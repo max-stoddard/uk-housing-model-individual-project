@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     derive_non_rent_income_columns,
     derive_liquid_financial_wealth_column,
 )
+from was.Config import WAS_DATA_ROOT
 from was.CSVWrite import write_joint_distribution
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_was_data
@@ -57,7 +58,7 @@ def log_histogram2d(
 
 
 # Read Wealth and Assets Survey data for households
-root = r""  # ADD HERE PATH TO WAS DATA FOLDER
+root = WAS_DATA_ROOT
 use_column_constants = [
     WAS_WEIGHT,
     WAS_GROSS_ANNUAL_INCOME,

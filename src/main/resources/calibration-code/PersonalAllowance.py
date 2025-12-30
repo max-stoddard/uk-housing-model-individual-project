@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.Config import WAS_DATA_ROOT
 from was.RowFilters import filter_percentile_outliers
 from was.IO import read_was_data
 from was.Constants import (
@@ -61,7 +62,7 @@ def getNetFromGross(gross_income, allowance):
 
 
 # Read Wealth and Assets Survey data for households
-root = r""  # ADD HERE PATH TO WAS DATA FOLDER
+root = WAS_DATA_ROOT
 use_columns = [
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,

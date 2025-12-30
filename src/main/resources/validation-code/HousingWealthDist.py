@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     GROSS_HOUSING_WEALTH,
     derive_gross_housing_wealth_column,
 )
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
 from was.Plotting import plot_hist_overlay
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
@@ -43,8 +44,8 @@ min_log_bin_edge = 6.0
 max_log_bin_edge = 16.0
 # variableToPlot = WAS_GROSS_HOUSING_WEALTH
 variableToPlot = WAS_TOTAL_PROPERTY_WEALTH
-rootData = r""  # ADD HERE PATH TO WAS DATA FOLDER
-rootResults = r""  # ADD HERE PATH TO RESULTS FOLDER
+rootData = WAS_DATA_ROOT
+rootResults = WAS_RESULTS_ROOT
 
 # Read Wealth and Assets Survey data for households
 use_column_constants = [

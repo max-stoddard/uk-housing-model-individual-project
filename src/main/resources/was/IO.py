@@ -6,11 +6,8 @@ import os
 
 import pandas as pd
 
-from was.Constants import (
-    WAS_COLUMN_MAP,
-    WAS_DATA_FILENAME,
-    WAS_DATA_SEPARATOR,
-)
+from was.Constants import WAS_COLUMN_MAP
+from was.Config import WAS_DATA_FILENAME, WAS_DATA_SEPARATOR
 
 
 def read_was_data(root: str, column_constants: list[str]) -> pd.DataFrame:

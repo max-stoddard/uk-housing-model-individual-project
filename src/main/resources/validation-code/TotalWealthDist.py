@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from was.Config import WAS_DATA_ROOT
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -44,7 +45,7 @@ from was.CSVWrite import write_1d_distribution
 
 
 # Read Wealth and Assets Survey data for households
-root = r""  # ADD HERE PATH TO WAS DATA FOLDER
+root = WAS_DATA_ROOT
 use_column_constants = [
     WAS_WEIGHT,
     WAS_GROSS_FINANCIAL_WEALTH,
