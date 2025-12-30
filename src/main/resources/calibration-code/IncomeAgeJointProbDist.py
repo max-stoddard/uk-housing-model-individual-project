@@ -20,7 +20,7 @@ from was.DerivedColumns import (
     derive_non_rent_income_columns,
 )
 from was.Config import WAS_DATA_ROOT
-from was.RowFilters import filter_percentile_outliers
+from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -56,6 +56,10 @@ chunk = filter_percentile_outliers(
     lower_bound_column=NET_NON_RENT_INCOME,
     upper_bound_column=GROSS_NON_RENT_INCOME,
 )
+# Drop non-positive incomes to enable log binning.
+chunk = filter_positive_values(chunk, [GROSS_NON_RENT_INCOME, NET_NON_RENT_INCOME])
+if chunk.empty:
+    raise ValueError("No rows left after income filters.")
 # Set bounds for log income bins after filtering.
 min_net_income = chunk[NET_NON_RENT_INCOME].min()
 max_gross_income = chunk[GROSS_NON_RENT_INCOME].max()

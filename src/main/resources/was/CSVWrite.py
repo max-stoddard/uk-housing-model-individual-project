@@ -66,7 +66,7 @@ def write_joint_distribution(
     rows = []
     for line, x_lower, x_upper in zip(frequency, x_bins[:-1], x_bins[1:]):
         line_sum = sum(line)
-        if normalize_rows and line_sum == 0 and zero_ok:
+        if normalize_rows and line_sum == 0:
             for y_lower, y_upper in zip(y_bins[:-1], y_bins[1:]):
                 rows.append((x_lower, x_upper, y_lower, y_upper, 0.0))
             continue
