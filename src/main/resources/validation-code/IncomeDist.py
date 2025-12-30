@@ -19,6 +19,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -73,14 +74,12 @@ chunk = chunk[
     ]
 ]
 
-# Filter out the 1% with highest GrossTotalIncome and the 1% with lowest NetTotalIncome
-one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_net = chunk.sort_values(WAS_NET_ANNUAL_INCOME)
-chunk_ord_by_gross = chunk.sort_values(WAS_GROSS_ANNUAL_INCOME)
-min_net_total_income = chunk_ord_by_net.iloc[one_per_cent][WAS_NET_ANNUAL_INCOME]
-max_gross_total_income = chunk_ord_by_gross.iloc[-one_per_cent][WAS_GROSS_ANNUAL_INCOME]
-chunk = chunk[chunk[WAS_NET_ANNUAL_INCOME] >= min_net_total_income]
-chunk = chunk[chunk[WAS_GROSS_ANNUAL_INCOME] <= max_gross_total_income]
+# Remove extreme income outliers to stabilize distribution.
+chunk = filter_percentile_outliers(
+    chunk,
+    lower_bound_column=WAS_NET_ANNUAL_INCOME,
+    upper_bound_column=WAS_GROSS_ANNUAL_INCOME,
+)
 
 results_file = os.path.join(
     rootResults, "test", "MonthlyGrossEmploymentIncome-run1.csv"
@@ -103,11 +102,13 @@ if printResults:
         GROSS_NON_RENT_INCOME,
         NET_NON_RENT_INCOME,
     ]:
+        # Keep positive values for log-scale histogram.
+        positive_chunk = filter_positive_values(chunk, [name])
         frequency = np.histogram(
-            np.log(chunk[chunk[name] > 0.0][name].values),
+            np.log(positive_chunk[name].values),
             bins=income_bin_edges,
             density=True,
-            weights=chunk[chunk[name] > 0.0][WAS_WEIGHT].values,
+            weights=positive_chunk[WAS_WEIGHT].values,
         )[0]
         with open(name + "-Weighted.csv", "w") as f:
             f.write(
@@ -136,11 +137,13 @@ if plotResults:
     )[0]
     model_hist = model_hist / sum(model_hist)
     # Histogram data from WAS
+    # Keep positive values for log-scale histogram.
+    positive_chunk = filter_positive_values(chunk, [variableToPlot])
     WAS_hist = np.histogram(
-        chunk[chunk[variableToPlot] > 0.0][variableToPlot].values,
+        positive_chunk[variableToPlot].values,
         bins=income_bin_edges,
         density=False,
-        weights=chunk[chunk[variableToPlot] > 0.0][WAS_WEIGHT].values,
+        weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
     # Plot both model results and data from WAS

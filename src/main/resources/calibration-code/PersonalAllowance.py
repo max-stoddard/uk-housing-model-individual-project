@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.RowFilters import filter_percentile_outliers
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -86,14 +87,12 @@ chunk = chunk[
     ]
 ]
 
-# Filter out the 1% with highest GrossTotalIncome and the 1% with lowest NetTotalIncome
-one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_net = chunk.sort_values(WAS_NET_ANNUAL_INCOME)
-chunk_ord_by_gross = chunk.sort_values(WAS_GROSS_ANNUAL_INCOME)
-min_net_total_income = chunk_ord_by_net.iloc[one_per_cent][WAS_NET_ANNUAL_INCOME]
-max_gross_total_income = chunk_ord_by_gross.iloc[-one_per_cent][WAS_GROSS_ANNUAL_INCOME]
-chunk = chunk[chunk[WAS_NET_ANNUAL_INCOME] >= min_net_total_income]
-chunk = chunk[chunk[WAS_GROSS_ANNUAL_INCOME] <= max_gross_total_income]
+# Remove extreme income outliers to stabilize allowance fit.
+chunk = filter_percentile_outliers(
+    chunk,
+    lower_bound_column=WAS_NET_ANNUAL_INCOME,
+    upper_bound_column=WAS_GROSS_ANNUAL_INCOME,
+)
 
 # Compute logarithmic difference between predicted and actual net income for the 2025-2026 personal allowance
 PERSONAL_ALLOWANCE_2025_26 = 12570

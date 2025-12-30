@@ -18,6 +18,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.RowFilters import filter_percentile_outliers
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -47,14 +48,15 @@ derive_non_rent_income_columns(chunk)
 chunk.rename(columns={age_column_key: "Age"}, inplace=True)
 # Filter down to keep only columns of interest
 chunk = chunk[["Age", GROSS_NON_RENT_INCOME, NET_NON_RENT_INCOME, WAS_WEIGHT]]
-# Filter out the 1% with highest GrossNonRentIncome and the 1% with lowest NetNonRentIncome
-one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_gross = chunk.sort_values(GROSS_NON_RENT_INCOME)
-chunk_ord_by_net = chunk.sort_values(NET_NON_RENT_INCOME)
-max_gross_income = chunk_ord_by_gross.iloc[-one_per_cent][GROSS_NON_RENT_INCOME]
-min_net_income = chunk_ord_by_net.iloc[one_per_cent][NET_NON_RENT_INCOME]
-chunk = chunk[chunk[GROSS_NON_RENT_INCOME] <= max_gross_income]
-chunk = chunk[chunk[NET_NON_RENT_INCOME] >= min_net_income]
+# Filter out the 1% with highest GrossNonRentIncome and the 1% with lowest NetNonRentIncome to stabilize joint distribution.
+chunk = filter_percentile_outliers(
+    chunk,
+    lower_bound_column=NET_NON_RENT_INCOME,
+    upper_bound_column=GROSS_NON_RENT_INCOME,
+)
+# Set bounds for log income bins after filtering.
+min_net_income = chunk[NET_NON_RENT_INCOME].min()
+max_gross_income = chunk[GROSS_NON_RENT_INCOME].max()
 # Map age buckets to middle of bucket value by creating the corresponding dictionary
 age_bucket_data = WAS_DATASET_AGE_BAND_MAPS[age_column_key]
 age_from_text = chunk["Age"].map(age_bucket_data["TEXT_MAPPING"])

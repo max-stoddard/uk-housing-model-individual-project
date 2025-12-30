@@ -3,7 +3,7 @@
 Class to study households' age distribution based on Wealth and Assets Survey data.
 Creates weighted distributions for each age band as "<AgeBand>-<WAS_DATASET>-Weighted.csv".
 
-@author: Adrian Carro
+@author: Adrian Carro, Max Stoddard
 """
 
 from __future__ import division
@@ -15,6 +15,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from was.IO import read_was_data
+from was.RowFilters import drop_missing_rows, filter_positive_values
 from was.Constants import (
     WAS_DATASET,
     WAS_WEIGHT,
@@ -38,8 +39,9 @@ for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():
     chunk[age_column] = chunk[age_column].map(bucket_mapping)
 
 # Filter down to keep only columns of interest & drop missing/invalid codes
-chunk = chunk.dropna(subset=age_columns + [WAS_WEIGHT])
-chunk = chunk[chunk[WAS_WEIGHT] > 0]
+chunk = drop_missing_rows(chunk, age_columns + [WAS_WEIGHT])
+# Keep positive weights for weighted distributions.
+chunk = filter_positive_values(chunk, [WAS_WEIGHT])
 
 for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():
     # Map age buckets to middle of bucket value by using the corresponding dictionary

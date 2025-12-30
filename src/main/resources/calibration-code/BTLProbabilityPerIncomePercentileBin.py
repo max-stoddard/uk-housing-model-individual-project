@@ -18,6 +18,7 @@ from was.DerivedColumns import (
     GROSS_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.RowFilters import filter_percentile_outliers
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -51,13 +52,11 @@ pd.set_option("display.max_columns", None)
 derive_non_rent_income_columns(chunk)
 
 # Filter out the 1% with highest GrossTotalIncome and the 1% with lowest NetTotalIncome
-one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_net = chunk.sort_values(WAS_NET_ANNUAL_INCOME)
-chunk_ord_by_gross = chunk.sort_values(WAS_GROSS_ANNUAL_INCOME)
-min_net_total_income = chunk_ord_by_net.iloc[one_per_cent][WAS_NET_ANNUAL_INCOME]
-max_gross_total_income = chunk_ord_by_gross.iloc[-one_per_cent][WAS_GROSS_ANNUAL_INCOME]
-chunk = chunk[chunk[WAS_NET_ANNUAL_INCOME] >= min_net_total_income]
-chunk = chunk[chunk[WAS_GROSS_ANNUAL_INCOME] <= max_gross_total_income]
+chunk = filter_percentile_outliers(
+    chunk,
+    lower_bound_column=WAS_NET_ANNUAL_INCOME,
+    upper_bound_column=WAS_GROSS_ANNUAL_INCOME,
+)
 
 # Compute income percentiles (using gross non-rent income) of all households
 chunk[GROSS_NON_RENT_INCOME_PERCENTILE] = [

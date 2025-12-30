@@ -19,6 +19,7 @@ from was.DerivedColumns import (
     LIQ_FINANCIAL_WEALTH,
     derive_liquid_financial_wealth_column,
 )
+from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -74,12 +75,11 @@ chunk = chunk[
         WAS_WEIGHT,
     ]
 ]
-# For the sake of using logarithmic scales, filter out any zero and negative values from all wealth columns
-chunk = chunk[
-    (chunk[WAS_GROSS_FINANCIAL_WEALTH] > 0.0)
-    & (chunk[WAS_NET_FINANCIAL_WEALTH] > 0.0)
-    & (chunk[LIQ_FINANCIAL_WEALTH] > 0.0)
-]
+# Keep positive wealth values for log-scale histogram.
+chunk = filter_positive_values(
+    chunk,
+    [WAS_GROSS_FINANCIAL_WEALTH, WAS_NET_FINANCIAL_WEALTH, LIQ_FINANCIAL_WEALTH],
+)
 
 # Define bin edges and widths
 number_of_bins = int(max_log_bin_edge - min_log_bin_edge) * 4 + 1
@@ -126,11 +126,13 @@ if plotResults:
     )[0]
     model_hist = model_hist / sum(model_hist)
     # Histogram data from WAS
+    # Keep positive values for log-scale histogram.
+    positive_chunk = filter_positive_values(chunk, [variableToPlot])
     WAS_hist = np.histogram(
-        chunk[chunk[variableToPlot] > 0.0][variableToPlot].values,
+        positive_chunk[variableToPlot].values,
         bins=bin_edges,
         density=False,
-        weights=chunk[chunk[variableToPlot] > 0.0][WAS_WEIGHT].values,
+        weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
     # Plot both model results and data from WAS

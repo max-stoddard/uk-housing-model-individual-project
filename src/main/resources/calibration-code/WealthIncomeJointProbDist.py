@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     derive_non_rent_income_columns,
     derive_liquid_financial_wealth_column,
 )
+from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_was_data
 from was.Constants import (
     WAS_WEIGHT,
@@ -143,24 +144,21 @@ chunk = chunk[
         WAS_WEIGHT,
     ]
 ]
-# Filter out the 1% with highest GrossNonRentIncome and the 1% with lowest NetNonRentIncome
-one_per_cent = int(round(len(chunk.index) / 100))
-chunk_ord_by_gross = chunk.sort_values(GROSS_NON_RENT_INCOME)
-chunk_ord_by_net = chunk.sort_values(NET_NON_RENT_INCOME)
-max_gross_income = chunk_ord_by_gross.iloc[-one_per_cent][GROSS_NON_RENT_INCOME]
-min_net_income = chunk_ord_by_net.iloc[one_per_cent][NET_NON_RENT_INCOME]
-chunk = chunk[chunk[GROSS_NON_RENT_INCOME] <= max_gross_income]
-chunk = chunk[chunk[NET_NON_RENT_INCOME] >= min_net_income]
-# For logarithmic binning, drop any non-positive income values
-chunk = chunk[(chunk[GROSS_NON_RENT_INCOME] > 0.0) & (chunk[NET_NON_RENT_INCOME] > 0.0)]
+# Remove extreme income outliers to stabilize joint distribution.
+chunk = filter_percentile_outliers(
+    chunk,
+    lower_bound_column=NET_NON_RENT_INCOME,
+    upper_bound_column=GROSS_NON_RENT_INCOME,
+)
+# Drop non-positive incomes to enable log binning.
+chunk = filter_positive_values(chunk, [GROSS_NON_RENT_INCOME, NET_NON_RENT_INCOME])
 max_gross_income = chunk[GROSS_NON_RENT_INCOME].max()
 min_net_income = chunk[NET_NON_RENT_INCOME].min()
-# For the sake of plotting in logarithmic scales, filter out any zero and negative values from all wealth columns
-chunk = chunk[
-    (chunk[WAS_GROSS_FINANCIAL_WEALTH] > 0.0)
-    & (chunk[WAS_NET_FINANCIAL_WEALTH] > 0.0)
-    & (chunk[LIQ_FINANCIAL_WEALTH] > 0.0)
-]
+# Filter non-positive wealth values for log-scale bins.
+chunk = filter_positive_values(
+    chunk,
+    [WAS_GROSS_FINANCIAL_WEALTH, WAS_NET_FINANCIAL_WEALTH, LIQ_FINANCIAL_WEALTH],
+)
 if chunk.empty:
     raise ValueError("No rows left after income and wealth filters.")
 

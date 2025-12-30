@@ -39,6 +39,7 @@ from was.DerivedColumns import (
     derive_liquid_financial_wealth_column,
     derive_total_wealth_column,
 )
+from was.RowFilters import filter_positive_values
 
 
 # Read Wealth and Assets Survey data for households
@@ -105,7 +106,7 @@ for financial_wealth_measure in financial_wealth_measures:
             chunk, financial_wealth_measure, housing_wealth_measure
         )
         # For the sake of using logarithmic scales, filter out any zero and negative values
-        temp_chunk = chunk[(chunk[TOTAL_WEALTH] > 0.0)]
+        temp_chunk = filter_positive_values(chunk, [TOTAL_WEALTH])
         # ...create a histogram
         frequency = np.histogram(
             np.log(temp_chunk[TOTAL_WEALTH].values),
