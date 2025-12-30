@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.Plotting import plot_hist_overlay
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -92,9 +93,6 @@ if printResults:
     income_bin_edges = np.linspace(
         min_log_income_bin_edge, max_log_income_bin_edge, number_of_bins
     )
-    income_bin_widths = [
-        b - a for a, b in zip(income_bin_edges[:-1], income_bin_edges[1:])
-    ]
     for name in [
         WAS_GROSS_ANNUAL_INCOME,
         WAS_NET_ANNUAL_INCOME,
@@ -147,29 +145,14 @@ if plotResults:
         weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
-    # Plot both model results and data from WAS
-    plt.bar(
-        income_bin_edges[:-1],
-        height=model_hist,
-        width=income_bin_widths,
-        align="edge",
-        label="Model results",
-        alpha=0.5,
-        color="b",
+    # Plot model vs WAS income distributions for validation.
+    plot_hist_overlay(
+        income_bin_edges,
+        model_hist,
+        WAS_hist,
+        xlabel="Income",
+        ylabel="Frequency (fraction of cases)",
+        title="Distribution of {}".format(variableToPlot),
+        log_x=True,
     )
-    plt.bar(
-        income_bin_edges[:-1],
-        height=WAS_hist,
-        width=income_bin_widths,
-        align="edge",
-        label="WAS data",
-        alpha=0.5,
-        color="r",
-    )
-    # Final plot details
-    plt.gca().set_xscale("log")
-    plt.xlabel("Income")
-    plt.ylabel("Frequency (fraction of cases)")
-    plt.legend()
-    plt.title("Distribution of {}".format(variableToPlot))
     plt.show()

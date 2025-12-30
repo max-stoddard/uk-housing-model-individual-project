@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     GROSS_HOUSING_WEALTH,
     derive_gross_housing_wealth_column,
 )
+from was.Plotting import plot_hist_overlay
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -83,7 +84,6 @@ chunk = filter_positive_values(
 # Define bin edges and widths
 number_of_bins = int(max_log_bin_edge - min_log_bin_edge) * 4 + 1
 bin_edges = np.logspace(min_log_bin_edge, max_log_bin_edge, number_of_bins, base=np.e)
-bin_widths = [b - a for a, b in zip(bin_edges[:-1], bin_edges[1:])]
 
 # If printing data to files is required, histogram data and print results
 if printResults:
@@ -130,31 +130,16 @@ if plotResults:
         weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
-    # Plot both model results and data from WAS
-    plt.bar(
-        bin_edges[:-1],
-        height=model_hist,
-        width=bin_widths,
-        align="edge",
-        label="Model results",
-        alpha=0.5,
-        color="b",
-    )
-    plt.bar(
-        bin_edges[:-1],
-        height=WAS_hist,
-        width=bin_widths,
-        align="edge",
-        label="WAS data",
-        alpha=0.5,
-        color="r",
-    )
-    # Final plot details
-    plt.gca().set_xscale("log")
-    plt.xlabel("{}".format(variableToPlot))
-    plt.ylabel("Frequency (fraction of cases)")
-    plt.legend()
-    plt.title(
-        "Distribution of Mark-to-market Net Housing Wealth ({})".format(variableToPlot)
+    # Plot model vs WAS housing wealth distributions for validation.
+    plot_hist_overlay(
+        bin_edges,
+        model_hist,
+        WAS_hist,
+        xlabel="{}".format(variableToPlot),
+        ylabel="Frequency (fraction of cases)",
+        title="Distribution of Mark-to-market Net Housing Wealth ({})".format(
+            variableToPlot
+        ),
+        log_x=True,
     )
     plt.show()
