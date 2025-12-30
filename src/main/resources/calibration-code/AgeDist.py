@@ -15,7 +15,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from was.IO import read_was_data
-from was.WealthAssetsSurveyConstants import (
+from was.Constants import (
     WAS_DATASET,
     WAS_WEIGHT,
     WAS_DATASET_AGE_BAND_MAPS,

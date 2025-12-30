@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from was.IO import read_results, read_was_data
-from was.WealthAssetsSurveyConstants import (
+from was.Constants import (
     WAS_WEIGHT,
     WAS_GROSS_FINANCIAL_WEALTH,
     WAS_NET_FINANCIAL_WEALTH,

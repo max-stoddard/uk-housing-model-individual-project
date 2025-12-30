@@ -6,7 +6,7 @@ import os
 
 import pandas as pd
 
-from was.WealthAssetsSurveyConstants import (
+from was.Constants import (
     WAS_COLUMN_MAP,
     WAS_DATA_FILENAME,
     WAS_DATA_SEPARATOR,
