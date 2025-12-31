@@ -21,7 +21,7 @@ from was.DerivedColumns import (
     derive_non_rent_income_columns,
 )
 from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
-from was.Plotting import plot_hist_overlay
+from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -37,6 +37,7 @@ from was.Constants import (
 # "NetTotalIncome", "GrossRentalIncome", "NetRentalIncome", "GrossNonRentIncome" and "NetNonRentIncome"
 printResults = False
 plotResults = True
+printBucketDiffs = False
 start_time = 1000
 end_time = 2000
 min_log_income_bin_edge = 4.0
@@ -146,6 +147,14 @@ if plotResults:
         weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
+    # Print percentage-point differences vs WAS for diagnostics.
+    print_hist_percent_diff(
+        income_bin_edges,
+        model_hist,
+        WAS_hist,
+        label="Income",
+        print_buckets=printBucketDiffs,
+    )
     # Plot model vs WAS income distributions for validation.
     plot_hist_overlay(
         income_bin_edges,
