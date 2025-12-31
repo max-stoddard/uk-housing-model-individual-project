@@ -21,7 +21,7 @@ from was.DerivedColumns import (
     derive_gross_housing_wealth_column,
 )
 from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
-from was.Plotting import plot_hist_overlay
+from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -32,12 +32,14 @@ from was.Constants import (
     WAS_OTHER_HOUSES_TOTAL_VALUE,
     WAS_BTL_HOUSES_TOTAL_VALUE,
 )
+from was.Timing import start_timer, end_timer
 
 
 # Set control variables and addresses. Available variables to print and plot are:
 # WAS_TOTAL_PROPERTY_WEALTH, WAS_PROPERTY_VALUE_SUM, WAS_GROSS_HOUSING_WEALTH
 printResults = False
 plotResults = True
+printBucketDiffs = False
 start_time = 1000
 end_time = 2000
 min_log_bin_edge = 6.0
@@ -46,6 +48,7 @@ max_log_bin_edge = 16.0
 variableToPlot = WAS_TOTAL_PROPERTY_WEALTH
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
 use_column_constants = [
@@ -131,6 +134,14 @@ if plotResults:
         weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
+    # Print percentage-point differences vs WAS for diagnostics.
+    print_hist_percent_diff(
+        bin_edges,
+        model_hist,
+        WAS_hist,
+        label="Housing wealth",
+        print_buckets=printBucketDiffs,
+    )
     # Plot model vs WAS housing wealth distributions for validation.
     plot_hist_overlay(
         bin_edges,
@@ -144,3 +155,5 @@ if plotResults:
         log_x=True,
     )
     plt.show()
+
+end_timer(timer_start)

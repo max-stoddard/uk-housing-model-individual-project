@@ -27,5 +27,9 @@
 # ignore all private data
 *.privdata
 *.dta
-temp-data/
+/*-data/
 test/
+test*
+
+# ignore local bash scripts
+*.sh

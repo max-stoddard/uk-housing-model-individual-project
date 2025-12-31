@@ -43,6 +43,7 @@ WAS_CASH_ISA_VALUE = "CashISAValue"  # Household value of Cash ISA
 WAS_CURRENT_ACCOUNT_CREDIT_VALUE = (
     "CurrentAccountCreditValue"  # Household value of current account in credit
 )
+WAS_FORMAL_FINANCIAL_ASSETS = "FormalFinancialAssets"
 WAS_TOTAL_PROPERTY_WEALTH = "TotalPropertyWealth"  # Total property wealth
 WAS_PROPERTY_VALUE_SUM = "PropertyValueSum"  # Sum of all property values
 WAS_MAIN_RESIDENCE_VALUE = "MainResidenceValue"  # Value of main residence
@@ -69,6 +70,7 @@ WAS_COLUMN_MAP = {
         WAS_SAVINGS_ACCOUNTS_VALUE: "DVSaValW3_aggr",
         WAS_CASH_ISA_VALUE: "DVCISAVW3_aggr",
         WAS_CURRENT_ACCOUNT_CREDIT_VALUE: "DVCaCrValW3_aggr",
+        WAS_FORMAL_FINANCIAL_ASSETS: "DVFFAssetsW3_aggr",
         WAS_TOTAL_PROPERTY_WEALTH: "HPROPWW3",
         WAS_PROPERTY_VALUE_SUM: "DVPropertyW3",
         WAS_MAIN_RESIDENCE_VALUE: "DVHValueW3",
@@ -90,6 +92,7 @@ WAS_COLUMN_MAP = {
         WAS_SAVINGS_ACCOUNTS_VALUE: "DVSaValR8_aggr",
         WAS_CASH_ISA_VALUE: "DVCISAVR8_aggr",
         WAS_CURRENT_ACCOUNT_CREDIT_VALUE: "DVCaCrValR8_aggr",
+        WAS_FORMAL_FINANCIAL_ASSETS: "DVFFAssetsR8_aggr",
         WAS_TOTAL_PROPERTY_WEALTH: "HPropWR8",
         WAS_PROPERTY_VALUE_SUM: "DVPropertyR8",
         WAS_MAIN_RESIDENCE_VALUE: "DVHValueR8",

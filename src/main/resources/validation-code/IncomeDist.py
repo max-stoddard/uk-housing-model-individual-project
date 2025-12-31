@@ -21,7 +21,7 @@ from was.DerivedColumns import (
     derive_non_rent_income_columns,
 )
 from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
-from was.Plotting import plot_hist_overlay
+from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -31,12 +31,14 @@ from was.Constants import (
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
+from was.Timing import start_timer, end_timer
 
 
 # Set control variables and addresses. Note that available variables to print and plot are "GrossTotalIncome",
 # "NetTotalIncome", "GrossRentalIncome", "NetRentalIncome", "GrossNonRentIncome" and "NetNonRentIncome"
 printResults = False
 plotResults = True
+printBucketDiffs = False
 start_time = 1000
 end_time = 2000
 min_log_income_bin_edge = 4.0
@@ -44,6 +46,7 @@ max_log_income_bin_edge = 12.25
 variableToPlot = GROSS_NON_RENT_INCOME
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
 use_columns = [
@@ -146,6 +149,14 @@ if plotResults:
         weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
+    # Print percentage-point differences vs WAS for diagnostics.
+    print_hist_percent_diff(
+        income_bin_edges,
+        model_hist,
+        WAS_hist,
+        label="Income",
+        print_buckets=printBucketDiffs,
+    )
     # Plot model vs WAS income distributions for validation.
     plot_hist_overlay(
         income_bin_edges,
@@ -157,3 +168,5 @@ if plotResults:
         log_x=True,
     )
     plt.show()
+
+end_timer(timer_start)

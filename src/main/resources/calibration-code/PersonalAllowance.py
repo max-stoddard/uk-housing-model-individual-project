@@ -20,6 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
+from was.Timing import start_timer, end_timer
 from was.Config import WAS_DATA_ROOT
 from was.RowFilters import filter_percentile_outliers
 from was.IO import read_was_data
@@ -30,6 +31,8 @@ from was.Constants import (
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
+
+timer_start = start_timer(os.path.basename(__file__), "calibration")
 
 tax_rates = pd.read_csv(
     TAX_RATE_FILE, comment="#", header=None, names=["band_start", "rate"]
@@ -121,3 +124,4 @@ print(
         doubleAllowanceDiff
     )
 )
+end_timer(timer_start)

@@ -26,6 +26,7 @@ from was.Constants import (
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
     WAS_TOTAL_PROPERTY_WEALTH,
     WAS_PROPERTY_VALUE_SUM,
     WAS_MAIN_RESIDENCE_VALUE,
@@ -42,10 +43,12 @@ from was.DerivedColumns import (
 )
 from was.RowFilters import filter_positive_values
 from was.CSVWrite import write_1d_distribution
+from was.Timing import start_timer, end_timer
 
 
 # Read Wealth and Assets Survey data for households
 root = WAS_DATA_ROOT
+timer_start = start_timer(os.path.basename(__file__), "validation")
 use_column_constants = [
     WAS_WEIGHT,
     WAS_GROSS_FINANCIAL_WEALTH,
@@ -56,6 +59,7 @@ use_column_constants = [
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
     WAS_TOTAL_PROPERTY_WEALTH,
     WAS_PROPERTY_VALUE_SUM,
     WAS_MAIN_RESIDENCE_VALUE,
@@ -125,3 +129,4 @@ for financial_wealth_measure in financial_wealth_measures:
             frequency,
             log_label=True,
         )
+end_timer(timer_start)

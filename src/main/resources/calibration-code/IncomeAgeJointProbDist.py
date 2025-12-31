@@ -30,10 +30,12 @@ from was.Constants import (
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
     WAS_DATASET_AGE_BAND_MAPS,
 )
+from was.Timing import start_timer, end_timer
 
 
 # Read Wealth and Assets Survey data for households
 root = WAS_DATA_ROOT
+timer_start = start_timer(os.path.basename(__file__), "calibration")
 age_column_key = next(iter(WAS_DATASET_AGE_BAND_MAPS))
 use_column_constants = [
     WAS_WEIGHT,
@@ -113,3 +115,4 @@ write_joint_distribution(
     x_is_log=False,
     y_is_log=True,
 )
+end_timer(timer_start)

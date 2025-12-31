@@ -59,3 +59,25 @@ def plot_hist_overlay(
     axes.legend()
     axes.set_title(title)
     return axes
+
+
+def print_hist_percent_diff(
+    bin_edges: np.ndarray,
+    model_hist: np.ndarray,
+    data_hist: np.ndarray,
+    label: str,
+    print_buckets: bool = False,
+) -> None:
+    """Print percentage-point differences per bucket and total absolute difference."""
+    percent_diff = (model_hist - data_hist) * 100.0
+    total_diff = float(np.sum(np.abs(model_hist - data_hist)) * 100.0)
+    print(f"{label} total diff: {total_diff:.6f} %")
+    if not print_buckets:
+        return
+    for lower_edge, upper_edge, diff, model_value, data_value in zip(
+        bin_edges[:-1], bin_edges[1:], percent_diff, model_hist, data_hist
+    ):
+        print(
+            f"{label} bucket {lower_edge}, {upper_edge}: "
+            f"{diff:.6f} % (model={model_value:.6f}, data={data_value:.6f})"
+        )
