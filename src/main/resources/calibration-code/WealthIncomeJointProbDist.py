@@ -38,6 +38,7 @@ from was.Constants import (
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
 )
 
 
@@ -73,6 +74,7 @@ use_column_constants = [
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
 ]
 chunk = read_was_data(root, use_column_constants)
 
