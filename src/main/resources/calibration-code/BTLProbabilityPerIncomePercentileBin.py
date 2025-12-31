@@ -29,6 +29,7 @@ from was.Constants import (
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
+from was.Timing import start_timer, end_timer
 
 GROSS_NON_RENT_INCOME_PERCENTILE = "GrossNonRentIncomePercentile"
 
@@ -40,6 +41,7 @@ GROSS_NON_RENT_INCOME_PERCENTILE = "GrossNonRentIncomePercentile"
 
 # Read Wealth and Assets Survey data for households
 root = WAS_DATA_ROOT
+timer_start = start_timer(os.path.basename(__file__), "calibration")
 use_columns = [
     WAS_WEIGHT,
     WAS_GROSS_ANNUAL_INCOME,
@@ -89,3 +91,4 @@ write_rows(
     "BTL probability\n",
     rows,
 )
+end_timer(timer_start)

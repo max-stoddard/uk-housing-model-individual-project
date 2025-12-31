@@ -24,6 +24,7 @@ from was.Config import WAS_DATA_ROOT
 from was.CSVWrite import write_joint_distribution
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_was_data
+from was.Timing import start_timer, end_timer
 from was.Constants import (
     WAS_WEIGHT,
     WAS_NET_ANNUAL_INCOME,
@@ -60,6 +61,7 @@ def log_histogram2d(
 
 # Read Wealth and Assets Survey data for households
 root = WAS_DATA_ROOT
+timer_start = start_timer(os.path.basename(__file__), "calibration")
 use_column_constants = [
     WAS_WEIGHT,
     WAS_GROSS_ANNUAL_INCOME,
@@ -224,3 +226,4 @@ write_joint_distribution(
     y_is_log=True,
     zero_ok=True,
 )
+end_timer(timer_start)

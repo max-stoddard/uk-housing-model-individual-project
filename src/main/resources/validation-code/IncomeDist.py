@@ -31,6 +31,7 @@ from was.Constants import (
     WAS_NET_ANNUAL_RENTAL_INCOME,
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
+from was.Timing import start_timer, end_timer
 
 
 # Set control variables and addresses. Note that available variables to print and plot are "GrossTotalIncome",
@@ -45,6 +46,7 @@ max_log_income_bin_edge = 12.25
 variableToPlot = GROSS_NON_RENT_INCOME
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
 use_columns = [
@@ -166,3 +168,5 @@ if plotResults:
         log_x=True,
     )
     plt.show()
+
+end_timer(timer_start)

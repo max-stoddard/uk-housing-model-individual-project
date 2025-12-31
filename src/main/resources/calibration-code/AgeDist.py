@@ -19,10 +19,12 @@ from was.IO import read_was_data
 from was.RowFilters import drop_missing_rows, filter_positive_values
 from was.Config import WAS_DATASET, WAS_DATA_ROOT
 from was.Constants import WAS_WEIGHT, WAS_DATASET_AGE_BAND_MAPS
+from was.Timing import start_timer, end_timer
 
 
 # Read Wealth and Assets Survey data for households
 root = WAS_DATA_ROOT
+timer_start = start_timer(os.path.basename(__file__), "calibration")
 age_columns = list(WAS_DATASET_AGE_BAND_MAPS.keys())
 chunk = read_was_data(root, [WAS_WEIGHT] + age_columns)
 pd.set_option("display.max_columns", None)
@@ -66,3 +68,4 @@ for age_column, bucket_data in WAS_DATASET_AGE_BAND_MAPS.items():
         "# Age (lower edge), Age (upper edge), Probability\n",
         rows,
     )
+end_timer(timer_start)

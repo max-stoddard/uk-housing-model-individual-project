@@ -32,6 +32,7 @@ from was.Constants import (
     WAS_OTHER_HOUSES_TOTAL_VALUE,
     WAS_BTL_HOUSES_TOTAL_VALUE,
 )
+from was.Timing import start_timer, end_timer
 
 
 # Set control variables and addresses. Available variables to print and plot are:
@@ -47,6 +48,7 @@ max_log_bin_edge = 16.0
 variableToPlot = WAS_TOTAL_PROPERTY_WEALTH
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
 use_column_constants = [
@@ -153,3 +155,5 @@ if plotResults:
         log_x=True,
     )
     plt.show()
+
+end_timer(timer_start)
