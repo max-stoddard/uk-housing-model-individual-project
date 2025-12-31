@@ -20,7 +20,7 @@ from was.DerivedColumns import (
     LIQ_FINANCIAL_WEALTH,
     derive_liquid_financial_wealth_column,
 )
-from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_SUBDIR
 from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
@@ -115,7 +115,7 @@ if printResults:
 if plotResults:
     # Read model results
     results = read_results(
-        os.path.join(rootResults, "test", "BankBalance-run1.csv"),
+        os.path.join(rootResults, WAS_RESULTS_SUBDIR, "BankBalance-run1.csv"),
         start_time,
         end_time,
     )

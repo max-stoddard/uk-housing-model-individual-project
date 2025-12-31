@@ -20,7 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
-from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_SUBDIR
 from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
@@ -88,7 +88,7 @@ chunk = filter_percentile_outliers(
 )
 
 results_file = os.path.join(
-    rootResults, "test", "MonthlyGrossEmploymentIncome-run1.csv"
+    rootResults, WAS_RESULTS_SUBDIR, "MonthlyGrossEmploymentIncome-run1.csv"
 )
 
 # If printing data to files is required, histogram data and print results
