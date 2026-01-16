@@ -14,7 +14,13 @@ ROUND_8_DATA = "R8"  # Round 8 covers April 2020 to March 2022.
 
 # Pick which WAS wave/round to dictate configuration.
 # Must be either WAVE_3_DATA or ROUND_8_DATA.
-WAS_DATASET = ROUND_8_DATA
+WAS_DATASET = os.getenv("WAS_DATASET", ROUND_8_DATA)
+if WAS_DATASET not in (WAVE_3_DATA, ROUND_8_DATA):
+    raise ValueError(
+        "WAS_DATASET must be WAVE_3_DATA or ROUND_8_DATA, got {!r}".format(
+            WAS_DATASET
+        )
+    )
 
 # Shared data and results roots (optional overrides).
 WAS_DATA_ROOT = os.getenv("WAS_DATA_ROOT", "")
@@ -22,8 +28,8 @@ WAS_RESULTS_ROOT = os.getenv("WAS_RESULTS_ROOT", "")
 
 # WAS dataset files and separators per wave.
 WAS_DATA_FILENAME = {
-    WAVE_3_DATA: "was_wave_3_hhold_eul_final.dta",
-    ROUND_8_DATA: "was_round_8_hhold_eul_may_2025.privdata",
+    WAVE_3_DATA: "private-datasets/was/was_wave_3_hhold_eul_final.dta",
+    ROUND_8_DATA: "private-datasets/was/was_round_8_hhold_eul_may_2025.privdata",
 }[WAS_DATASET]
 
 WAS_DATA_SEPARATOR = {
