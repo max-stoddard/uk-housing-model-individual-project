@@ -3,7 +3,7 @@
 Class to study households' financial wealth distribution, for validation purposes, based on Wealth and Assets Survey
 data.
 
-@author: Adrian Carro
+@author: Adrian Carro, Max Stoddard
 """
 
 from __future__ import division
@@ -20,8 +20,8 @@ from was.DerivedColumns import (
     LIQ_FINANCIAL_WEALTH,
     derive_liquid_financial_wealth_column,
 )
-from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
-from was.Plotting import plot_hist_overlay
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_RUN_SUBDIR
+from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -34,13 +34,16 @@ from was.Constants import (
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
 )
+from was.Timing import start_timer, end_timer
 
 
 # Set control variables and addresses. Available variables to print and plot are:
 # WAS_GROSS_FINANCIAL_WEALTH, WAS_NET_FINANCIAL_WEALTH, LIQ_FINANCIAL_WEALTH
 printResults = False
 plotResults = True
+printBucketDiffs = False
 start_time = 1000
 end_time = 2000
 min_log_bin_edge = 0.0
@@ -48,6 +51,8 @@ max_log_bin_edge = 20.0
 variableToPlot = LIQ_FINANCIAL_WEALTH
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+results_run_dir = os.path.join(rootResults, WAS_RESULTS_RUN_SUBDIR)
+timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
 use_column_constants = [
@@ -60,6 +65,7 @@ use_column_constants = [
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
 ]
 chunk = read_was_data(rootData, use_column_constants)
 
@@ -78,12 +84,6 @@ chunk = chunk[
         WAS_WEIGHT,
     ]
 ]
-# Keep positive wealth values for log-scale histogram.
-chunk = filter_positive_values(
-    chunk,
-    [WAS_GROSS_FINANCIAL_WEALTH, WAS_NET_FINANCIAL_WEALTH, LIQ_FINANCIAL_WEALTH],
-)
-
 # Define bin edges and widths
 number_of_bins = int(max_log_bin_edge - min_log_bin_edge) * 4 + 1
 bin_edges = np.logspace(min_log_bin_edge, max_log_bin_edge, number_of_bins, base=np.e)
@@ -95,11 +95,13 @@ if printResults:
         WAS_NET_FINANCIAL_WEALTH,
         LIQ_FINANCIAL_WEALTH,
     ]:
+        # Keep positive values for log-scale histogram per measure.
+        positive_chunk = filter_positive_values(chunk, [variable])
         hist = np.histogram(
-            chunk[variable].values,
+            positive_chunk[variable].values,
             bins=bin_edges,
             density=True,
-            weights=chunk[WAS_WEIGHT].values,
+            weights=positive_chunk[WAS_WEIGHT].values,
         )[0]
         # Write financial wealth distribution for validation.
         write_1d_distribution(
@@ -114,7 +116,7 @@ if printResults:
 if plotResults:
     # Read model results
     results = read_results(
-        os.path.join(rootResults, "test", "BankBalance-run1.csv"),
+        os.path.join(results_run_dir, "BankBalance-run1.csv"),
         start_time,
         end_time,
     )
@@ -133,6 +135,14 @@ if plotResults:
         weights=positive_chunk[WAS_WEIGHT].values,
     )[0]
     WAS_hist = WAS_hist / sum(WAS_hist)
+    # Print percentage-point differences vs WAS for diagnostics.
+    print_hist_percent_diff(
+        bin_edges,
+        model_hist,
+        WAS_hist,
+        label="Financial wealth",
+        print_buckets=printBucketDiffs,
+    )
     # Plot model vs WAS financial wealth distributions for validation.
     plot_hist_overlay(
         bin_edges,
@@ -144,3 +154,5 @@ if plotResults:
         log_x=True,
     )
     plt.show()
+
+end_timer(timer_start)

@@ -19,6 +19,7 @@ from was.Constants import (
     WAS_CHILD_OTHER_SAVINGS_VALUE,
     WAS_SAVINGS_ACCOUNTS_VALUE,
     WAS_CASH_ISA_VALUE,
+    WAS_FORMAL_FINANCIAL_ASSETS,
     WAS_CURRENT_ACCOUNT_CREDIT_VALUE,
     WAS_MAIN_RESIDENCE_VALUE,
     WAS_OTHER_HOUSES_TOTAL_VALUE,
@@ -58,6 +59,7 @@ def derive_liquid_financial_wealth_column(chunk: pd.DataFrame) -> pd.DataFrame:
         + chunk[WAS_CHILD_OTHER_SAVINGS_VALUE].astype(float)
         + chunk[WAS_SAVINGS_ACCOUNTS_VALUE].astype(float)
         + chunk[WAS_CASH_ISA_VALUE].astype(float)
+        + chunk[WAS_FORMAL_FINANCIAL_ASSETS].astype(float)  # TODO: REQUIRES EXPERIMENT
         + chunk[WAS_CURRENT_ACCOUNT_CREDIT_VALUE].astype(float)
     )
     return chunk

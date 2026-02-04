@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/INET-Complexity/housing-model.svg?branch=master)](https://travis-ci.com/INET-Complexity/housing-model)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/279e3e6d210c4668ab685c293ea7fc01)](https://www.codacy.com/gh/INET-Complexity/housing-model/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=INET-Complexity/housing-model&amp;utm_campaign=Badge_Grade)
 
 Agent-Based Model of the UK Housing Market
 ==========================================
