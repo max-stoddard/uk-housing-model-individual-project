@@ -20,7 +20,7 @@ from was.DerivedColumns import (
     GROSS_HOUSING_WEALTH,
     derive_gross_housing_wealth_column,
 )
-from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_RUN_SUBDIR
 from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
@@ -48,6 +48,7 @@ max_log_bin_edge = 16.0
 variableToPlot = WAS_TOTAL_PROPERTY_WEALTH
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+results_run_dir = os.path.join(rootResults, WAS_RESULTS_RUN_SUBDIR)
 timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
@@ -115,7 +116,7 @@ if printResults:
 if plotResults:
     # Read model results
     results = read_results(
-        os.path.join(rootResults, "test", "HousingWealth-run1.csv"),
+        os.path.join(results_run_dir, "HousingWealth-run1.csv"),
         start_time,
         end_time,
     )

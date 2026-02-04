@@ -20,7 +20,7 @@ from was.DerivedColumns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
-from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT
+from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_RUN_SUBDIR
 from was.Plotting import plot_hist_overlay, print_hist_percent_diff
 from was.RowFilters import filter_percentile_outliers, filter_positive_values
 from was.IO import read_results, read_was_data
@@ -41,11 +41,13 @@ plotResults = True
 printBucketDiffs = False
 start_time = 1000
 end_time = 2000
-min_log_income_bin_edge = 4.0
+min_income = 1000.0
+min_log_income_bin_edge = np.log(min_income)
 max_log_income_bin_edge = 12.25
 variableToPlot = GROSS_NON_RENT_INCOME
 rootData = WAS_DATA_ROOT
 rootResults = WAS_RESULTS_ROOT
+results_run_dir = os.path.join(rootResults, WAS_RESULTS_RUN_SUBDIR)
 timer_start = start_timer(os.path.basename(__file__), "validation")
 
 # Read Wealth and Assets Survey data for households
@@ -87,9 +89,7 @@ chunk = filter_percentile_outliers(
     upper_bound_column=WAS_GROSS_ANNUAL_INCOME,
 )
 
-results_file = os.path.join(
-    rootResults, "test", "MonthlyGrossEmploymentIncome-run1.csv"
-)
+results_file = os.path.join(results_run_dir, "MonthlyGrossEmploymentIncome-run1.csv")
 
 # If printing data to files is required, histogram data and print results
 if printResults:
@@ -135,13 +135,18 @@ if plotResults:
     # Read model results
     results = read_results(results_file, start_time, end_time)
     # Histogram model results
+    model_income = [12.0 * x for x in results if x > 0.0]
+    model_income = [x for x in model_income if x >= min_income]
     model_hist = np.histogram(
-        [12.0 * x for x in results if x > 0.0], bins=income_bin_edges, density=False
+        model_income,
+        bins=income_bin_edges,
+        density=False,
     )[0]
     model_hist = model_hist / sum(model_hist)
     # Histogram data from WAS
     # Keep positive values for log-scale histogram.
     positive_chunk = filter_positive_values(chunk, [variableToPlot])
+    positive_chunk = positive_chunk[positive_chunk[variableToPlot] >= min_income]
     WAS_hist = np.histogram(
         positive_chunk[variableToPlot].values,
         bins=income_bin_edges,
