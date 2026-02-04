@@ -9,7 +9,6 @@ Creates weighted distributions for each age band as "<AgeBand>-<WAS_DATASET>-Wei
 from __future__ import annotations, division
 
 import argparse
-import importlib
 import os
 import sys
 
@@ -21,27 +20,13 @@ from was.CSVWrite import write_rows
 from was.RowFilters import drop_missing_rows, filter_positive_values
 from was.Timing import start_timer, end_timer
 from was import Config as was_config
-from was import Constants as was_constants
-from was import IO as was_io
-
-
-def _reload_was_modules(dataset: str) -> tuple[object, object, object]:
-    """Reload WAS modules after selecting a dataset."""
-    if dataset not in (was_config.WAVE_3_DATA, was_config.ROUND_8_DATA):
-        raise ValueError(
-            "Dataset must be WAVE_3_DATA or ROUND_8_DATA, got {!r}".format(dataset)
-        )
-    os.environ["WAS_DATASET"] = dataset
-    importlib.reload(was_config)
-    importlib.reload(was_constants)
-    importlib.reload(was_io)
-    return was_config, was_constants, was_io
+from was.Dataset import reload_was_modules
 
 
 def run_age_distribution(dataset: str | None = None) -> dict[str, object]:
     """Generate weighted age distributions for a WAS dataset."""
     target_dataset = dataset or was_config.WAS_DATASET
-    config, constants, io_module = _reload_was_modules(target_dataset)
+    config, constants, io_module = reload_was_modules(target_dataset)
     timer_start = start_timer(os.path.basename(__file__), "calibration")
 
     age_columns = list(constants.WAS_DATASET_AGE_BAND_MAPS.keys())
