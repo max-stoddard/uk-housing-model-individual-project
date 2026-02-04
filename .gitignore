@@ -21,8 +21,9 @@
 # ignore python pyc files
 *.pyc
 
-# ignore root-level CSV outputs
+# ignore root-level CSV/PNG outputs
 /*.csv
+/*.png
 
 # ignore all private data
 *.privdata
@@ -31,6 +32,7 @@
 test/
 test*
 private-datasets/
+src/main/resources/experiments/outputs
 
 # ignore local bash scripts
 *.sh
