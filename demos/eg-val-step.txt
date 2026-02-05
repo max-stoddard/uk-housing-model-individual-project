@@ -1,0 +1,6 @@
+./scripts/demos/run-validation-step.sh \
+  "v2" \
+  "Results/v2-output" \
+  "ROUND_8_DATA" \
+  "R8" \
+  "private-datasets/was/was_round_8_hhold_eul_may_2025.privdata"
