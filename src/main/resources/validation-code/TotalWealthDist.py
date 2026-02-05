@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Class to study households' total wealth (financial + housing) distribution, for
-calibration purposes, based on Wealth and Assets Survey data.
+validation purposes, based on Wealth and Assets Survey data.
 
 @author: Adrian Carro, Max Stoddard
 """
