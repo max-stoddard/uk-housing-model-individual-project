@@ -21,7 +21,11 @@ from was.DerivedColumns import (
     derive_liquid_financial_wealth_column,
 )
 from was.Config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_RUN_SUBDIR
-from was.Plotting import plot_hist_overlay, print_hist_percent_diff
+from was.Plotting import (
+    format_currency_axis,
+    plot_hist_overlay,
+    print_hist_percent_diff,
+)
 from was.RowFilters import filter_positive_values
 from was.IO import read_results, read_was_data
 from was.Constants import (
@@ -144,7 +148,7 @@ if plotResults:
         print_buckets=printBucketDiffs,
     )
     # Plot model vs WAS financial wealth distributions for validation.
-    plot_hist_overlay(
+    axes = plot_hist_overlay(
         bin_edges,
         model_hist,
         WAS_hist,
@@ -152,7 +156,9 @@ if plotResults:
         ylabel="Frequency (fraction of cases)",
         title="Distribution of {}".format(variableToPlot),
         log_x=True,
+        data_label="Validation data (WAS)",
     )
+    format_currency_axis(axes, axis="x")
     plt.show()
 
 end_timer(timer_start)

@@ -9,7 +9,7 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import TwoSlopeNorm
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, LogLocator, NullFormatter
 
 
 def set_log_x_axis(ax: plt.Axes | None = None) -> None:
@@ -102,6 +102,24 @@ def format_currency_axis(
     axis_obj.set_major_formatter(formatter)
     axis_obj.set_minor_formatter(formatter)
     axis_obj.offsetText.set_visible(False)
+
+
+def reduce_log_ticks(
+    ax: plt.Axes,
+    axis: str = "x",
+    num_ticks: int = 6,
+    base: float = 10.0,
+) -> None:
+    """Reduce tick density on a log-scaled axis and hide minor tick labels."""
+    if axis == "x":
+        axis_obj = ax.xaxis
+    elif axis == "y":
+        axis_obj = ax.yaxis
+    else:
+        raise ValueError("axis must be 'x' or 'y'.")
+    axis_obj.set_major_locator(LogLocator(base=base, numticks=num_ticks))
+    axis_obj.set_minor_locator(LogLocator(base=base, subs="auto", numticks=num_ticks))
+    axis_obj.set_minor_formatter(NullFormatter())
 
 
 def format_age_axis(ax: plt.Axes, axis: str = "x") -> None:

@@ -25,7 +25,7 @@ WAS_DATA_ROOT = os.getenv("WAS_DATA_ROOT", "")
 WAS_RESULTS_ROOT = os.getenv("WAS_RESULTS_ROOT", "")
 WAS_RESULTS_RUN_SUBDIR = os.getenv(
     "WAS_RESULTS_RUN_SUBDIR",
-    "Results/v2-output",
+    "Results/v1-output",
 )
 
 # WAS dataset files and separators per wave.
