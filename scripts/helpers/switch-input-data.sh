@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${script_dir}/log.sh"
+LOG_TAG="SWITCH"
+LOG_COLOR="\033[1;34m"
+log_init
+
 usage() {
-  echo "Usage: $(basename "$0") <version>" >&2
-  echo "Example: $(basename "$0") v0" >&2
+  log_err "Usage: $(basename "$0") <version>"
+  log_err "Example: $(basename "$0") v0"
 }
 
 if [[ $# -ne 1 ]]; then
@@ -12,13 +18,13 @@ if [[ $# -ne 1 ]]; then
 fi
 
 version="$1"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+log "Switching input data version to '${version}' (top-level files only)."
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 input_dir="${repo_root}/input-data-versions/${version}"
 resources_dir="${repo_root}/src/main/resources"
 
 if [[ ! -d "${input_dir}" ]]; then
-  echo "Input data version not found: ${input_dir}" >&2
+  log_err "Input data version not found: ${input_dir}"
   usage
   exit 1
 fi
@@ -37,4 +43,4 @@ if (( ${#files[@]} > 0 )); then
   cp -a "${files[@]}" "${resources_dir}/"
 fi
 
-echo "Switched resources to '${version}': removed ${removed_count} files, copied ${copied_count} files."
+log "Switched resources to '${version}': removed ${removed_count} files, copied ${copied_count} files."

@@ -1,17 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${script_dir}/../helpers/log.sh"
+LOG_TAG="DEMO"
+LOG_COLOR="\033[1;31m"
+log_init
+
+repo_root="$(cd "${script_dir}/../.." && pwd)"
 cd "${repo_root}"
 
+demo_newline() { printf '\n'; }
+
 pause() {
-  echo
-  read -r -n 1 -s -p "Press any key (or Enter) to continue..."
-  echo
-  echo
+  demo_newline
+  printf '%s %s' "$(log_prefix)" "Press any key (or Enter) to continue..."
+  read -r -n 1 -s
+  demo_newline
+  demo_newline
 }
 
-echo "=== Part 1/3: v0 parameters + Wave 3 validation ==="
+log "=== Part 1/3: v0 parameters + Wave 3 validation ==="
 bash scripts/demos/run-validation-step.sh \
   "v0" \
   "Results/v0-output" \
@@ -21,12 +30,12 @@ bash scripts/demos/run-validation-step.sh \
 
 pause
 
-echo "=== Part 2/3: Experiments (GUI enabled) ==="
+log "=== Part 2/3: Experiments (GUI enabled) ==="
 ./scripts/was/run_was_experiments.sh true
 
 pause
 
-echo "=== Part 3/3: v1 parameters + Round 8 validation ==="
+log "=== Part 3/3: v1 parameters + Round 8 validation ==="
 bash scripts/demos/run-validation-step.sh \
   "v1" \
   "Results/v1-output" \

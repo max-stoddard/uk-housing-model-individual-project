@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${script_dir}/../helpers/log.sh"
+LOG_TAG="WAS-EXPER"
+LOG_COLOR="\033[1;35m"
+log_init
+
 gui_arg="${1:-false}"
 case "${gui_arg}" in
   true|TRUE|True|1|yes|YES|y|Y)
@@ -10,7 +16,7 @@ case "${gui_arg}" in
     gui_enabled=false
     ;;
   *)
-    echo "Usage: $(basename "$0") [true|false]" >&2
+    log_err "Usage: $(basename "$0") [true|false]"
     exit 1
     ;;
 esac
@@ -20,9 +26,10 @@ if [[ "${gui_enabled}" != "true" ]]; then
   export MPLBACKEND=Agg
 fi
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 experiments_dir="${repo_root}/src/main/resources/experiments"
+
+log "Running experiments (GUI enabled: ${gui_enabled})."
 
 scripts=(
   "AgeDistributionComparison.py"
@@ -35,9 +42,9 @@ scripts=(
 for script_name in "${scripts[@]}"; do
   script_path="${experiments_dir}/${script_name}"
   if [[ -f "${script_path}" ]]; then
-    echo "Running ${script_name}"
+    log "Running ${script_name}"
     python3 "${script_path}"
   else
-    echo "Skipping missing ${script_name}"
+    log "Skipping missing ${script_name}"
   fi
 done

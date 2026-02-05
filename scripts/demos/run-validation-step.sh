@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${script_dir}/../helpers/log.sh"
+LOG_TAG="VALIDATE"
+LOG_COLOR="\033[1;36m"
+log_init
+
 if [[ $# -ne 5 ]]; then
-  echo "Usage: $0 <input_version> <output_dir> <dataset_const> <expected_dataset> <expected_file>"
+  log_err "Usage: $0 <input_version> <output_dir> <dataset_const> <expected_dataset> <expected_file>"
   exit 1
 fi
 
@@ -12,7 +18,7 @@ dataset_const="$3"
 expected_dataset="$4"
 expected_file="$5"
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+repo_root="$(cd "${script_dir}/../.." && pwd)"
 cd "${repo_root}"
 
 update_config() {
@@ -96,13 +102,20 @@ PY
 
 run_model() {
   local output_dir="$1"
-  echo "Running model: output -> ${output_dir}"
+  log "Running model simulation -> ${output_dir}"
   mvn exec:java -Dexec.args="-outputFolder ${output_dir} -dev"
 }
 
+log "Validation step: switch data -> run model -> validate outputs."
+log "Input version: ${input_version}"
+log "Output folder: ${output_dir}"
+
 ./scripts/helpers/switch-input-data.sh "${input_version}"
 run_model "${output_dir}"
+log "Updating validation config to point at output folder"
 update_config "${dataset_const}" "${output_dir}"
 show_config_summary
+log "Verifying dataset selection"
 verify_config "${expected_dataset}" "${expected_file}"
+log "Running validation suite"
 ./scripts/was/run_was_validation.sh
