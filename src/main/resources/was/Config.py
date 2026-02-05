@@ -25,11 +25,7 @@ WAS_DATA_ROOT = os.getenv("WAS_DATA_ROOT", "")
 WAS_RESULTS_ROOT = os.getenv("WAS_RESULTS_ROOT", "")
 WAS_RESULTS_RUN_SUBDIR = os.getenv(
     "WAS_RESULTS_RUN_SUBDIR",
-    # "Results/2025-12-29T15-46-42.655771531Z",  # Old
-    # "Results/2025-12-31T17-32-53.386645203Z",  # New
-    "Results/New-WAS-NI-Income",
-    # "Results/New-WAS-Old-NI-Income",
-    # "Results/Original-Model",
+    "Results/v2-output",
 )
 
 # WAS dataset files and separators per wave.
