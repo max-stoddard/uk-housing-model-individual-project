@@ -33,6 +33,3 @@ test/
 test*
 private-datasets/
 src/main/resources/experiments/outputs
-
-# ignore local bash scripts
-*.sh
