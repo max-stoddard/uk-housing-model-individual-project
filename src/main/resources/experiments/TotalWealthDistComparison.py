@@ -14,7 +14,7 @@ from matplotlib.ticker import LogLocator, NullLocator
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "validation-code"))
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "calibration-code"))
 )
 from was.Config import WAVE_3_DATA, ROUND_8_DATA
 from was.ComparisonStats import (
