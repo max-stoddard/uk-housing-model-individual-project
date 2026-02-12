@@ -3,11 +3,13 @@
 """
 Compute DESIRED_RENT_SCALE and DESIRED_RENT_EXPONENT from NMG CSV data.
 
-Default method (chosen to best reproduce 2016 legacy values):
+Default method (chosen to reduce band-edge and level-space fitting bias):
   - qhousing in {3,4,5}
-  - income source: incomev2comb mapped to annual upper bounds
-  - rent source: spq07 mapped to monthly upper bounds
-  - fit: weighted non-linear least squares in original space
+  - income source: incomev2comb mapped to annual midpoints
+  - rent source: spq07 mapped to monthly midpoints
+  - fit: weighted linear regression in log space
+
+@author: Max Stoddard
 """
 
 from __future__ import annotations
@@ -22,7 +24,11 @@ import numpy as np
 
 from scripts.python.helpers.common.cli import format_float
 from scripts.python.helpers.nmg.columns import DesiredRentColumnNames as ColumnNames
-from scripts.python.helpers.nmg.fitting import HAVE_SCIPY, fit_log_weighted, fit_nls_weighted
+from scripts.python.helpers.nmg.fitting import (
+    HAVE_SCIPY,
+    fit_log_weighted,
+    fit_nls_weighted,
+)
 from scripts.python.helpers.nmg.observations import (
     get_income_from_row,
     get_rent_from_row,
@@ -45,6 +51,8 @@ class ParseStats:
     rows_invalid_rent: int = 0
     rows_invalid_weight: int = 0
     rows_used: int = 0
+
+
 def validate_required_columns(
     header: Sequence[str],
     columns: ColumnNames,
@@ -126,21 +134,31 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--income-source",
-        default="incomev2comb_upper",
+        default="incomev2comb_mid",
         choices=["incomev2comb_upper", "incomev2comb_mid", "sum_free_income"],
-        help="Income source mapping (default: incomev2comb_upper).",
+        help=(
+            "Income source mapping. Default uses income-band midpoints to avoid "
+            "systematic upper-bound inflation."
+        ),
     )
     parser.add_argument(
         "--rent-source",
-        default="spq07_upper",
+        default="spq07_mid",
         choices=["spq07_upper", "spq07_mid", "spq07_free"],
-        help="Rent source mapping (default: spq07_upper).",
+        help=(
+            "Rent source mapping. Default uses rent-band midpoints to avoid "
+            "systematic upper-bound inflation."
+        ),
     )
     parser.add_argument(
         "--fit-method",
-        default="nls_weighted",
+        default="log_weighted",
         choices=["nls_weighted", "log_weighted"],
-        help="Fit method (default: nls_weighted).",
+        help=(
+            "Fit method. Default log_weighted balances proportional errors; "
+            "nls_weighted minimizes level-space squared errors and can overweight "
+            "high-rent observations."
+        ),
     )
     return parser
 
@@ -159,7 +177,9 @@ def main() -> None:
         parser.error(str(exc))
 
     if args.fit_method == "nls_weighted" and not HAVE_SCIPY:
-        raise SystemExit("fit-method=nls_weighted requires SciPy, which is unavailable.")
+        raise SystemExit(
+            "fit-method=nls_weighted requires SciPy, which is unavailable."
+        )
 
     with csv_path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -206,7 +226,9 @@ def main() -> None:
     print(f"Rows read: {stats.total_rows}")
     print(f"Rows used: {stats.rows_used}")
     print(f"Rows with invalid qhousing: {stats.rows_invalid_qhousing}")
-    print(f"Rows with qhousing not in {{{qhousing_label}}}: {stats.rows_filtered_qhousing}")
+    print(
+        f"Rows with qhousing not in {{{qhousing_label}}}: {stats.rows_filtered_qhousing}"
+    )
     print(f"Rows with invalid income: {stats.rows_invalid_income}")
     print(f"Rows with invalid rent: {stats.rows_invalid_rent}")
     print(f"Rows with invalid weight: {stats.rows_invalid_weight}")
@@ -215,6 +237,15 @@ def main() -> None:
     print(f"income source: {args.income_source}")
     print(f"rent source: {args.rent_source}")
     print(f"fit method: {args.fit_method}")
+    if args.fit_method == "log_weighted":
+        print(
+            "fit objective: weighted log-space regression (balances proportional errors across rent levels)"
+        )
+    else:
+        print("fit objective: weighted level-space NLS (squared pound errors)")
+        print(
+            "warning: level-space NLS can overweight high-rent observations in the fit"
+        )
     print("")
     print(f"DESIRED_RENT_SCALE = {format_float(scale)}")
     print(f"DESIRED_RENT_EXPONENT = {format_float(exponent)}")
