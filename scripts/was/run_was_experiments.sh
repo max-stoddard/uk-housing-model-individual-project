@@ -27,24 +27,19 @@ if [[ "${gui_enabled}" != "true" ]]; then
 fi
 
 repo_root="$(cd "${script_dir}/../.." && pwd)"
-experiments_dir="${repo_root}/src/main/resources/experiments"
+cd "${repo_root}"
 
 log "Running experiments (GUI enabled: ${gui_enabled})."
 
-scripts=(
-  "AgeDistributionComparison.py"
-  "BTLProbabilityPerIncomePercentileComparison.py"
-  "AgeGrossIncomeJointDistComparison.py"
-  "GrossIncomeNetWealthJointDistComparison.py"
-  "TotalWealthDistComparison.py"
+modules=(
+  "scripts.python.experiments.was.age_distribution_comparison"
+  "scripts.python.experiments.was.btl_probability_per_income_percentile_comparison"
+  "scripts.python.experiments.was.age_gross_income_joint_dist_comparison"
+  "scripts.python.experiments.was.gross_income_net_wealth_joint_dist_comparison"
+  "scripts.python.experiments.was.total_wealth_dist_comparison"
 )
 
-for script_name in "${scripts[@]}"; do
-  script_path="${experiments_dir}/${script_name}"
-  if [[ -f "${script_path}" ]]; then
-    log "Running ${script_name}"
-    python3 "${script_path}"
-  else
-    log "Skipping missing ${script_name}"
-  fi
+for module_name in "${modules[@]}"; do
+  log "Running ${module_name}"
+  python3 -m "${module_name}"
 done

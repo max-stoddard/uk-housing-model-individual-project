@@ -8,11 +8,12 @@ LOG_COLOR="\033[1;33m"
 log_init
 
 repo_root="$(cd "${script_dir}/../.." && pwd)"
+cd "${repo_root}"
 
 log "Running validation scripts (income, housing wealth, financial wealth)."
 log "Income distribution validation"
-python3 "$repo_root/src/main/resources/validation-code/IncomeDist.py"
+python3 -m scripts.python.validation.was.income_dist
 log "Housing wealth validation"
-python3 "$repo_root/src/main/resources/validation-code/HousingWealthDist.py"
+python3 -m scripts.python.validation.was.housing_wealth_dist
 log "Financial wealth validation"
-python3 "$repo_root/src/main/resources/validation-code/FinancialWealthDist.py"
+python3 -m scripts.python.validation.was.financial_wealth_dist
