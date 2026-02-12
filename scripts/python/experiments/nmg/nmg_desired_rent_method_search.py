@@ -18,6 +18,7 @@ import csv
 import math
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 
@@ -253,6 +254,10 @@ def main() -> None:
     print(f"Target {target_keys.scale} = {format_float(target_scale)}")
     print(f"Target {target_keys.exponent} = {format_float(target_exponent)}")
     print(f"SciPy available: {'yes' if HAVE_SCIPY else 'no'}")
+    print(
+        "Note: closest-to-legacy ranking may differ from the recommended default "
+        "for reduced estimation bias (midpoint mapping + log-weighted fit)."
+    )
     print("")
     print(
         "Rank\tDistance\t|dScale|\t|dExp|\tRows\tQHousing\tIncome\tRent\tFit\tScale\tExponent"
