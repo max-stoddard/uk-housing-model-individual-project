@@ -18,7 +18,12 @@ from scripts.python.helpers.was.derived_columns import (
     GROSS_HOUSING_WEALTH,
     derive_gross_housing_wealth_column,
 )
-from scripts.python.helpers.was.config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_RUN_SUBDIR
+from scripts.python.helpers.was.config import (
+    WAS_DATA_ROOT,
+    WAS_RESULTS_ROOT,
+    WAS_RESULTS_RUN_SUBDIR,
+    WAS_VALIDATION_PLOTS,
+)
 from scripts.python.helpers.was.plotting import (
     format_currency_axis,
     plot_hist_overlay,
@@ -41,7 +46,7 @@ from scripts.python.helpers.was.timing import start_timer, end_timer
 # Set control variables and addresses. Available variables to print and plot are:
 # WAS_TOTAL_PROPERTY_WEALTH, WAS_PROPERTY_VALUE_SUM, WAS_GROSS_HOUSING_WEALTH
 printResults = False
-plotResults = True
+plotResults = WAS_VALIDATION_PLOTS
 printBucketDiffs = False
 start_time = 1000
 end_time = 2000
@@ -115,37 +120,39 @@ if printResults:
             log_label=True,
         )
 
-# If plotting data and results is required, read model results, histogram data and results and plot them
+# Build model/data histograms and print percentage-point differences regardless of plotting mode.
+# Read model results
+results = read_results(
+    os.path.join(results_run_dir, "HousingWealth-run1.csv"),
+    start_time,
+    end_time,
+)
+# Histogram model results
+model_hist = np.histogram(
+    [x for x in results if x > 0.0], bins=bin_edges, density=False
+)[0]
+model_hist = model_hist / sum(model_hist)
+# Histogram data from WAS
+# Keep positive values for log-scale histogram.
+positive_chunk = filter_positive_values(chunk, [variableToPlot])
+WAS_hist = np.histogram(
+    positive_chunk[variableToPlot].values,
+    bins=bin_edges,
+    density=False,
+    weights=positive_chunk[WAS_WEIGHT].values,
+)[0]
+WAS_hist = WAS_hist / sum(WAS_hist)
+# Print percentage-point differences vs WAS for diagnostics.
+print_hist_percent_diff(
+    bin_edges,
+    model_hist,
+    WAS_hist,
+    label="Housing wealth",
+    print_buckets=printBucketDiffs,
+)
+
+# If plotting data and results is required, plot model and validation distributions.
 if plotResults:
-    # Read model results
-    results = read_results(
-        os.path.join(results_run_dir, "HousingWealth-run1.csv"),
-        start_time,
-        end_time,
-    )
-    # Histogram model results
-    model_hist = np.histogram(
-        [x for x in results if x > 0.0], bins=bin_edges, density=False
-    )[0]
-    model_hist = model_hist / sum(model_hist)
-    # Histogram data from WAS
-    # Keep positive values for log-scale histogram.
-    positive_chunk = filter_positive_values(chunk, [variableToPlot])
-    WAS_hist = np.histogram(
-        positive_chunk[variableToPlot].values,
-        bins=bin_edges,
-        density=False,
-        weights=positive_chunk[WAS_WEIGHT].values,
-    )[0]
-    WAS_hist = WAS_hist / sum(WAS_hist)
-    # Print percentage-point differences vs WAS for diagnostics.
-    print_hist_percent_diff(
-        bin_edges,
-        model_hist,
-        WAS_hist,
-        label="Housing wealth",
-        print_buckets=printBucketDiffs,
-    )
     # Plot model vs WAS housing wealth distributions for validation.
     axes = plot_hist_overlay(
         bin_edges,

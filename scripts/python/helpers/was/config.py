@@ -8,6 +8,20 @@ from __future__ import annotations
 
 import os
 
+
+def _parse_bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(
+        f"{name} must be one of 1/0, true/false, yes/no, on/off; got {value!r}"
+    )
+
 # WAS wave/round identifiers.
 WAVE_3_DATA = "W3"  # Wave 3 covers July 2010 to June 2012.
 ROUND_8_DATA = "R8"  # Round 8 covers April 2020 to March 2022.
@@ -27,6 +41,10 @@ WAS_RESULTS_RUN_SUBDIR = os.getenv(
     "WAS_RESULTS_RUN_SUBDIR",
     "Results/v1-output",
 )
+
+# Toggle validation plotting (matplotlib). Default kept as True for backward compatibility;
+# versioned validation wrappers set this explicitly.
+WAS_VALIDATION_PLOTS = _parse_bool_env("WAS_VALIDATION_PLOTS", True)
 
 # WAS dataset files and separators per wave.
 WAS_DATA_FILENAME = {

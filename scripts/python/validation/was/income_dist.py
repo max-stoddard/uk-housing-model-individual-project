@@ -18,7 +18,12 @@ from scripts.python.helpers.was.derived_columns import (
     NET_NON_RENT_INCOME,
     derive_non_rent_income_columns,
 )
-from scripts.python.helpers.was.config import WAS_DATA_ROOT, WAS_RESULTS_ROOT, WAS_RESULTS_RUN_SUBDIR
+from scripts.python.helpers.was.config import (
+    WAS_DATA_ROOT,
+    WAS_RESULTS_ROOT,
+    WAS_RESULTS_RUN_SUBDIR,
+    WAS_VALIDATION_PLOTS,
+)
 from scripts.python.helpers.was.plotting import (
     format_currency_axis,
     plot_hist_overlay,
@@ -40,7 +45,7 @@ from scripts.python.helpers.was.timing import start_timer, end_timer
 # Set control variables and addresses. Note that available variables to print and plot are "GrossTotalIncome",
 # "NetTotalIncome", "GrossRentalIncome", "NetRentalIncome", "GrossNonRentIncome" and "NetNonRentIncome"
 printResults = False
-plotResults = True
+plotResults = WAS_VALIDATION_PLOTS
 printBucketDiffs = False
 start_time = 1000
 end_time = 2000
@@ -125,46 +130,44 @@ if printResults:
             log_label=False,
         )
 
-# If plotting data and results is required, read model results, histogram data and results and plot them
+# Build model/data histograms and print percentage-point differences regardless of plotting mode.
+number_of_bins = int(max_log_income_bin_edge - min_log_income_bin_edge) * 4 + 2
+income_bin_edges = np.logspace(
+    min_log_income_bin_edge, max_log_income_bin_edge, number_of_bins, base=np.e
+)
+# Read model results
+results = read_results(results_file, start_time, end_time)
+# Histogram model results
+model_income = [12.0 * x for x in results if x > 0.0]
+model_income = [x for x in model_income if x >= min_income]
+model_hist = np.histogram(
+    model_income,
+    bins=income_bin_edges,
+    density=False,
+)[0]
+model_hist = model_hist / sum(model_hist)
+# Histogram data from WAS
+# Keep positive values for log-scale histogram.
+positive_chunk = filter_positive_values(chunk, [variableToPlot])
+positive_chunk = positive_chunk[positive_chunk[variableToPlot] >= min_income]
+WAS_hist = np.histogram(
+    positive_chunk[variableToPlot].values,
+    bins=income_bin_edges,
+    density=False,
+    weights=positive_chunk[WAS_WEIGHT].values,
+)[0]
+WAS_hist = WAS_hist / sum(WAS_hist)
+# Print percentage-point differences vs WAS for diagnostics.
+print_hist_percent_diff(
+    income_bin_edges,
+    model_hist,
+    WAS_hist,
+    label="Income",
+    print_buckets=printBucketDiffs,
+)
+
+# If plotting data and results is required, plot model and validation distributions.
 if plotResults:
-    # Define bin edges and widths
-    number_of_bins = int(max_log_income_bin_edge - min_log_income_bin_edge) * 4 + 2
-    income_bin_edges = np.logspace(
-        min_log_income_bin_edge, max_log_income_bin_edge, number_of_bins, base=np.e
-    )
-    income_bin_widths = [
-        b - a for a, b in zip(income_bin_edges[:-1], income_bin_edges[1:])
-    ]
-    # Read model results
-    results = read_results(results_file, start_time, end_time)
-    # Histogram model results
-    model_income = [12.0 * x for x in results if x > 0.0]
-    model_income = [x for x in model_income if x >= min_income]
-    model_hist = np.histogram(
-        model_income,
-        bins=income_bin_edges,
-        density=False,
-    )[0]
-    model_hist = model_hist / sum(model_hist)
-    # Histogram data from WAS
-    # Keep positive values for log-scale histogram.
-    positive_chunk = filter_positive_values(chunk, [variableToPlot])
-    positive_chunk = positive_chunk[positive_chunk[variableToPlot] >= min_income]
-    WAS_hist = np.histogram(
-        positive_chunk[variableToPlot].values,
-        bins=income_bin_edges,
-        density=False,
-        weights=positive_chunk[WAS_WEIGHT].values,
-    )[0]
-    WAS_hist = WAS_hist / sum(WAS_hist)
-    # Print percentage-point differences vs WAS for diagnostics.
-    print_hist_percent_diff(
-        income_bin_edges,
-        model_hist,
-        WAS_hist,
-        label="Income",
-        print_buckets=printBucketDiffs,
-    )
     # Plot model vs WAS income distributions for validation.
     axes = plot_hist_overlay(
         income_bin_edges,
