@@ -31,7 +31,8 @@
 /*-data/
 private-datasets/
 src/main/resources/experiments/outputs
+scripts/python/experiments/was/outputs/
 tmp/
 
 AGENTS.md
-scripts/python/AGENT_SCRIPT_STRUCTURE.md
+AGENT*.md
