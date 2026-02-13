@@ -9,6 +9,22 @@ This script evaluates combinations of:
   - fit methods
 
 and ranks them by Euclidean distance to target config values.
+
+Latest experiment findings (run on February 13, 2026):
+  - Dataset: private-datasets/nmg/nmg-2024.csv
+  - Config: src/main/resources/config.properties
+  - Targets:
+    - DESIRED_RENT_SCALE = 18.1279304158
+    - DESIRED_RENT_EXPONENT = 0.3371001138
+  - Best-ranked methods (tie):
+    - qhousing={3,4,5}, incomev2comb_mid, spq07_mid, log_weighted
+    - qhousing={3,4,5,98}, incomev2comb_mid, spq07_mid, log_weighted
+  - Shared best estimate:
+    - Scale = 18.1279304158
+    - Exponent = 0.3371001138
+    - Distance ~= 0.0 (exact at displayed precision)
+  - Interpretation:
+    - Midpoint mapping with log-weighted fit exactly reproduces current 2024 target values.
 """
 
 from __future__ import annotations
