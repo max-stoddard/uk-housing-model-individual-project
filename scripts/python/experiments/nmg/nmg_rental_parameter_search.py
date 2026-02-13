@@ -16,6 +16,18 @@ Variants:
   - weighted vs unweighted
   - std definition: population vs sample
 
+Latest experiment findings (run on February 13, 2026):
+  - Dataset: private-datasets/nmg/nmg-2024.csv
+  - Config: src/main/resources/config.properties
+  - Targets:
+    - RENTAL_PRICES_SCALE = 6.4882696353
+    - RENTAL_PRICES_SHAPE = 0.8031833339
+  - Closest variant:
+    - q3q4|weighted|std=pop
+    - Mu = 6.4882696353
+    - Sigma = 0.8031833339
+    - Distance ~= 0.0 (exact at displayed precision)
+
 @author: Max Stoddard
 """
 
@@ -33,7 +45,12 @@ from scripts.python.helpers.nmg.columns import (
     RentalParameterColumns as ColumnNames,
     RentalTargetKeys as TargetKeys,
 )
-from scripts.python.helpers.nmg.parsing import parse_float, parse_int, read_properties
+from scripts.python.helpers.nmg.parsing import (
+    parse_float,
+    parse_int,
+    read_properties,
+    resolve_optional_column,
+)
 
 @dataclass(frozen=True)
 class Variant:
@@ -60,17 +77,16 @@ class ResultRow:
 
 def resolve_indices(header: Sequence[str], columns: ColumnNames) -> dict[str, int]:
     lookup = {name: idx for idx, name in enumerate(header)}
-    missing = [
-        name
-        for name in (columns.qhousing, columns.rent, columns.weight)
-        if name not in lookup
-    ]
+    missing = [name for name in (columns.qhousing, columns.weight) if name not in lookup]
+    rent_column = resolve_optional_column(header, columns.rent_candidates)
+    if rent_column is None:
+        missing.append("rent(" + "|".join(columns.rent_candidates) + ")")
     if missing:
         missing_text = ", ".join(missing)
         raise ValueError(f"Missing required columns: {missing_text}")
     return {
         "qhousing": lookup[columns.qhousing],
-        "rent": lookup[columns.rent],
+        "rent": lookup[rent_column],
         "weight": lookup[columns.weight],
     }
 

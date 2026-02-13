@@ -27,7 +27,7 @@ class RentalLognormalColumns:
 @dataclass(frozen=True)
 class RentalParameterColumns:
     qhousing: str = "qhousing"
-    rent: str = "SPQ07free_1"
+    rent_candidates: tuple[str, ...] = ("SPQ07free_1", "spq07free_1")
     weight: str = "we_factor"
 
 
