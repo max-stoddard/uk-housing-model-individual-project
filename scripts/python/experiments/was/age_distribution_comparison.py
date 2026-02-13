@@ -35,12 +35,15 @@ from scripts.python.calibration.was import age_dist
 
 
 def _split_final_bin_uniform(distribution: pd.DataFrame) -> pd.DataFrame:
-    """Split the final bin into two equal-width bins, splitting mass uniformly."""
+    """Split a legacy final 75-85 bin into 75-85 and 85-95 with uniform density."""
     if distribution.empty:
         return distribution
     last_row = distribution.iloc[-1]
     width = float(last_row["upper_edge"] - last_row["lower_edge"])
     if width <= 0:
+        return distribution
+    # Legacy Round 8 age outputs ended at 85.0; newer outputs already end at 95.0.
+    if abs(float(last_row["upper_edge"]) - 85.0) > 1e-9:
         return distribution
     split_point = float(last_row["upper_edge"])
     extended_upper = split_point + width

@@ -13,16 +13,51 @@ import argparse
 import os
 
 import numpy as np
+import pandas as pd
 
 from scripts.python.helpers.was.csv_write import write_joint_distribution
 from scripts.python.helpers.was.distributions import log_histogram2d
-from scripts.python.helpers.was.row_filters import filter_percentile_outliers, filter_positive_values
+from scripts.python.helpers.was.income_processing import (
+    DEFAULT_INCOME_TRIM_PERCENTILE,
+    filter_positive_then_trim_income_rows,
+    resolve_income_bounds,
+)
+from scripts.python.helpers.was.row_filters import filter_positive_values
 from scripts.python.helpers.was.timing import start_timer, end_timer
 from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was import derived_columns as was_derived
 from scripts.python.helpers.was.dataset import reload_was_modules
 from scripts.python.helpers.was.statistics import weighted_mean_variance_skew
 from scripts.python.helpers.common.paths import resolve_output_path
+
+INCOME_TRIM_PERCENTILE = DEFAULT_INCOME_TRIM_PERCENTILE
+
+
+def _filter_income_rows(
+    chunk: pd.DataFrame,
+    gross_income_column: str,
+    net_income_column: str,
+) -> pd.DataFrame:
+    """Apply stable positive-value and tail trimming filters for income rows."""
+    return filter_positive_then_trim_income_rows(
+        chunk,
+        gross_income_column=gross_income_column,
+        net_income_column=net_income_column,
+        percentile=INCOME_TRIM_PERCENTILE,
+    )
+
+
+def _resolve_income_bounds(
+    chunk: pd.DataFrame,
+    gross_income_column: str,
+    net_income_column: str,
+) -> tuple[float, float]:
+    """Compute lower/upper bounds used for automatic income binning."""
+    return resolve_income_bounds(
+        chunk,
+        gross_income_column=gross_income_column,
+        net_income_column=net_income_column,
+    )
 
 
 def _load_income_wealth_chunk(
@@ -63,16 +98,10 @@ def _load_income_wealth_chunk(
             constants.WAS_WEIGHT,
         ]
     ]
-    # Trim 1% tails so joint distributions are less dominated by extreme incomes.
-    chunk = filter_percentile_outliers(
+    chunk = _filter_income_rows(
         chunk,
-        lower_bound_column=derived.NET_NON_RENT_INCOME,
-        upper_bound_column=derived.GROSS_NON_RENT_INCOME,
-        percentile=0.01,
-    )
-    chunk = filter_positive_values(
-        chunk,
-        [derived.GROSS_NON_RENT_INCOME, derived.NET_NON_RENT_INCOME],
+        derived.GROSS_NON_RENT_INCOME,
+        derived.NET_NON_RENT_INCOME,
     )
     chunk = filter_positive_values(
         chunk,
@@ -94,8 +123,11 @@ def compute_income_wealth_bounds(
     """Return min/max bounds for income and wealth after filtering."""
     target_dataset = dataset or was_config.WAS_DATASET
     chunk, _, constants, derived = _load_income_wealth_chunk(target_dataset)
-    min_net_income = float(chunk[derived.NET_NON_RENT_INCOME].min())
-    max_gross_income = float(chunk[derived.GROSS_NON_RENT_INCOME].max())
+    min_net_income, max_gross_income = _resolve_income_bounds(
+        chunk,
+        derived.GROSS_NON_RENT_INCOME,
+        derived.NET_NON_RENT_INCOME,
+    )
     min_wealth = min(
         float(chunk[constants.WAS_GROSS_FINANCIAL_WEALTH].min()),
         float(chunk[constants.WAS_NET_FINANCIAL_WEALTH].min()),
@@ -121,8 +153,11 @@ def run_wealth_income_joint_prob_dist(
 
     chunk, config, constants, derived = _load_income_wealth_chunk(target_dataset)
     if income_bin_edges is None or wealth_bin_edges is None:
-        min_net_income = float(chunk[derived.NET_NON_RENT_INCOME].min())
-        max_gross_income = float(chunk[derived.GROSS_NON_RENT_INCOME].max())
+        min_net_income, max_gross_income = _resolve_income_bounds(
+            chunk,
+            derived.GROSS_NON_RENT_INCOME,
+            derived.NET_NON_RENT_INCOME,
+        )
         min_wealth = min(
             float(chunk[constants.WAS_GROSS_FINANCIAL_WEALTH].min()),
             float(chunk[constants.WAS_NET_FINANCIAL_WEALTH].min()),

@@ -16,13 +16,57 @@ import numpy as np
 import pandas as pd
 
 from scripts.python.helpers.was.csv_write import write_joint_distribution
-from scripts.python.helpers.was.row_filters import filter_percentile_outliers, filter_positive_values
+from scripts.python.helpers.was.income_processing import (
+    DEFAULT_INCOME_TRIM_PERCENTILE,
+    filter_positive_then_trim_income_rows,
+    resolve_income_bounds,
+)
 from scripts.python.helpers.was.timing import start_timer, end_timer
 from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was import derived_columns as was_derived
 from scripts.python.helpers.was.dataset import reload_was_modules
 from scripts.python.helpers.was.statistics import weighted_mean_variance_skew, weighted_stats_by_bins
 from scripts.python.helpers.common.paths import resolve_output_path
+
+INCOME_TRIM_PERCENTILE = DEFAULT_INCOME_TRIM_PERCENTILE
+ROUND8_OUTPUT_AGE_MAX = 95.0
+
+
+def _filter_income_rows(
+    chunk: pd.DataFrame,
+    gross_income_column: str,
+    net_income_column: str,
+) -> pd.DataFrame:
+    """Apply stable positive-value and tail trimming filters for income rows."""
+    return filter_positive_then_trim_income_rows(
+        chunk,
+        gross_income_column=gross_income_column,
+        net_income_column=net_income_column,
+        percentile=INCOME_TRIM_PERCENTILE,
+    )
+
+
+def _resolve_income_bounds(
+    chunk: pd.DataFrame,
+    gross_income_column: str,
+    net_income_column: str,
+) -> tuple[float, float]:
+    """Compute lower/upper bounds used for automatic income binning."""
+    return resolve_income_bounds(
+        chunk,
+        gross_income_column=gross_income_column,
+        net_income_column=net_income_column,
+    )
+
+
+def _resolve_age_bin_edges(age_bucket_data: dict[str, object], dataset: str) -> np.ndarray:
+    """Return age bin edges for output/statistics, with dataset-specific adjustments."""
+    age_bin_edges = np.asarray(age_bucket_data["BIN_EDGES"], dtype=float).copy()
+    if dataset == was_config.ROUND_8_DATA and age_bin_edges.size >= 2:
+        age_bin_edges[-1] = ROUND8_OUTPUT_AGE_MAX
+    if np.any(np.diff(age_bin_edges) <= 0):
+        raise ValueError(f"Age bin edges must be strictly increasing, got {age_bin_edges.tolist()}")
+    return age_bin_edges
 
 
 def _load_income_age_chunk(
@@ -54,15 +98,10 @@ def _load_income_age_chunk(
             constants.WAS_WEIGHT,
         ]
     ]
-    # Trim extreme tails so the joint distribution is less sensitive to outliers.
-    chunk = filter_percentile_outliers(
+    chunk = _filter_income_rows(
         chunk,
-        lower_bound_column=derived.NET_NON_RENT_INCOME,
-        upper_bound_column=derived.GROSS_NON_RENT_INCOME,
-    )
-    chunk = filter_positive_values(
-        chunk,
-        [derived.GROSS_NON_RENT_INCOME, derived.NET_NON_RENT_INCOME],
+        derived.GROSS_NON_RENT_INCOME,
+        derived.NET_NON_RENT_INCOME,
     )
     if chunk.empty:
         raise ValueError("No rows left after income filters.")
@@ -81,9 +120,11 @@ def compute_income_bounds(dataset: str | None = None) -> tuple[float, float]:
     """Return min net and max gross non-rent income after filtering."""
     target_dataset = dataset or was_config.WAS_DATASET
     chunk, _, _, _, derived = _load_income_age_chunk(target_dataset)
-    min_net_income = float(chunk[derived.NET_NON_RENT_INCOME].min())
-    max_gross_income = float(chunk[derived.GROSS_NON_RENT_INCOME].max())
-    return min_net_income, max_gross_income
+    return _resolve_income_bounds(
+        chunk,
+        derived.GROSS_NON_RENT_INCOME,
+        derived.NET_NON_RENT_INCOME,
+    )
 
 
 def run_income_age_joint_prob_dist(
@@ -100,8 +141,11 @@ def run_income_age_joint_prob_dist(
     )
 
     if income_bin_edges is None:
-        min_net_income = float(chunk[derived.NET_NON_RENT_INCOME].min())
-        max_gross_income = float(chunk[derived.GROSS_NON_RENT_INCOME].max())
+        min_net_income, max_gross_income = _resolve_income_bounds(
+            chunk,
+            derived.GROSS_NON_RENT_INCOME,
+            derived.NET_NON_RENT_INCOME,
+        )
         income_bin_edges = np.linspace(
             np.log(min_net_income),
             np.log(max_gross_income),
@@ -117,10 +161,10 @@ def run_income_age_joint_prob_dist(
         chunk["Age"].astype(float),
         chunk[derived.GROSS_NON_RENT_INCOME].astype(float),
         chunk[constants.WAS_WEIGHT].astype(float),
-        age_bucket_data["BIN_EDGES"],
+        _resolve_age_bin_edges(age_bucket_data, target_dataset),
     )
 
-    age_bin_edges = age_bucket_data["BIN_EDGES"][1:]
+    age_bin_edges = _resolve_age_bin_edges(age_bucket_data, target_dataset)[1:]
     frequency_gross = np.histogram2d(
         chunk["Age"].values,
         np.log(chunk[derived.GROSS_NON_RENT_INCOME].values),

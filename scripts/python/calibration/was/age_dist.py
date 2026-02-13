@@ -21,6 +21,20 @@ from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was.dataset import reload_was_modules
 from scripts.python.helpers.common.paths import resolve_output_path
 
+ROUND8_OUTPUT_AGE_MAX = 95.0
+
+
+def _resolve_age_bin_edges(age_bucket_data: dict[str, object], dataset: str) -> np.ndarray:
+    """Return age bin edges for output, with dataset-specific adjustments."""
+    age_bin_edges = np.asarray(age_bucket_data["BIN_EDGES"], dtype=float).copy()
+    if dataset == was_config.ROUND_8_DATA and age_bin_edges.size >= 2:
+        age_bin_edges[-1] = ROUND8_OUTPUT_AGE_MAX
+    if np.any(np.diff(age_bin_edges) <= 0):
+        raise ValueError(
+            f"Age bin edges must be strictly increasing, got {age_bin_edges.tolist()}"
+        )
+    return age_bin_edges
+
 
 def run_age_distribution(
     dataset: str | None = None,
@@ -55,7 +69,7 @@ def run_age_distribution(
     output_files = {}
     for age_column, bucket_data in constants.WAS_DATASET_AGE_BAND_MAPS.items():
         # Map age buckets to middle of bucket value by using the corresponding dictionary.
-        bin_edges = bucket_data["BIN_EDGES"]
+        bin_edges = _resolve_age_bin_edges(bucket_data, target_dataset)
         frequency, histogram_bin_edges = np.histogram(
             chunk[age_column].values,
             bins=bin_edges,
