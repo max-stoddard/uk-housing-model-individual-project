@@ -41,3 +41,36 @@ class DesiredRentTargetKeys:
 class RentalTargetKeys:
     scale: str = "RENTAL_PRICES_SCALE"
     shape: str = "RENTAL_PRICES_SHAPE"
+
+
+@dataclass(frozen=True)
+class BtlStrategyColumnNames:
+    weight: str = "we_factor"
+    btl_owner_screen: str = "boe72"
+    boe77_option_columns: tuple[str, ...] = (
+        "boe77_1",
+        "boe77_2",
+        "boe77_3",
+        "boe77_4",
+        "boe77_5",
+        "boe77_6",
+        "boe77_7",
+    )
+    proxy_concern_column: str = "qbe22b"
+    proxy_reason_columns: tuple[str, ...] = (
+        "be22bb_1",
+        "be22bb_2",
+        "be22bb_3",
+        "be22bb_4",
+        "be22bb_5",
+        "be22bb_6",
+        "be22bb_7",
+        "be22bb_8",
+        "be22bb_9",
+    )
+
+
+@dataclass(frozen=True)
+class BtlStrategyTargetKeys:
+    income: str = "BTL_P_INCOME_DRIVEN"
+    capital: str = "BTL_P_CAPITAL_DRIVEN"
