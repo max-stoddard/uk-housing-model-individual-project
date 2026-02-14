@@ -375,7 +375,7 @@ python3 -m scripts.python.experiments.was.personal_allowance
 - Method chosen: direct table update from source data.
 - Method-selection decision logic: `Objective=target reproduction; Why=policy-table parameters are direct-source values rather than inferred estimates; Tradeoff=depends on source table update cadence.`
 - Rationale category: direct method justification.
-- Evidence links: `input-data-versions/version-notes.txt`
+- Evidence links: `input-data-versions/version-notes.json`
 - Version(s) affected: `v2.0`
 
 ### v2.1
@@ -386,7 +386,7 @@ python3 -m scripts.python.experiments.was.personal_allowance
 - Method chosen: direct table update from source data.
 - Method-selection decision logic: `Objective=target reproduction; Why=tax bands/rates are direct-source values and should not be statistically fitted; Tradeoff=depends on source table update cadence.`
 - Rationale category: direct method justification.
-- Evidence links: `input-data-versions/version-notes.txt`
+- Evidence links: `input-data-versions/version-notes.json`
 - Version(s) affected: `v2.1`
 
 ### v2.2
@@ -513,7 +513,7 @@ python3 -m scripts.python.experiments.was.personal_allowance
   - `tmp/r8_recalibration_campaign_summary.md`
   - `tmp/r8_recalibration_campaign_ledger.csv`
   - `tmp/r8_recalibration_additional_checks.md`
-  - `input-data-versions/version-notes.txt`
+  - `input-data-versions/version-notes.json`
 - Version(s) affected: `v3.7`
 
 ### v3.8
@@ -537,5 +537,5 @@ python3 -m scripts.python.experiments.was.personal_allowance
   - `scripts/python/experiments/psd/psd_buy_budget_method_search.py`
   - `tmp/psd_buy_budget_shards_repro/PsdBuyBudgetMethodSearchMerged.csv`
   - `tmp/psd_buy_budget_v38/PsdBuyBudgetCalibration.csv`
-  - `input-data-versions/version-notes.txt`
+  - `input-data-versions/version-notes.json`
 - Version(s) affected: `v3.8`

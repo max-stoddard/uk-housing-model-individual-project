@@ -9,7 +9,7 @@ print_usage() {
 Usage: $(basename "$0") <subfolder> <w3|r8> [--graphs|--no-graphs]
 
 Arguments:
-  <subfolder>  Input-data version folder name (for example: v0, v1, v4).
+  <subfolder>  Input-data version folder name (for example: v0, v1.0, v3.8).
   <w3|r8>      WAS dataset selector.
 
 Options:
