@@ -34,7 +34,7 @@ Required entry field format:
 - Method-selection decision logic:
   - `Objective=<...>; Why=<...>; Tradeoff=<...>`
 
-## Current Reproducible Commands (Latest Baseline: `input-data-versions/v3.6`)
+## Current Reproducible Commands (Latest Baseline: `input-data-versions/v3.8`)
 
 ### `scripts/python/calibration/was/age_dist.py`
 - Outputs/keys produced:
@@ -240,6 +240,65 @@ scripts/psd/run_psd_2024_reproduce_v3_4_to_v3_6_values.sh
 - Version(s) affected:
   - `v3.4`, `v3.5`, `v3.6`
 
+### `scripts/python/experiments/psd/psd_buy_budget_method_search.py`
+- Outputs/keys produced:
+  - ranked BUY* reproduction candidates:
+    - `BUY_SCALE`
+    - `BUY_EXPONENT`
+    - `BUY_MU`
+    - `BUY_SIGMA`
+- Command:
+```bash
+scripts/psd/run_psd_buy_budget_method_search_parallel.sh
+```
+- Expected-result snippet:
+  - best-ranked method:
+    - `family=psd_log_ols_robust_mu|loan_to_income=comonotonic|income_to_price=comonotonic|loan_open_k=500|lti_open=10|lti_floor=2.5|income_open_k=100|property_open_k=10000|trim=0|within_bin_points=11|grid=4000|mu_hi_trim=0.0063`
+  - best estimates:
+    - `BUY_SCALE ~= 43.0647528622`
+    - `BUY_EXPONENT ~= 0.8115853517`
+    - `BUY_MU ~= -0.0178564659`
+    - `BUY_SIGMA ~= 0.4083763694`
+    - `Distance(norm) ~= 0.0292602479`
+- Method chosen:
+  - reproduction-first normalized-distance ranking over PSD 2011 + PPD 2011 candidate grid
+- Method-selection decision logic:
+  - `Objective=target reproduction; Why=the selected robust_mu method minimized normalized 4-key distance to BUY* targets in the configured search grid; Tradeoff=BUY_EXPONENT remains the dominant residual mismatch versus legacy targets despite strong scale/mu/sigma alignment.`
+- Rationale category:
+  - alteration-vs-legacy evidence and justification
+- Evidence links:
+  - `scripts/python/helpers/psd/buy_budget_methods.py`
+  - `tmp/psd_buy_budget_shards_repro/PsdBuyBudgetMethodSearchMerged.csv`
+- Version(s) affected:
+  - `v3.8`
+
+### `scripts/python/calibration/psd/psd_buy_budget_calibration.py`
+- Outputs/keys produced:
+  - `BUY_SCALE`
+  - `BUY_EXPONENT`
+  - `BUY_MU`
+  - `BUY_SIGMA`
+- Command:
+```bash
+python3 -m scripts.python.calibration.psd.psd_buy_budget_calibration --quarterly-csv private-datasets/psd/2024/psd-quarterly-2024.csv --ppd-csv private-datasets/ppd/pp-2025.csv --target-year-psd 2024 --target-year-ppd 2025 --method 'family=psd_log_ols_robust_mu|loan_to_income=comonotonic|income_to_price=comonotonic|loan_open_k=500|lti_open=10|lti_floor=2.5|income_open_k=100|property_open_k=10000|trim=0|within_bin_points=11|grid=4000|mu_hi_trim=0.0063' --output-dir tmp/psd_buy_budget_v38
+```
+- Expected-result snippet:
+  - `BUY_SCALE = 0.0061771819`
+  - `BUY_EXPONENT = 1.7577643641`
+  - `BUY_MU = -0.0161667809`
+  - `BUY_SIGMA = 0.9016848332`
+- Method chosen:
+  - use 2011-selected default method on production-year pairing PSD 2024 + PPD 2025
+- Method-selection decision logic:
+  - `Objective=target reproduction; Why=the production method is pinned to the top robust 2011 reproduction candidate (distance ~= 0.02926) before applying to modern data, preserving blueprint decision order; Tradeoff=modern BUY* values are method-driven candidates and are not gated by validation thresholds.`
+- Rationale category:
+  - alteration-vs-legacy evidence and justification
+- Evidence links:
+  - `scripts/python/experiments/psd/psd_buy_budget_method_search.py`
+  - `tmp/psd_buy_budget_v38/PsdBuyBudgetCalibration.csv`
+- Version(s) affected:
+  - `v3.8`
+
 ### Experimental Entry: `scripts/python/experiments/was/personal_allowance.py`
 - Outputs/keys produced:
   - diagnostic stdout:
@@ -423,3 +482,60 @@ python3 -m scripts.python.experiments.was.personal_allowance
   - `scripts/python/experiments/psd/psd_downpayment_lognormal_method_search.py`
   - `scripts/psd/run_psd_2024_reproduce_v3_4_to_v3_6_values.sh`
 - Version(s) affected: `v3.6`
+
+### v3.7
+- Script path: `N/A (config-only output-calibration campaign)`
+- Outputs/keys produced: `MARKET_AVERAGE_PRICE_DECAY`
+- Exact run command:
+  - `python3 -m scripts.python.calibration.ppd.house_price_lognormal_fit private-datasets/ppd/pp-2022.csv --method focused_repro_default`
+  - `python3 -m scripts.python.calibration.ppd.house_price_lognormal_fit private-datasets/ppd/pp-2023.csv --method focused_repro_default`
+  - `python3 -m scripts.python.calibration.ppd.house_price_lognormal_fit private-datasets/ppd/pp-2024.csv --method focused_repro_default`
+  - `python3 -m scripts.python.calibration.ppd.house_price_lognormal_fit private-datasets/ppd/pp-2025.csv --method focused_repro_default`
+  - `python3 -m scripts.python.calibration.psd.psd_2024_pure_direct_calibration --term-method modal_midpoint_round`
+  - `python3 -m scripts.python.calibration.psd.psd_2024_pure_direct_calibration --term-method weighted_median_round`
+  - Full campaign + ledger generation performed via scripted batch; outputs captured in:
+    - `tmp/r8_recalibration_campaign_ledger.csv`
+    - `tmp/r8_recalibration_campaign_summary.md`
+    - `tmp/r8_recalibration_additional_checks.md`
+- Expected result snippet:
+  - Best R8 candidate: `MARKET_AVERAGE_PRICE_DECAY = 0.4`
+  - Validation triplet: `[6.615492%, 26.760137%, 11.890496%]`
+- Method chosen:
+  - R8-first, evidence-governed config-only campaign with empirical-key updates constrained to script outputs and output-key sweep over:
+    - `SENSITIVITY_RENT_OR_PURCHASE`
+    - `PSYCHOLOGICAL_COST_OF_RENTING`
+    - `MARKET_AVERAGE_PRICE_DECAY`
+- Method-selection decision logic:
+  - `Objective=target reproduction; Why=MARKET_AVERAGE_PRICE_DECAY=0.4 minimized housing_wealth_diff under guardrails across a 16-run governed campaign; Tradeoff=seed sensitivity remains material and one seed breached the financial guardrail in stability checks.`
+- Rationale category:
+  - direct method justification
+- Evidence links:
+  - `tmp/r8_recalibration_campaign_summary.md`
+  - `tmp/r8_recalibration_campaign_ledger.csv`
+  - `tmp/r8_recalibration_additional_checks.md`
+  - `input-data-versions/version-notes.txt`
+- Version(s) affected: `v3.7`
+
+### v3.8
+- Script path: `scripts/python/calibration/psd/psd_buy_budget_calibration.py`
+- Outputs/keys produced: `BUY_SCALE`, `BUY_EXPONENT`, `BUY_MU`, `BUY_SIGMA`
+- Exact run command:
+  - `scripts/psd/run_psd_buy_budget_method_search_parallel.sh`
+  - `python3 -m scripts.python.calibration.psd.psd_buy_budget_calibration --quarterly-csv private-datasets/psd/2024/psd-quarterly-2024.csv --ppd-csv private-datasets/ppd/pp-2025.csv --target-year-psd 2024 --target-year-ppd 2025 --method 'family=psd_log_ols_robust_mu|loan_to_income=comonotonic|income_to_price=comonotonic|loan_open_k=500|lti_open=10|lti_floor=2.5|income_open_k=100|property_open_k=10000|trim=0|within_bin_points=11|grid=4000|mu_hi_trim=0.0063' --output-dir tmp/psd_buy_budget_v38`
+- Expected result snippet:
+  - `BUY_SCALE = 0.0061771819`
+  - `BUY_EXPONENT = 1.7577643641`
+  - `BUY_MU = -0.0161667809`
+  - `BUY_SIGMA = 0.9016848332`
+- Method chosen:
+  - `family=psd_log_ols_robust_mu|loan_to_income=comonotonic|income_to_price=comonotonic|loan_open_k=500|lti_open=10|lti_floor=2.5|income_open_k=100|property_open_k=10000|trim=0|within_bin_points=11|grid=4000|mu_hi_trim=0.0063`
+- Method-selection decision logic:
+  - `Objective=target reproduction; Why=normalized reproduction-first ranking on PSD 2011 + PPD 2011 selected this robust method as closest to legacy BUY* targets (distance ~= 0.02926) before modern deployment; Tradeoff=modern outputs can shift materially when constrained to the historically selected method and are not blocked by a validation gate.`
+- Rationale category:
+  - alteration-vs-legacy evidence and justification
+- Evidence links:
+  - `scripts/python/experiments/psd/psd_buy_budget_method_search.py`
+  - `tmp/psd_buy_budget_shards_repro/PsdBuyBudgetMethodSearchMerged.csv`
+  - `tmp/psd_buy_budget_v38/PsdBuyBudgetCalibration.csv`
+  - `input-data-versions/version-notes.txt`
+- Version(s) affected: `v3.8`
