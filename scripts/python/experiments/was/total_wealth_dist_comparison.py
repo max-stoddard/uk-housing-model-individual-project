@@ -28,7 +28,7 @@ from scripts.python.helpers.was.experiments import (
     write_stats_csv,
 )
 from scripts.python.helpers.was.plotting import apply_axis_grid, format_currency_axis, plot_hist_overlay
-from scripts.python.calibration.was import total_wealth_dist
+from scripts.python.calibration.legacy import total_wealth_dist
 
 
 def _pick_primary_output(output_files: list[str]) -> str:

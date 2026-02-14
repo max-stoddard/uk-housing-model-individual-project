@@ -32,6 +32,7 @@ cd "${repo_root}"
 log "Running experiments (GUI enabled: ${gui_enabled})."
 
 modules=(
+  "scripts.python.experiments.was.personal_allowance"
   "scripts.python.experiments.was.age_distribution_comparison"
   "scripts.python.experiments.was.btl_probability_per_income_percentile_comparison"
   "scripts.python.experiments.was.age_gross_income_joint_dist_comparison"

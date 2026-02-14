@@ -197,12 +197,12 @@ def main() -> None:
     refactor_exp_dir.mkdir(parents=True)
 
     refactor_cmds = [
-        ("new_personal_allowance", ["python3", "-m", "scripts.python.calibration.was.personal_allowance"], repo_root),
+        ("new_personal_allowance", ["python3", "-m", "scripts.python.experiments.was.personal_allowance"], repo_root),
         ("new_age_dist", ["python3", "-m", "scripts.python.calibration.was.age_dist", "--output-dir", str(refactor_calibration_dir)], repo_root),
         ("new_wealth_income", ["python3", "-m", "scripts.python.calibration.was.wealth_income_joint_prob_dist", "--output-dir", str(refactor_calibration_dir)], repo_root),
         ("new_income_age", ["python3", "-m", "scripts.python.calibration.was.income_age_joint_prob_dist", "--output-dir", str(refactor_calibration_dir)], repo_root),
         ("new_btl_prob", ["python3", "-m", "scripts.python.calibration.was.btl_probability_per_income_percentile_bin", "--output-dir", str(refactor_calibration_dir)], repo_root),
-        ("new_total_wealth", ["python3", "-m", "scripts.python.calibration.was.total_wealth_dist", "--output-dir", str(refactor_calibration_dir)], repo_root),
+        ("new_total_wealth", ["python3", "-m", "scripts.python.calibration.legacy.total_wealth_dist", "--output-dir", str(refactor_calibration_dir)], repo_root),
         ("new_nmg_rental", ["python3", "-m", "scripts.python.calibration.nmg.nmg_rental_lognormal_fit", "private-datasets/nmg/nmg-2016.csv"], repo_root),
         ("new_nmg_desired", ["python3", "-m", "scripts.python.calibration.nmg.nmg_desired_rent_power_fit", "private-datasets/nmg/nmg-2016.csv"], repo_root),
         ("new_nmg_param_search", ["python3", "-m", "scripts.python.experiments.nmg.nmg_rental_parameter_search", "private-datasets/nmg/nmg-2016.csv", "--config-path", "input-data-versions/v0/config.properties"], repo_root),

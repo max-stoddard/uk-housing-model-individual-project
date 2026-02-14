@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Class to show that a single personal allowance produces a better fit of the net income of households as a function of
-their gross income, based on Wealth and Assets Survey data.
+Compare single vs double personal allowance fit against observed WAS net incomes.
+
+Command:
+  python3 -m scripts.python.experiments.was.personal_allowance
+
+Latest conclusion:
+  The single personal allowance (12570 for tax year 2025-26) yields a lower
+  log-squared fit error than the double allowance benchmark on the current WAS
+  filtering pipeline.
 
 @author: Adrian Carro, Max Stoddard
 """
@@ -32,7 +39,7 @@ from scripts.python.helpers.was.constants import (
     WAS_GROSS_ANNUAL_RENTAL_INCOME,
 )
 
-timer_start = start_timer(os.path.basename(__file__), "calibration")
+timer_start = start_timer(os.path.basename(__file__), "experiment")
 
 tax_rates = pd.read_csv(
     TAX_RATE_FILE, comment="#", header=None, names=["band_start", "rate"]
