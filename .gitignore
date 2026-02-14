@@ -36,3 +36,10 @@ tmp/
 
 AGENTS.md
 AGENT*.md
+
+# dashboard artifacts
+dashboard/node_modules/
+dashboard/dist/
+
+# dashboard smoke artifacts
+dashboard/.smoke-dist/
