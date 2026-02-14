@@ -1,0 +1,594 @@
+{
+  "author": "Max Stoddard",
+  "schema_version": 2,
+  "description": "Structured changelog for input-data versions, calibration provenance, and WAS validation diffs.",
+  "fields": {
+    "version_id": "Display version id in notes (for example v0a, v2.1, v3.8).",
+    "snapshot_folder": "Snapshot folder under input-data-versions/ used by switch-input-data.sh.",
+    "validation_dataset": "WAS dataset key used for validation (w3 or r8).",
+    "description": "Human description of what changed for this version.",
+    "updated_data_sources": "Short source tags previously shown in brackets.",
+    "calibration_files": "Calibration or update script path(s) for this version.",
+    "config_parameters": "Config keys changed at this version milestone.",
+    "validation": {
+      "status": "Validation status: complete | in_progress.",
+      "income_diff_pct": "Income total diff percentage from validation output.",
+      "housing_wealth_diff_pct": "Housing wealth total diff percentage from validation output.",
+      "financial_wealth_diff_pct": "Financial wealth total diff percentage from validation output.",
+      "note": "Optional context, for example when validation is pending or rejected."
+    }
+  },
+  "entries": [
+    {
+      "version_id": "v0a",
+      "snapshot_folder": "v0",
+      "validation_dataset": "w3",
+      "description": "Original model + Wave 3 val",
+      "updated_data_sources": [],
+      "calibration_files": [],
+      "config_parameters": [],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 2.29,
+        "housing_wealth_diff_pct": 18.92,
+        "financial_wealth_diff_pct": 14.26
+      },
+      "method_variations": []
+    },
+    {
+      "version_id": "v0b",
+      "snapshot_folder": "v0",
+      "validation_dataset": "r8",
+      "description": "Original model + Round 8 val",
+      "updated_data_sources": [
+        "was"
+      ],
+      "calibration_files": [],
+      "config_parameters": [],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 16.97,
+        "housing_wealth_diff_pct": 47.26,
+        "financial_wealth_diff_pct": 17.99
+      },
+      "method_variations": []
+    },
+    {
+      "version_id": "v1.0",
+      "snapshot_folder": "v1.0",
+      "validation_dataset": "r8",
+      "description": "Updated age gross income",
+      "updated_data_sources": [
+        "was"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/was/income_age_joint_prob_dist.py"
+      ],
+      "config_parameters": [
+        "DATA_INCOME_GIVEN_AGE"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 5.46,
+        "housing_wealth_diff_pct": 35.59,
+        "financial_wealth_diff_pct": 13.26
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DATA_INCOME_GIVEN_AGE"
+          ],
+          "improvement_summary": "Switched to filtered and trimmed weighted age-income joint estimation to reduce unstable tail-driven bins.",
+          "why_changed": "To improve robustness of empirical density estimates while preserving the central income-age structure used by the model.",
+          "method_chosen": "weighted log-income by age joint distribution with positive-and-trimmed income filtering",
+          "decision_logic": "Objective=stability/robustness; Why=positive filtering and tail trimming stabilize bin estimates; Tradeoff=extreme tails are removed from calibration support."
+        }
+      ]
+    },
+    {
+      "version_id": "v1.1",
+      "snapshot_folder": "v1.1",
+      "validation_dataset": "r8",
+      "description": "Updated gross income net wealth",
+      "updated_data_sources": [
+        "was"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/was/wealth_income_joint_prob_dist.py"
+      ],
+      "config_parameters": [
+        "DATA_WEALTH_GIVEN_INCOME"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 4.66,
+        "housing_wealth_diff_pct": 34.36,
+        "financial_wealth_diff_pct": 12.22
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DATA_WEALTH_GIVEN_INCOME"
+          ],
+          "improvement_summary": "Moved to log-space weighted gross-income/net-wealth joint estimation with positive-wealth and filtered-income constraints.",
+          "why_changed": "To produce cleaner and more stable wealth-income joint densities and avoid distortions from invalid wealth support.",
+          "method_chosen": "weighted joint distribution for gross income vs net wealth in log space",
+          "decision_logic": "Objective=stability/robustness; Why=positive wealth constraints and filtered income support stable log-space joint densities; Tradeoff=non-positive wealth rows are excluded."
+        }
+      ]
+    },
+    {
+      "version_id": "v1.2",
+      "snapshot_folder": "v1.2",
+      "validation_dataset": "r8",
+      "description": "Updated BTL% income%",
+      "updated_data_sources": [
+        "was"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/was/btl_probability_per_income_percentile_bin.py"
+      ],
+      "config_parameters": [
+        "DATA_BTL_PROBABILITY"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 4.6,
+        "housing_wealth_diff_pct": 32.97,
+        "financial_wealth_diff_pct": 12.28
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DATA_BTL_PROBABILITY"
+          ],
+          "improvement_summary": "Standardized to direct percentile-bin estimation of BTL probability using non-rent income ranking and rental-income positivity marker.",
+          "why_changed": "To align empirical calibration output to the required model table shape with transparent, reproducible semantics.",
+          "method_chosen": "percentile binning over gross non-rent income and rental-income positivity as BTL marker",
+          "decision_logic": "Objective=target reproduction; Why=direct percentile-bin estimator aligns with required output table shape; Tradeoff=keeps a simple semantic indicator instead of model-heavy inference."
+        }
+      ]
+    },
+    {
+      "version_id": "v1.3",
+      "snapshot_folder": "v1.3",
+      "validation_dataset": "r8",
+      "description": "Updated age bands",
+      "updated_data_sources": [
+        "was"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/was/age_dist.py"
+      ],
+      "config_parameters": [
+        "DATA_AGE_DISTRIBUTION"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.19,
+        "housing_wealth_diff_pct": 22.1,
+        "financial_wealth_diff_pct": 12.34
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DATA_AGE_DISTRIBUTION"
+          ],
+          "improvement_summary": "Recomputed weighted age histogram under R8 while retaining compatibility banding convention.",
+          "why_changed": "To update empirical age structure with newer data without breaking downstream assumptions tied to legacy age-band shape.",
+          "method_chosen": "weighted age histogram by WAS age bands",
+          "decision_logic": "Objective=backward compatibility; Why=R8 75-95 convention preserves downstream compatibility while updating dataset coverage; Tradeoff=retains legacy-style age-band structure."
+        }
+      ]
+    },
+    {
+      "version_id": "v2.0",
+      "snapshot_folder": "v2.0",
+      "validation_dataset": "r8",
+      "description": "Updated National Insurance rates",
+      "updated_data_sources": [
+        "gov"
+      ],
+      "calibration_files": [
+        "N/A (manual source-data update)"
+      ],
+      "config_parameters": [
+        "DATA_NATIONAL_INSURANCE_RATES"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.08,
+        "housing_wealth_diff_pct": 27.41,
+        "financial_wealth_diff_pct": 13.18,
+        "note": "Corrected thresholds to 12584 and 50284."
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DATA_NATIONAL_INSURANCE_RATES"
+          ],
+          "improvement_summary": "Replaced NI thresholds/rates with direct source-of-truth policy values for the target tax regime.",
+          "why_changed": "To keep model deductions empirically aligned with official policy tables instead of stale historical bands.",
+          "method_chosen": "direct table update from source data",
+          "decision_logic": "Objective=target reproduction; Why=policy-table parameters are direct-source values rather than inferred estimates; Tradeoff=depends on source table update cadence."
+        }
+      ]
+    },
+    {
+      "version_id": "v2.1",
+      "snapshot_folder": "v2.1",
+      "validation_dataset": "r8",
+      "description": "Updated Income tax rates",
+      "updated_data_sources": [
+        "gov"
+      ],
+      "calibration_files": [
+        "N/A (manual source-data update)"
+      ],
+      "config_parameters": [
+        "DATA_TAX_RATES"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 6.37,
+        "housing_wealth_diff_pct": 23.28,
+        "financial_wealth_diff_pct": 12.03
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DATA_TAX_RATES"
+          ],
+          "improvement_summary": "Updated income-tax thresholds and rates directly from official tables.",
+          "why_changed": "To maintain empirical realism in post-tax income calculations and affordability behavior under current policy values.",
+          "method_chosen": "direct table update from source data",
+          "decision_logic": "Objective=target reproduction; Why=tax bands/rates are direct-source values and should not be statistically fitted; Tradeoff=depends on source table update cadence."
+        }
+      ]
+    },
+    {
+      "version_id": "v2.2",
+      "snapshot_folder": "v2.2",
+      "validation_dataset": "r8",
+      "description": "Updated Personal Allowance Benefits",
+      "updated_data_sources": [
+        "gov"
+      ],
+      "calibration_files": [
+        "scripts/python/experiments/was/personal_allowance.py"
+      ],
+      "config_parameters": [
+        "GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE",
+        "GOVERNMENT_MONTHLY_INCOME_SUPPORT"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.52,
+        "housing_wealth_diff_pct": 23.91,
+        "financial_wealth_diff_pct": 12.13
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE",
+            "GOVERNMENT_MONTHLY_INCOME_SUPPORT"
+          ],
+          "improvement_summary": "Introduced allowance-policy selection using empirical fit comparison against observed net incomes.",
+          "why_changed": "To choose policy settings with better measured agreement to validation targets rather than preserving legacy assumptions.",
+          "method_chosen": "compare log-squared fit to observed net incomes under two allowance assumptions",
+          "decision_logic": "Objective=direct method justification; Why=single allowance minimizes fit error vs observed net incomes under current pipeline; Tradeoff=diagnostic comparison, not a full fiscal-policy model."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.0",
+      "snapshot_folder": "v3.0",
+      "validation_dataset": "r8",
+      "description": "Updated HOUSE_PRICES_SCALE, HOUSE_PRICES_SHAPE",
+      "updated_data_sources": [
+        "ppd"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/ppd/house_price_lognormal_fit.py"
+      ],
+      "config_parameters": [
+        "HOUSE_PRICES_SCALE",
+        "HOUSE_PRICES_SHAPE"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.33,
+        "housing_wealth_diff_pct": 32.97,
+        "financial_wealth_diff_pct": 13.07
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "HOUSE_PRICES_SCALE",
+            "HOUSE_PRICES_SHAPE"
+          ],
+          "improvement_summary": "Adopted focused status-A lognormal fitting with population moments for house prices.",
+          "why_changed": "To reduce noise sensitivity and improve parameter stability under current transaction-data quality.",
+          "method_chosen": "focused status-A method with population standard deviation",
+          "decision_logic": "Objective=stability/robustness; Why=status-A filtering and population moments provide cleaner, stable estimates under current data assumptions; Tradeoff=small residual mismatch vs legacy targets may persist from data drift."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.1",
+      "snapshot_folder": "v3.1",
+      "validation_dataset": "r8",
+      "description": "Updated RENTAL_PRICES_SCALE, RENTAL_PRICES_SHAPE",
+      "updated_data_sources": [
+        "nmg"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/nmg/nmg_rental_lognormal_fit.py"
+      ],
+      "config_parameters": [
+        "RENTAL_PRICES_SCALE",
+        "RENTAL_PRICES_SHAPE"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.02,
+        "housing_wealth_diff_pct": 29.84,
+        "financial_wealth_diff_pct": 12.56
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "RENTAL_PRICES_SCALE",
+            "RENTAL_PRICES_SHAPE"
+          ],
+          "improvement_summary": "Selected weighted private-renter subset fitting for rental lognormal parameters.",
+          "why_changed": "To better reproduce calibration targets with method choices shown empirically strongest in search.",
+          "method_chosen": "weighted lognormal fit over private renter qhousing values",
+          "decision_logic": "Objective=target reproduction; Why=weighted qhousing {3,4} variant is closest/exact at displayed precision in search results; Tradeoff=ties method to private-renter subset definition."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.2",
+      "snapshot_folder": "v3.2",
+      "validation_dataset": "r8",
+      "description": "Updated DESIRED_RENT_SCALE, DESIRED_RENT_EXPONENT",
+      "updated_data_sources": [
+        "nmg"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/nmg/nmg_desired_rent_power_fit.py"
+      ],
+      "config_parameters": [
+        "DESIRED_RENT_SCALE",
+        "DESIRED_RENT_EXPONENT"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.41,
+        "housing_wealth_diff_pct": 27.57,
+        "financial_wealth_diff_pct": 12.36
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DESIRED_RENT_SCALE",
+            "DESIRED_RENT_EXPONENT"
+          ],
+          "improvement_summary": "Switched to midpoint mapping plus weighted log-space regression for desired-rent power fit.",
+          "why_changed": "To reduce high-rent and upper-bound bias while retaining strong reproduction of target coefficients.",
+          "method_chosen": "midpoint mappings with weighted log-space regression",
+          "decision_logic": "Objective=target reproduction; Why=midpoint mappings with log-weighted fitting reproduce targets while reducing upper-bound and high-rent bias; Tradeoff=not optimized for level-space SSE."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.3",
+      "snapshot_folder": "v3.3",
+      "validation_dataset": "r8",
+      "description": "Updated BTL_P_INCOME_DRIVEN, BTL_P_CAPITAL_DRIVEN",
+      "updated_data_sources": [
+        "nmg"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/nmg/nmg_btl_strategy_probabilities.py"
+      ],
+      "config_parameters": [
+        "BTL_P_INCOME_DRIVEN",
+        "BTL_P_CAPITAL_DRIVEN"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 6.72,
+        "housing_wealth_diff_pct": 29.73,
+        "financial_wealth_diff_pct": 12.69
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "BTL_P_INCOME_DRIVEN",
+            "BTL_P_CAPITAL_DRIVEN"
+          ],
+          "improvement_summary": "Used legacy-weighted strategy aggregation with schema fallback for BTL split estimation.",
+          "why_changed": "To preserve behavioral continuity while supporting newer input schema variants.",
+          "method_chosen": "legacy-weighted strategy aggregation with schema auto-detection",
+          "decision_logic": "Objective=backward compatibility; Why=legacy_weighted preserves historical strategy semantics while supporting 2024 schema fallback; Tradeoff=keeps legacy classification structure."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.4",
+      "snapshot_folder": "v3.4",
+      "validation_dataset": "r8",
+      "description": "Updated MORTGAGE_DURATION_YEARS",
+      "updated_data_sources": [
+        "psd"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/psd/psd_2024_pure_direct_calibration.py"
+      ],
+      "config_parameters": [
+        "MORTGAGE_DURATION_YEARS"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.06,
+        "housing_wealth_diff_pct": 33.29,
+        "financial_wealth_diff_pct": 12.88
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "MORTGAGE_DURATION_YEARS"
+          ],
+          "improvement_summary": "Adopted modal-midpoint term calibration selected for quarter-to-quarter stability.",
+          "why_changed": "To prioritize robust reproduction under repeated calibrations instead of minimum single-run distance.",
+          "method_chosen": "modal_midpoint_round with open-top year assumption 45",
+          "decision_logic": "Objective=stability/robustness; Why=modal midpoint was top-ranked for rounded quarter-to-quarter stability; Tradeoff=not always minimum raw-distance estimator."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.5",
+      "snapshot_folder": "v3.5",
+      "validation_dataset": "r8",
+      "description": "Updated DOWNPAYMENT_FTB_SCALE, DOWNPAYMENT_FTB_SHAPE",
+      "updated_data_sources": [
+        "psd"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/psd/psd_2024_pure_direct_calibration.py"
+      ],
+      "config_parameters": [
+        "DOWNPAYMENT_FTB_SCALE",
+        "DOWNPAYMENT_FTB_SHAPE"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.06,
+        "housing_wealth_diff_pct": 33.29,
+        "financial_wealth_diff_pct": 12.88
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DOWNPAYMENT_FTB_SCALE",
+            "DOWNPAYMENT_FTB_SHAPE"
+          ],
+          "improvement_summary": "Used median-anchored downpayment fitting with within-bin integration for FTB parameters.",
+          "why_changed": "To improve robustness of estimated distribution shape across plausible tail assumptions.",
+          "method_chosen": "median_anchored_nonftb_independent with within-bin integration points 11",
+          "decision_logic": "Objective=stability/robustness; Why=median anchoring and within-bin integration improved robust reproducibility across candidate tails; Tradeoff=not always the closest method by raw error in expanded grids."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.6",
+      "snapshot_folder": "v3.6",
+      "validation_dataset": "r8",
+      "description": "Updated DOWNPAYMENT_OO_SCALE, DOWNPAYMENT_OO_SHAPE",
+      "updated_data_sources": [
+        "psd"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/psd/psd_2024_pure_direct_calibration.py"
+      ],
+      "config_parameters": [
+        "DOWNPAYMENT_OO_SCALE",
+        "DOWNPAYMENT_OO_SHAPE"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 6.86,
+        "housing_wealth_diff_pct": 34.34,
+        "financial_wealth_diff_pct": 12.54
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "DOWNPAYMENT_OO_SCALE",
+            "DOWNPAYMENT_OO_SHAPE"
+          ],
+          "improvement_summary": "Applied constrained non-FTB proxy downpayment fitting for owner-occupier parameter stability.",
+          "why_changed": "To derive robust OO downpayment estimates despite limited direct observability of true OO-only bins.",
+          "method_chosen": "median_anchored_nonftb_independent with non-FTB proxy from all-minus-FTB bins",
+          "decision_logic": "Objective=stability/robustness; Why=non-FTB proxy with constrained physical tail assumptions gave robust production estimates; Tradeoff=accepts proxy contamination risk vs unavailable direct OO observables."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.7",
+      "snapshot_folder": "v3.7",
+      "validation_dataset": "r8",
+      "description": "Updated MARKET_AVERAGE_PRICE_DECAY",
+      "updated_data_sources": [
+        "output-calibrated",
+        "r8-first-campaign"
+      ],
+      "calibration_files": [
+        "N/A (config-only output-calibration campaign)"
+      ],
+      "config_parameters": [
+        "MARKET_AVERAGE_PRICE_DECAY"
+      ],
+      "validation": {
+        "status": "complete",
+        "income_diff_pct": 7.13,
+        "housing_wealth_diff_pct": 29.04,
+        "financial_wealth_diff_pct": 12.55
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "MARKET_AVERAGE_PRICE_DECAY"
+          ],
+          "improvement_summary": "Ran a governed R8-first output calibration campaign to select decay under explicit guardrails.",
+          "why_changed": "To tune market-response dynamics using validation-led evidence rather than static prior assumptions.",
+          "method_chosen": "R8-first, evidence-governed config-only campaign with empirical-key updates and output-key sweep",
+          "decision_logic": "Objective=target reproduction; Why=MARKET_AVERAGE_PRICE_DECAY=0.4 minimized housing_wealth_diff under guardrails across a 16-run governed campaign; Tradeoff=seed sensitivity remains material and one seed breached the financial guardrail in stability checks."
+        }
+      ]
+    },
+    {
+      "version_id": "v3.8",
+      "snapshot_folder": "v3.8",
+      "validation_dataset": "r8",
+      "description": "Updated BUY_SCALE, BUY_EXPONENT, BUY_MU, BUY_SIGMA",
+      "updated_data_sources": [
+        "psd",
+        "ppd"
+      ],
+      "calibration_files": [
+        "scripts/python/calibration/psd/psd_buy_budget_calibration.py",
+        "scripts/python/experiments/psd/psd_buy_budget_method_search.py"
+      ],
+      "config_parameters": [
+        "BUY_SCALE",
+        "BUY_EXPONENT",
+        "BUY_MU",
+        "BUY_SIGMA"
+      ],
+      "validation": {
+        "status": "in_progress",
+        "income_diff_pct": null,
+        "housing_wealth_diff_pct": null,
+        "financial_wealth_diff_pct": null,
+        "note": "Validation in progress; do not treat prior refreshed outputs as correct for this version yet."
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "BUY_SCALE",
+            "BUY_EXPONENT",
+            "BUY_MU",
+            "BUY_SIGMA"
+          ],
+          "improvement_summary": "Pinned BUY* calibration to a robust reproduction-first method selected by normalized historical-target distance.",
+          "why_changed": "To improve methodological traceability and consistency by deploying a method selected from explicit search evidence.",
+          "method_chosen": "family=psd_log_ols_robust_mu|loan_to_income=comonotonic|income_to_price=comonotonic|loan_open_k=500|lti_open=10|lti_floor=2.5|income_open_k=100|property_open_k=10000|trim=0|within_bin_points=11|grid=4000|mu_hi_trim=0.0063",
+          "decision_logic": "Objective=target reproduction; Why=normalized reproduction-first ranking on PSD 2011 + PPD 2011 selected this robust method as closest to legacy BUY* targets (distance ~= 0.02926) before modern deployment; Tradeoff=modern outputs can shift materially when constrained to the historically selected method and are not blocked by a validation gate."
+        }
+      ]
+    }
+  ]
+}
