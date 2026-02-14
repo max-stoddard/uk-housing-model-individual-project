@@ -35,10 +35,10 @@ log "=== Part 2/3: Experiments (GUI enabled) ==="
 
 pause
 
-log "=== Part 3/3: v1 parameters + Round 8 validation ==="
+log "=== Part 3/3: v1.3 parameters + Round 8 validation ==="
 bash scripts/demos/run-validation-step.sh \
-  "v1" \
-  "Results/v1-output" \
+  "v1.3" \
+  "Results/v1.3-output" \
   "ROUND_8_DATA" \
   "R8" \
   "private-datasets/was/was_round_8_hhold_eul_may_2025.privdata"
