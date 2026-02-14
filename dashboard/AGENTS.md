@@ -6,6 +6,12 @@ Author: Max Stoddard
 
 This guide is for future agents working only in the dashboard stack. Keep it short, accurate, and update it when dashboard structure or contracts change.
 
+## Living File Requirement
+- Treat this file as a living operational guide, not static documentation.
+- If you change dashboard behavior, API contracts, workflow commands, page structure, or parameter/provenance semantics, update this file in the same change.
+- Add concise "good to know" notes when you discover recurring pitfalls, edge cases, or debugging shortcuts that will help future tasks.
+- Do not defer these updates to a later commit.
+
 ## Fast Orientation
 - `dashboard/src`: React frontend (routes, pages, components, styles).
 - `dashboard/src/pages/HomePage.tsx`: Landing page.
@@ -13,6 +19,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - `dashboard/src/components/CompareCard.tsx`: Format-specific rendering logic for comparison cards.
 - `dashboard/src/components/EChart.tsx`: ECharts wrapper.
 - `dashboard/src/lib/api.ts`: Frontend API calls.
+- `dashboard/src/lib/chartAxes.ts`: Canonical axis-title/unit mapping for all charted parameter cards.
 - `dashboard/server`: Express API server.
 - `dashboard/server/index.ts`: API route registration (`/api/versions`, `/api/parameter-catalog`, `/api/compare`).
 - `dashboard/server/lib/service.ts`: Comparison engine and payload builders.
@@ -50,6 +57,14 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
   - add type in `shared/types.ts`
   - produce payload in `server/lib/service.ts`
   - render it in `src/components/CompareCard.tsx`
+- Axis titles and units are mandatory:
+  - every chart must include explicit x-axis and y-axis titles with units (`£`, `£/year`, `years`, `(-)`, `1/£`, etc.).
+  - generic placeholders like `native units` are forbidden.
+  - axis metadata must be centralized in `src/lib/chartAxes.ts`; when adding/changing parameter cards, update that file in the same change.
+  - if axis metadata changes, update smoke tests that validate axis-spec completeness.
+- Good to know for joint heatmaps:
+  - use built-in interactive ECharts `visualMap` on the right side (`orient: vertical`, `calculable: true`) for consistent draggable keys.
+  - avoid replacing it with custom non-interactive `graphic` legends unless explicitly requested.
 - Maintain concise, practical explanations in catalog metadata (meaning + likely directional effect).
 - Keep charts readable first (labels, units, deltas); avoid adding decorative complexity that obscures comparisons.
 
