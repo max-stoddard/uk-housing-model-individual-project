@@ -21,4 +21,5 @@ cd "${repo_root}"
 "${script_dir}/run_psd_pure_reproduction_report.sh"
 "${script_dir}/run_psd_mortgage_duration_method_search_2024.sh"
 "${script_dir}/run_psd_2024_pure_direct_calibration.sh" "${term_method}"
-
+"${script_dir}/run_psd_buy_budget_method_search.sh"
+"${script_dir}/run_psd_buy_budget_calibration.sh"
