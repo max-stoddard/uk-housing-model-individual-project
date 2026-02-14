@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { compareParameters, getParameterCatalog, getVersions } from '../server/lib/service.js';
 import { getConfigPath, parseConfigFile, readNumericCsvRows, resolveConfigDataFilePath } from '../server/lib/io.js';
 import { loadVersionNotes } from '../server/lib/versionNotes.js';
+import { assertAxisSpecComplete, getAxisSpec } from '../src/lib/chartAxes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +43,31 @@ assert.deepEqual(
   expectedIds,
   'Catalog should contain exactly the changed parameter cards tracked in version notes'
 );
+
+assertAxisSpecComplete(expectedIds);
+for (const id of expectedIds) {
+  const spec = getAxisSpec(id);
+  const labels = [
+    spec.scalar.xTitle,
+    spec.scalar.yTitle,
+    spec.binned.xTitle,
+    spec.binned.yTitle,
+    spec.binned.yDeltaTitle,
+    spec.joint.xTitle,
+    spec.joint.yTitle,
+    spec.joint.legendTitle,
+    spec.curve.xTitle,
+    spec.curve.yTitle,
+    spec.buyBudget.xTitle,
+    spec.buyBudget.yTitle,
+    spec.buyMultiplier.xTitle,
+    spec.buyMultiplier.yTitle
+  ];
+  for (const label of labels) {
+    assert.ok(/\(.+\)/.test(label), `Axis label should include unit marker: ${id} -> ${label}`);
+    assert.ok(!label.toLowerCase().includes('native units'), `Axis label should not use native units placeholder: ${id}`);
+  }
+}
 
 const versions = getVersions(repoRoot);
 assert.ok(versions.length > 0, 'Expected at least one version folder');

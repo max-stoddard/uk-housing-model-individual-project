@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { EChartsOption } from 'echarts';
 import type { CompareResult, JointCell, ScalarDatum } from '../../shared/types';
 import { EChart } from './EChart';
+import { getAxisSpec } from '../lib/chartAxes';
 
 interface CompareCardProps {
   item: CompareResult;
@@ -36,17 +37,71 @@ function formatCompact(value: number): string {
   return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
 }
 
-function scalarOption(values: ScalarDatum[], leftVersion: string, rightVersion: string): EChartsOption {
+function formatScientific(value: number, digits = 2): string {
+  const [mantissa, exponent] = value.toExponential(digits).split('e');
+  const trimmedMantissa = mantissa.replace(/\.?0+$/, '');
+  const normalizedExponent = exponent.replace('+', '').replace(/^(-?)0+(\d)/, '$1$2');
+  return `${trimmedMantissa}e${normalizedExponent}`;
+}
+
+function formatCurveValue(value: number): string {
+  const absolute = Math.abs(value);
+  if (absolute < 1e-12) {
+    return '0';
+  }
+  if (absolute < 0.001) {
+    return formatScientific(value, 2);
+  }
+  if (absolute < 1) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 6 });
+  }
+  return formatNumber(value);
+}
+
+function formatAxisTick(value: number): string {
+  const absolute = Math.abs(value);
+  if (absolute < 1e-12) {
+    return '0';
+  }
+  if (absolute >= 1) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+  }
+  if (absolute >= 0.01) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
+  }
+  if (absolute >= 0.001) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
+  }
+  return formatScientific(value, 1);
+}
+
+function scalarOption(
+  values: ScalarDatum[],
+  leftVersion: string,
+  rightVersion: string,
+  xAxisName: string,
+  yAxisName: string
+): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
     legend: { top: 0 },
-    grid: { left: 40, right: 24, top: 36, bottom: 70 },
+    grid: { left: 74, right: 34, top: 44, bottom: 98, containLabel: true },
     xAxis: {
       type: 'category',
       data: values.map((entry) => entry.key),
-      axisLabel: { rotate: 25 }
+      axisLabel: { rotate: 25 },
+      name: xAxisName,
+      nameLocation: 'middle',
+      nameGap: 66,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
     },
-    yAxis: { type: 'value' },
+    yAxis: {
+      type: 'value',
+      name: yAxisName,
+      nameLocation: 'middle',
+      nameGap: 58,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
+    },
     series: [
       {
         name: leftVersion,
@@ -64,17 +119,27 @@ function scalarOption(values: ScalarDatum[], leftVersion: string, rightVersion: 
   };
 }
 
-function scalarSingleOption(values: ScalarDatum[], version: string): EChartsOption {
+function scalarSingleOption(values: ScalarDatum[], version: string, xAxisName: string, yAxisName: string): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
     legend: { top: 0 },
-    grid: { left: 40, right: 24, top: 36, bottom: 70 },
+    grid: { left: 74, right: 34, top: 44, bottom: 98, containLabel: true },
     xAxis: {
       type: 'category',
       data: values.map((entry) => entry.key),
-      axisLabel: { rotate: 25 }
+      axisLabel: { rotate: 25 },
+      name: xAxisName,
+      nameLocation: 'middle',
+      nameGap: 66,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
     },
-    yAxis: { type: 'value' },
+    yAxis: {
+      type: 'value',
+      name: yAxisName,
+      nameLocation: 'middle',
+      nameGap: 58,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
+    },
     series: [
       {
         name: version,
@@ -86,7 +151,7 @@ function scalarSingleOption(values: ScalarDatum[], version: string): EChartsOpti
   };
 }
 
-function binnedOption(item: CompareResult): EChartsOption {
+function binnedOption(item: CompareResult, xAxisName: string, yAxisName: string, deltaAxisName: string): EChartsOption {
   if (item.visualPayload.type !== 'binned_distribution') {
     return {};
   }
@@ -106,15 +171,32 @@ function binnedOption(item: CompareResult): EChartsOption {
       }
     },
     legend: { top: 0 },
-    grid: { left: 48, right: 42, top: 36, bottom: 80 },
+    grid: { left: 78, right: 76, top: 44, bottom: 108, containLabel: true },
     xAxis: {
       type: 'category',
       data: item.visualPayload.bins.map((bin) => bin.label),
-      axisLabel: { rotate: 35 }
+      axisLabel: { rotate: 35 },
+      name: xAxisName,
+      nameLocation: 'middle',
+      nameGap: 70,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
     },
     yAxis: [
-      { type: 'value', name: 'Value' },
-      { type: 'value', name: 'Delta', position: 'right' }
+      {
+        type: 'value',
+        name: yAxisName,
+        nameLocation: 'middle',
+        nameGap: 64,
+        nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
+      },
+      {
+        type: 'value',
+        name: deltaAxisName,
+        position: 'right',
+        nameLocation: 'middle',
+        nameGap: 64,
+        nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
+      }
     ],
     series: [
       {
@@ -142,7 +224,7 @@ function binnedOption(item: CompareResult): EChartsOption {
   };
 }
 
-function binnedSingleOption(item: CompareResult): EChartsOption {
+function binnedSingleOption(item: CompareResult, xAxisName: string, yAxisName: string): EChartsOption {
   if (item.visualPayload.type !== 'binned_distribution') {
     return {};
   }
@@ -150,13 +232,25 @@ function binnedSingleOption(item: CompareResult): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
     legend: { top: 0 },
-    grid: { left: 48, right: 24, top: 36, bottom: 80 },
+    grid: { left: 78, right: 34, top: 44, bottom: 108, containLabel: true },
     xAxis: {
       type: 'category',
       data: item.visualPayload.bins.map((bin) => bin.label),
-      axisLabel: { rotate: 35 }
+      axisLabel: { rotate: 35 },
+      name: xAxisName,
+      nameLocation: 'middle',
+      nameGap: 70,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
     },
-    yAxis: [{ type: 'value', name: 'Value' }],
+    yAxis: [
+      {
+        type: 'value',
+        name: yAxisName,
+        nameLocation: 'middle',
+        nameGap: 64,
+        nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
+      }
+    ],
     series: [
       {
         name: item.rightVersion,
@@ -175,7 +269,9 @@ function heatmapOption(
   yLabels: string[],
   min: number,
   max: number,
-  colors: string[]
+  colors: string[],
+  xAxisName: string,
+  yAxisName: string
 ): EChartsOption {
   return {
     title: {
@@ -190,28 +286,43 @@ function heatmapOption(
         return `${xLabels[xIndex]} / ${yLabels[yIndex]}<br/>${formatCompact(value)}`;
       }
     },
-    grid: { left: 92, right: 16, top: 34, bottom: 118, containLabel: false },
+    grid: { left: 124, right: 72, top: 42, bottom: 94, containLabel: true },
     xAxis: {
       type: 'category',
       data: xLabels,
-      axisLabel: { rotate: 45, fontSize: 9, margin: 14 }
+      axisLabel: { rotate: 45, fontSize: 9, margin: 14 },
+      name: xAxisName,
+      nameLocation: 'middle',
+      nameGap: 56,
+      nameTextStyle: { fontSize: 11, fontWeight: 600, color: '#495057' }
     },
     yAxis: {
       type: 'category',
       data: yLabels,
-      axisLabel: { fontSize: 9, margin: 10 }
+      axisLabel: { fontSize: 9, margin: 10 },
+      name: yAxisName,
+      nameLocation: 'middle',
+      nameGap: 104,
+      nameTextStyle: { fontSize: 11, fontWeight: 600, color: '#495057' }
     },
     visualMap: {
+      show: true,
+      type: 'continuous',
       min,
       max,
-      orient: 'horizontal',
-      left: 'center',
-      bottom: 10,
+      orient: 'vertical',
+      right: 10,
+      top: 'middle',
       calculable: false,
+      realtime: true,
+      showLabel: false,
       precision: 6,
       formatter: '{value}',
       itemWidth: 12,
-      itemHeight: 180,
+      itemHeight: 168,
+      text: ['High', 'Low'],
+      textGap: 6,
+      textStyle: { color: '#495057', fontSize: 10 },
       inRange: { color: colors }
     },
     series: [
@@ -249,22 +360,27 @@ function curveOption(
         const rightSeriesData = (rows.find((entry: any) => entry.seriesName === rightVersion) as any)?.data;
         const left = Array.isArray(leftSeriesData) ? Number(leftSeriesData[1]) : 0;
         const right = Array.isArray(rightSeriesData) ? Number(rightSeriesData[1]) : 0;
-        return `${xLabel}: ${xText}<br/>${leftVersion}: ${formatNumber(left)}<br/>${rightVersion}: ${formatNumber(right)}`;
+        return `${xLabel}: ${xText}<br/>${leftVersion}: ${formatCurveValue(left)}<br/>${rightVersion}: ${formatCurveValue(right)}`;
       }
     },
     legend: { top: 0 },
-    grid: { left: 56, right: 28, top: 36, bottom: 56 },
+    grid: { left: 82, right: 36, top: 44, bottom: 82, containLabel: true },
     xAxis: {
       type: 'value',
       name: xLabel,
       nameLocation: 'middle',
-      nameGap: 34
+      nameGap: 52,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
     },
     yAxis: {
       type: 'value',
       name: yLabel,
       nameLocation: 'middle',
-      nameGap: 42
+      nameGap: 58,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' },
+      axisLabel: {
+        formatter: (rawValue: number) => formatAxisTick(Number(rawValue))
+      }
     },
     series: [
       {
@@ -303,22 +419,27 @@ function curveSingleOption(
         const xText = valueFormatter ? valueFormatter(Number(xValue)) : formatNumber(Number(xValue));
         const seriesData = (rows.find((entry: any) => entry.seriesName === version) as any)?.data;
         const value = Array.isArray(seriesData) ? Number(seriesData[1]) : 0;
-        return `${xLabel}: ${xText}<br/>${version}: ${formatNumber(value)}`;
+        return `${xLabel}: ${xText}<br/>${version}: ${formatCurveValue(value)}`;
       }
     },
     legend: { top: 0 },
-    grid: { left: 56, right: 28, top: 36, bottom: 56 },
+    grid: { left: 82, right: 36, top: 44, bottom: 82, containLabel: true },
     xAxis: {
       type: 'value',
       name: xLabel,
       nameLocation: 'middle',
-      nameGap: 34
+      nameGap: 52,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
     },
     yAxis: {
       type: 'value',
       name: yLabel,
       nameLocation: 'middle',
-      nameGap: 42
+      nameGap: 58,
+      nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' },
+      axisLabel: {
+        formatter: (rawValue: number) => formatAxisTick(Number(rawValue))
+      }
     },
     series: [
       {
@@ -402,6 +523,7 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
   const [isMoreInfoOpen, setIsMoreInfoOpen] = useState<boolean>(false);
 
   const updated = itemIsUpdated(item, mode);
+  const axisSpec = useMemo(() => getAxisSpec(item.id), [item.id]);
 
   const jointRanges = useMemo(() => {
     if (item.visualPayload.type !== 'joint_distribution') {
@@ -482,8 +604,19 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               <EChart
                 option={
                   mode === 'single'
-                    ? scalarSingleOption(item.visualPayload.values, item.rightVersion)
-                    : scalarOption(item.visualPayload.values, item.leftVersion, item.rightVersion)
+                    ? scalarSingleOption(
+                        item.visualPayload.values,
+                        item.rightVersion,
+                        axisSpec.scalar.xTitle,
+                        axisSpec.scalar.yTitle
+                      )
+                    : scalarOption(
+                        item.visualPayload.values,
+                        item.leftVersion,
+                        item.rightVersion,
+                        axisSpec.scalar.xTitle,
+                        axisSpec.scalar.yTitle
+                      )
                 }
                 className="chart"
               />
@@ -492,7 +625,14 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
 
           {item.visualPayload.type === 'binned_distribution' && (
             <div className="card-section">
-              <EChart option={mode === 'single' ? binnedSingleOption(item) : binnedOption(item)} className="chart" />
+              <EChart
+                option={
+                  mode === 'single'
+                    ? binnedSingleOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle)
+                    : binnedOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle, axisSpec.binned.yDeltaTitle)
+                }
+                className="chart"
+              />
             </div>
           )}
 
@@ -507,7 +647,9 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                     item.visualPayload.matrix.yAxis.labels,
                     jointRanges.sharedMin,
                     jointRanges.sharedMax,
-                    ['#eff6ff', '#1d4ed8']
+                    ['#eff6ff', '#1d4ed8'],
+                    axisSpec.joint.xTitle,
+                    axisSpec.joint.yTitle
                   )}
                   className="chart chart-heatmap"
                 />
@@ -521,7 +663,9 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                       item.visualPayload.matrix.yAxis.labels,
                       jointRanges.sharedMin,
                       jointRanges.sharedMax,
-                      ['#eff6ff', '#1d4ed8']
+                      ['#eff6ff', '#1d4ed8'],
+                      axisSpec.joint.xTitle,
+                      axisSpec.joint.yTitle
                     )}
                     className="chart chart-heatmap"
                   />
@@ -533,7 +677,9 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                       item.visualPayload.matrix.yAxis.labels,
                       jointRanges.sharedMin,
                       jointRanges.sharedMax,
-                      ['#e8f7f6', '#18958b']
+                      ['#e8f7f6', '#18958b'],
+                      axisSpec.joint.xTitle,
+                      axisSpec.joint.yTitle
                     )}
                     className="chart chart-heatmap"
                   />
@@ -545,7 +691,9 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                       item.visualPayload.matrix.yAxis.labels,
                       jointRanges.deltaMin,
                       jointRanges.deltaMax,
-                      ['#1d4ed8', '#f8fafc', '#18958b']
+                      ['#1d4ed8', '#f8fafc', '#18958b'],
+                      axisSpec.joint.xTitle,
+                      axisSpec.joint.yTitle
                     )}
                     className="chart chart-heatmap"
                   />
@@ -559,16 +707,20 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               <EChart
                 option={
                   mode === 'single'
-                    ? curveSingleOption(item.rightVersion, item.visualPayload.curveRight, 'Value', 'Density', (value) =>
-                        formatNumber(value)
+                    ? curveSingleOption(
+                        item.rightVersion,
+                        item.visualPayload.curveRight,
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
+                        (value) => formatNumber(value)
                       )
                     : curveOption(
                         item.leftVersion,
                         item.rightVersion,
                         item.visualPayload.curveLeft,
                         item.visualPayload.curveRight,
-                        'Value',
-                        'Density',
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
                         (value) => formatNumber(value)
                       )
                 }
@@ -582,16 +734,20 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               <EChart
                 option={
                   mode === 'single'
-                    ? curveSingleOption(item.rightVersion, item.visualPayload.curveRight, 'Income', 'Desired Rent', (value) =>
-                        formatNumber(value)
+                    ? curveSingleOption(
+                        item.rightVersion,
+                        item.visualPayload.curveRight,
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
+                        (value) => formatNumber(value)
                       )
                     : curveOption(
                         item.leftVersion,
                         item.rightVersion,
                         item.visualPayload.curveLeft,
                         item.visualPayload.curveRight,
-                        'Income',
-                        'Desired Rent',
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
                         (value) => formatNumber(value)
                       )
                 }
@@ -617,16 +773,20 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               <EChart
                 option={
                   mode === 'single'
-                    ? curveSingleOption(item.rightVersion, item.visualPayload.budgetRight, 'Income', 'Buy Budget', (value) =>
-                        formatNumber(value)
+                    ? curveSingleOption(
+                        item.rightVersion,
+                        item.visualPayload.budgetRight,
+                        axisSpec.buyBudget.xTitle,
+                        axisSpec.buyBudget.yTitle,
+                        (value) => formatNumber(value)
                       )
                     : curveOption(
                         item.leftVersion,
                         item.rightVersion,
                         item.visualPayload.budgetLeft,
                         item.visualPayload.budgetRight,
-                        'Income',
-                        'Buy Budget',
+                        axisSpec.buyBudget.xTitle,
+                        axisSpec.buyBudget.yTitle,
                         (value) => formatNumber(value)
                       )
                 }
@@ -635,16 +795,20 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               <EChart
                 option={
                   mode === 'single'
-                    ? curveSingleOption(item.rightVersion, item.visualPayload.multiplierRight, 'Multiplier', 'Density', (value) =>
-                        formatNumber(value)
+                    ? curveSingleOption(
+                        item.rightVersion,
+                        item.visualPayload.multiplierRight,
+                        axisSpec.buyMultiplier.xTitle,
+                        axisSpec.buyMultiplier.yTitle,
+                        (value) => formatNumber(value)
                       )
                     : curveOption(
                         item.leftVersion,
                         item.rightVersion,
                         item.visualPayload.multiplierLeft,
                         item.visualPayload.multiplierRight,
-                        'Multiplier',
-                        'Density',
+                        axisSpec.buyMultiplier.xTitle,
+                        axisSpec.buyMultiplier.yTitle,
                         (value) => formatNumber(value)
                       )
                 }

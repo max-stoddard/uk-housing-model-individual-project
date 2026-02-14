@@ -3,7 +3,7 @@ import type { ParameterCardMeta } from './types';
 export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   {
     id: 'income_given_age_joint',
-    title: 'Income Given Age Distribution',
+    title: 'How Gross Income Is Distributed Across Age Groups',
     group: 'Household Demographics & Wealth',
     format: 'joint_distribution',
     configKeys: ['DATA_INCOME_GIVEN_AGE'],
@@ -13,7 +13,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'wealth_given_income_joint',
-    title: 'Wealth Given Income Distribution',
+    title: 'How Household Wealth Is Distributed Across Income Groups',
     group: 'Household Demographics & Wealth',
     format: 'joint_distribution',
     configKeys: ['DATA_WEALTH_GIVEN_INCOME'],
@@ -23,7 +23,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'btl_probability_bins',
-    title: 'BTL Probability by Income Percentile',
+    title: 'Buy-to-Let Investor Probability by Income Percentile',
     group: 'BTL & Investor Behavior',
     format: 'binned_distribution',
     configKeys: ['DATA_BTL_PROBABILITY'],
@@ -33,7 +33,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'age_distribution',
-    title: 'Age Distribution',
+    title: 'Household Population Share by Age Group',
     group: 'Household Demographics & Wealth',
     format: 'binned_distribution',
     configKeys: ['DATA_AGE_DISTRIBUTION'],
@@ -43,7 +43,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'national_insurance_rates',
-    title: 'National Insurance Bands and Rates',
+    title: 'National Insurance Rates Across Income Thresholds',
     group: 'Government & Tax',
     format: 'binned_distribution',
     configKeys: ['DATA_NATIONAL_INSURANCE_RATES'],
@@ -53,7 +53,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'income_tax_rates',
-    title: 'Income Tax Bands and Rates',
+    title: 'Income Tax Rates Across Income Thresholds',
     group: 'Government & Tax',
     format: 'binned_distribution',
     configKeys: ['DATA_TAX_RATES'],
@@ -63,7 +63,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'government_allowance_support',
-    title: 'Personal Allowance and Income Support',
+    title: 'Government Personal Allowance and Monthly Income Support',
     group: 'Government & Tax',
     format: 'scalar_pair',
     configKeys: ['GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE', 'GOVERNMENT_MONTHLY_INCOME_SUPPORT'],
@@ -72,7 +72,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'house_price_lognormal',
-    title: 'House Price Lognormal Parameters',
+    title: 'House Price Distribution Shape (Scale and Spread)',
     group: 'Housing & Rental Market',
     format: 'lognormal_pair',
     configKeys: ['HOUSE_PRICES_SCALE', 'HOUSE_PRICES_SHAPE'],
@@ -81,7 +81,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'rental_price_lognormal',
-    title: 'Rental Price Lognormal Parameters',
+    title: 'Rental Price Distribution Shape (Scale and Spread)',
     group: 'Housing & Rental Market',
     format: 'lognormal_pair',
     configKeys: ['RENTAL_PRICES_SCALE', 'RENTAL_PRICES_SHAPE'],
@@ -90,7 +90,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'desired_rent_power',
-    title: 'Desired Rent Power Function',
+    title: 'Desired Rent as Income Changes (Power Curve)',
     group: 'Housing & Rental Market',
     format: 'power_law_pair',
     configKeys: ['DESIRED_RENT_SCALE', 'DESIRED_RENT_EXPONENT'],
@@ -99,7 +99,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'btl_strategy_split',
-    title: 'BTL Strategy Split',
+    title: 'Buy-to-Let Strategy Mix: Income Yield vs Capital Growth',
     group: 'BTL & Investor Behavior',
     format: 'scalar_pair',
     configKeys: ['BTL_P_INCOME_DRIVEN', 'BTL_P_CAPITAL_DRIVEN'],
@@ -108,7 +108,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'mortgage_duration_years',
-    title: 'Mortgage Duration (Years)',
+    title: 'Typical Mortgage Term Length (Years)',
     group: 'Purchase & Mortgage',
     format: 'scalar',
     configKeys: ['MORTGAGE_DURATION_YEARS'],
@@ -117,7 +117,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'downpayment_ftb_lognormal',
-    title: 'FTB Down-payment Lognormal Parameters',
+    title: 'First-Time Buyer Down-Payment Distribution',
     group: 'Purchase & Mortgage',
     format: 'lognormal_pair',
     configKeys: ['DOWNPAYMENT_FTB_SCALE', 'DOWNPAYMENT_FTB_SHAPE'],
@@ -126,7 +126,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'downpayment_oo_lognormal',
-    title: 'Owner-Occupier Down-payment Lognormal Parameters',
+    title: 'Owner-Occupier Down-Payment Distribution',
     group: 'Purchase & Mortgage',
     format: 'lognormal_pair',
     configKeys: ['DOWNPAYMENT_OO_SCALE', 'DOWNPAYMENT_OO_SHAPE'],
@@ -135,7 +135,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'market_average_price_decay',
-    title: 'Market Average Price Decay',
+    title: 'Speed of Market Average Price Adjustment',
     group: 'Housing & Rental Market',
     format: 'scalar',
     configKeys: ['MARKET_AVERAGE_PRICE_DECAY'],
@@ -144,7 +144,7 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'buy_quad',
-    title: 'Buy Budget Function and Noise',
+    title: 'Purchase Budget Curve and Bid Variation Noise',
     group: 'Purchase & Mortgage',
     format: 'buy_quad',
     configKeys: ['BUY_SCALE', 'BUY_EXPONENT', 'BUY_MU', 'BUY_SIGMA'],

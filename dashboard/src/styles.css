@@ -107,6 +107,104 @@ code {
   gap: 1.1rem;
 }
 
+.todo-layout {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.todo-card {
+  background: var(--panel);
+  border-radius: 1rem;
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  box-shadow: var(--shadow);
+  padding: clamp(1.2rem, 2.5vw, 2rem);
+}
+
+.todo-card h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+}
+
+.todo-card p {
+  color: var(--muted);
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+.todo-badge {
+  margin: 0 0 0.5rem;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #0b7285;
+  background: #e3fafc;
+  border: 1px solid rgba(11, 114, 133, 0.15);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.summary-card {
+  background: var(--panel);
+  border-radius: 1rem;
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  box-shadow: var(--shadow);
+  padding: clamp(1.2rem, 2.5vw, 2rem);
+}
+
+.summary-card h2 {
+  margin-top: 0.3rem;
+  margin-bottom: 0.65rem;
+  font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+}
+
+.summary-card p {
+  color: var(--muted);
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+  max-width: 78ch;
+}
+
+.summary-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.summary-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  text-decoration: none;
+  color: #0b7285;
+  background: #e3fafc;
+  border: 1px solid rgba(11, 114, 133, 0.14);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.summary-links a:hover {
+  background: #d0f4f7;
+}
+
+.summary-link-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-link-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .hero-card {
   background: var(--panel);
   border-radius: 1rem;
@@ -125,6 +223,73 @@ code {
 .hero-card p {
   color: var(--muted);
   max-width: 70ch;
+}
+
+.hero-preview {
+  margin-top: 0.9rem;
+  margin-bottom: 0.3rem;
+  background: #f6f9f6;
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+}
+
+.hero-preview-head {
+  margin-bottom: 0.45rem;
+}
+
+.hero-preview-head p {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.hero-preview-head strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1rem;
+}
+
+.hero-preview-chart {
+  height: 292px;
+}
+
+.hero-preview-chart-shell {
+  animation: previewFadeIn 420ms ease both;
+}
+
+.hero-preview-dots {
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hero-preview-dots button {
+  width: 0.56rem;
+  height: 0.56rem;
+  border: 0;
+  border-radius: 999px;
+  background: #c3cbc6;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hero-preview-dots button.active {
+  background: #0b7285;
+}
+
+@keyframes previewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .primary-button,
@@ -511,14 +676,14 @@ code {
 
 .chart {
   width: 100%;
-  height: 320px;
+  height: 360px;
   border-radius: 0.85rem;
   background: #fff;
   border: 1px solid rgba(17, 32, 24, 0.08);
 }
 
 .chart-heatmap {
-  height: 350px;
+  height: 390px;
 }
 
 .heatmap-grid {
@@ -736,6 +901,6 @@ code {
   }
 
   .chart {
-    height: 280px;
+    height: 320px;
   }
 }
