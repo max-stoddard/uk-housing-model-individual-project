@@ -1,0 +1,912 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { PARAMETER_CATALOG } from '../../shared/catalog';
+import type {
+  AxisScaleType,
+  BinnedDatum,
+  CompareResult,
+  CompareResponse,
+  CurvePoint,
+  JointCell,
+  JointPayload,
+  ParameterCardMeta,
+  ScalarDatum,
+  VersionChangeOrigin
+} from '../../shared/types';
+import {
+  getConfigPath,
+  getNumericConfigValue,
+  parseConfigFile,
+  readNumericCsvRows,
+  resolveConfigDataFilePath,
+  resolveVersionPath
+} from './io';
+import { compareVersions, listVersions } from './versioning';
+import { loadVersionNotes, type VersionNoteEntry } from './versionNotes';
+
+const EPSILON = 1e-12;
+export type ProvenanceScope = 'range' | 'through_right';
+
+interface CompareContext {
+  repoRoot: string;
+  leftVersion: string;
+  rightVersion: string;
+  leftConfig: Map<string, string>;
+  rightConfig: Map<string, string>;
+  versionNotes: VersionNoteEntry[];
+  provenanceScope: ProvenanceScope;
+}
+
+interface StepRateRow {
+  threshold: number;
+  rate: number;
+}
+
+function asRelative(repoRoot: string, absolutePath: string): string {
+  return path.relative(repoRoot, absolutePath).replace(/\\/g, '/');
+}
+
+function deltaStat(left: number, right: number) {
+  const absolute = right - left;
+  const percent = Math.abs(left) < EPSILON ? null : (absolute / left) * 100;
+  return { absolute, percent };
+}
+
+function isNearlyZero(value: number): boolean {
+  return Math.abs(value) < EPSILON;
+}
+
+function scalarRows(keys: string[], leftConfig: Map<string, string>, rightConfig: Map<string, string>): ScalarDatum[] {
+  return keys.map((key) => {
+    const left = getNumericConfigValue(leftConfig, key);
+    const right = getNumericConfigValue(rightConfig, key);
+    return {
+      key,
+      left,
+      right,
+      delta: deltaStat(left, right)
+    };
+  });
+}
+
+function intersects(left: string[], right: string[]): boolean {
+  const rightSet = new Set(right);
+  return left.some((item) => rightSet.has(item));
+}
+
+function toChangeOriginsInRange(context: CompareContext, meta: ParameterCardMeta): VersionChangeOrigin[] {
+  const includeByScope = (entry: VersionNoteEntry): boolean => {
+    if (context.provenanceScope === 'through_right') {
+      return compareVersions(entry.snapshot_folder, context.rightVersion) <= 0;
+    }
+    return (
+      compareVersions(entry.snapshot_folder, context.leftVersion) > 0 &&
+      compareVersions(entry.snapshot_folder, context.rightVersion) <= 0
+    );
+  };
+
+  return context.versionNotes
+    .filter(
+      (entry) =>
+        includeByScope(entry) &&
+        intersects(meta.configKeys, entry.config_parameters)
+    )
+    .map((entry) => ({
+      versionId: entry.version_id,
+      description: entry.description,
+      validationDataset: entry.validation_dataset,
+      updatedDataSources: entry.updated_data_sources,
+      calibrationFiles: entry.calibration_files,
+      configParameters: entry.config_parameters,
+      validationStatus: entry.validation.status,
+      methodVariations: entry.method_variations
+        .filter((variation) => intersects(meta.configKeys, variation.config_parameters))
+        .map((variation) => ({
+          configParameters: variation.config_parameters,
+          improvementSummary: variation.improvement_summary,
+          whyChanged: variation.why_changed,
+          methodChosen: variation.method_chosen,
+          decisionLogic: variation.decision_logic
+        }))
+    }));
+}
+
+function formatThreshold(value: number): string {
+  if (Math.abs(value) >= 1000) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+  }
+  if (Math.abs(value) >= 1) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+  }
+  return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
+}
+
+function normalizeStepRateRows(rows: number[][]): StepRateRow[] {
+  const deduped = new Map<number, number>();
+  for (const row of rows) {
+    if (row.length < 2) {
+      continue;
+    }
+    const threshold = row[0];
+    const rate = row[1];
+    if (!Number.isFinite(threshold) || !Number.isFinite(rate)) {
+      continue;
+    }
+    deduped.set(threshold, rate);
+  }
+
+  return [...deduped.entries()]
+    .map(([threshold, rate]) => ({ threshold, rate }))
+    .sort((a, b) => a.threshold - b.threshold);
+}
+
+function rateAt(thresholdRows: StepRateRow[], value: number): number {
+  if (thresholdRows.length === 0) {
+    return 0;
+  }
+  let activeRate = 0;
+  for (const row of thresholdRows) {
+    if (value < row.threshold) {
+      break;
+    }
+    activeRate = row.rate;
+  }
+  return activeRate;
+}
+
+function buildStepRateComparison(leftRows: number[][], rightRows: number[][]): BinnedDatum[] {
+  const left = normalizeStepRateRows(leftRows);
+  const right = normalizeStepRateRows(rightRows);
+
+  const breakpoints = [...new Set([0, ...left.map((row) => row.threshold), ...right.map((row) => row.threshold)])]
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b);
+
+  if (breakpoints.length === 0) {
+    return [];
+  }
+
+  return breakpoints.map((lower, index) => {
+    const upper = breakpoints[index + 1];
+    const leftRate = rateAt(left, lower);
+    const rightRate = rateAt(right, lower);
+    const isOpenEnded = upper === undefined;
+    return {
+      label: isOpenEnded ? `>=${formatThreshold(lower)}` : `${formatThreshold(lower)}-${formatThreshold(upper)}`,
+      lower,
+      upper: isOpenEnded ? lower : upper,
+      left: leftRate,
+      right: rightRate,
+      delta: rightRate - leftRate
+    };
+  });
+}
+
+interface BinnedMassRow {
+  lower: number;
+  upper: number;
+  value: number;
+}
+
+interface JointMassCell {
+  xLower: number;
+  xUpper: number;
+  yLower: number;
+  yUpper: number;
+  value: number;
+}
+
+function normalizeBinnedRows(rows: number[][]): BinnedMassRow[] {
+  if (rows.length === 0) {
+    return [];
+  }
+
+  if (rows[0].length >= 3) {
+    return rows.map((row) => ({
+      lower: row[0],
+      upper: row[1],
+      value: row[2]
+    }));
+  }
+
+  return rows.map((row, index) => {
+    const lower = row[0];
+    const upper = rows[index + 1]?.[0] ?? row[0];
+    return {
+      lower,
+      upper,
+      value: row[1]
+    };
+  });
+}
+
+function normalizeJointRows(rows: number[][]): JointMassCell[] {
+  return rows
+    .filter((row) => row.length >= 5)
+    .map((row) => ({
+      xLower: row[0],
+      xUpper: row[1],
+      yLower: row[2],
+      yUpper: row[3],
+      value: row[4]
+    }));
+}
+
+function extractEdgesFromBins(bins: BinnedMassRow[]): number[] {
+  const values = bins.flatMap((bin) => [bin.lower, bin.upper]).filter(Number.isFinite);
+  const uniqueSorted = [...new Set(values)].sort((a, b) => a - b);
+  return uniqueSorted;
+}
+
+function extractEdgesFromJoint(cells: JointMassCell[], axis: 'x' | 'y'): number[] {
+  const values =
+    axis === 'x'
+      ? cells.flatMap((cell) => [cell.xLower, cell.xUpper])
+      : cells.flatMap((cell) => [cell.yLower, cell.yUpper]);
+  return [...new Set(values.filter(Number.isFinite))].sort((a, b) => a - b);
+}
+
+function inferLinearAxisKind(edges: number[]): 'age' | 'percentile' | 'generic' {
+  const min = edges[0];
+  const max = edges[edges.length - 1];
+  if (min >= 0 && max <= 1.2) {
+    return 'percentile';
+  }
+  if (min >= 10 && max <= 120) {
+    return 'age';
+  }
+  return 'generic';
+}
+
+function formatCompactNumber(value: number): string {
+  if (Math.abs(value) >= 1000) {
+    return new Intl.NumberFormat('en-GB', {
+      notation: 'compact',
+      maximumFractionDigits: 1
+    }).format(value);
+  }
+  if (Math.abs(value) >= 1) {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+  }
+  return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
+}
+
+function formatCurrencyCompact(value: number): string {
+  if (Math.abs(value) >= 1000) {
+    return `£${new Intl.NumberFormat('en-GB', {
+      notation: 'compact',
+      maximumFractionDigits: 1
+    }).format(value)}`;
+  }
+  return `£${value.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
+}
+
+function formatBound(value: number, scaleType: AxisScaleType, linearKind: 'age' | 'percentile' | 'generic'): string {
+  if (scaleType === 'log') {
+    return formatCurrencyCompact(Math.exp(value));
+  }
+
+  if (linearKind === 'age') {
+    return `${Math.round(value)}`;
+  }
+  if (linearKind === 'percentile') {
+    return value.toFixed(2);
+  }
+  return formatCompactNumber(value);
+}
+
+function formatBandLabel(
+  lower: number,
+  upper: number,
+  scaleType: AxisScaleType,
+  linearKind: 'age' | 'percentile' | 'generic'
+): string {
+  return `${formatBound(lower, scaleType, linearKind)}-${formatBound(upper, scaleType, linearKind)}`;
+}
+
+function buildSharedAxis(
+  edgesLeft: number[],
+  edgesRight: number[],
+  scaleType: AxisScaleType,
+  targetBinCount: number
+): { edges: number[]; labels: string[]; scaleType: AxisScaleType } {
+  const min = Math.min(...edgesLeft, ...edgesRight);
+  let max = Math.max(...edgesLeft, ...edgesRight);
+  const bins = Math.max(targetBinCount, 1);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    throw new Error('Invalid axis domain for shared bin alignment');
+  }
+
+  if (Math.abs(max - min) < EPSILON) {
+    max = min + 1;
+  }
+
+  const step = (max - min) / bins;
+  const edges = Array.from({ length: bins + 1 }, (_, index) => min + step * index);
+  edges[0] = min;
+  edges[edges.length - 1] = max;
+
+  const linearKind = inferLinearAxisKind(edges);
+  const labels = edges.slice(0, -1).map((lower, index) => {
+    const upper = edges[index + 1];
+    return formatBandLabel(lower, upper, scaleType, linearKind);
+  });
+
+  return {
+    edges,
+    labels,
+    scaleType
+  };
+}
+
+function rebin1DMass(source: BinnedMassRow[], targetEdges: number[]): number[] {
+  const target = Array.from({ length: targetEdges.length - 1 }, () => 0);
+
+  for (const src of source) {
+    const srcWidth = src.upper - src.lower;
+    if (srcWidth <= EPSILON) {
+      continue;
+    }
+    for (let i = 0; i < target.length; i += 1) {
+      const overlapLower = Math.max(src.lower, targetEdges[i]);
+      const overlapUpper = Math.min(src.upper, targetEdges[i + 1]);
+      const overlap = overlapUpper - overlapLower;
+      if (overlap > EPSILON) {
+        target[i] += src.value * (overlap / srcWidth);
+      }
+    }
+  }
+
+  return target;
+}
+
+function rebin2DMass(source: JointMassCell[], targetXEdges: number[], targetYEdges: number[]): number[] {
+  const xBins = targetXEdges.length - 1;
+  const yBins = targetYEdges.length - 1;
+  const target = Array.from({ length: xBins * yBins }, () => 0);
+
+  for (const src of source) {
+    const srcWidthX = src.xUpper - src.xLower;
+    const srcWidthY = src.yUpper - src.yLower;
+    if (srcWidthX <= EPSILON || srcWidthY <= EPSILON) {
+      continue;
+    }
+
+    for (let xi = 0; xi < xBins; xi += 1) {
+      const overlapX = Math.min(src.xUpper, targetXEdges[xi + 1]) - Math.max(src.xLower, targetXEdges[xi]);
+      if (overlapX <= EPSILON) {
+        continue;
+      }
+      const ratioX = overlapX / srcWidthX;
+
+      for (let yi = 0; yi < yBins; yi += 1) {
+        const overlapY = Math.min(src.yUpper, targetYEdges[yi + 1]) - Math.max(src.yLower, targetYEdges[yi]);
+        if (overlapY <= EPSILON) {
+          continue;
+        }
+        const ratioY = overlapY / srcWidthY;
+        target[xi * yBins + yi] += src.value * ratioX * ratioY;
+      }
+    }
+  }
+
+  return target;
+}
+
+function buildBinnedComparison(
+  leftRows: number[][],
+  rightRows: number[][],
+  scaleType: AxisScaleType = 'linear'
+): BinnedDatum[] {
+  const left = normalizeBinnedRows(leftRows);
+  const right = normalizeBinnedRows(rightRows);
+  const leftEdges = extractEdgesFromBins(left);
+  const rightEdges = extractEdgesFromBins(right);
+  const leftCount = Math.max(leftEdges.length - 1, 1);
+  const rightCount = Math.max(rightEdges.length - 1, 1);
+
+  const axis = buildSharedAxis(leftEdges, rightEdges, scaleType, Math.max(leftCount, rightCount));
+  const leftMass = rebin1DMass(left, axis.edges);
+  const rightMass = rebin1DMass(right, axis.edges);
+
+  return axis.edges.slice(0, -1).map((lower, index) => {
+    const upper = axis.edges[index + 1];
+    const leftValue = leftMass[index] ?? 0;
+    const rightValue = rightMass[index] ?? 0;
+    return {
+      label: axis.labels[index],
+      lower,
+      upper,
+      left: leftValue,
+      right: rightValue,
+      delta: rightValue - leftValue
+    };
+  });
+}
+
+function buildJointPayload(
+  leftRows: number[][],
+  rightRows: number[][],
+  xScaleType: AxisScaleType,
+  yScaleType: AxisScaleType
+): JointPayload {
+  const left = normalizeJointRows(leftRows);
+  const right = normalizeJointRows(rightRows);
+
+  const xLeftEdges = extractEdgesFromJoint(left, 'x');
+  const xRightEdges = extractEdgesFromJoint(right, 'x');
+  const yLeftEdges = extractEdgesFromJoint(left, 'y');
+  const yRightEdges = extractEdgesFromJoint(right, 'y');
+
+  const xAxis = buildSharedAxis(
+    xLeftEdges,
+    xRightEdges,
+    xScaleType,
+    Math.max(xLeftEdges.length - 1, xRightEdges.length - 1, 1)
+  );
+  const yAxis = buildSharedAxis(
+    yLeftEdges,
+    yRightEdges,
+    yScaleType,
+    Math.max(yLeftEdges.length - 1, yRightEdges.length - 1, 1)
+  );
+
+  const leftMass = rebin2DMass(left, xAxis.edges, yAxis.edges);
+  const rightMass = rebin2DMass(right, xAxis.edges, yAxis.edges);
+
+  const xBins = xAxis.edges.length - 1;
+  const yBins = yAxis.edges.length - 1;
+
+  const cellsLeft: JointCell[] = [];
+  const cellsRight: JointCell[] = [];
+  const cellsDelta: JointCell[] = [];
+
+  for (let xIndex = 0; xIndex < xBins; xIndex += 1) {
+    for (let yIndex = 0; yIndex < yBins; yIndex += 1) {
+      const flatIndex = xIndex * yBins + yIndex;
+      const leftValue = leftMass[flatIndex] ?? 0;
+      const rightValue = rightMass[flatIndex] ?? 0;
+      cellsLeft.push({ xIndex, yIndex, value: leftValue });
+      cellsRight.push({ xIndex, yIndex, value: rightValue });
+      cellsDelta.push({ xIndex, yIndex, value: rightValue - leftValue });
+    }
+  }
+
+  return {
+    xAxis,
+    yAxis,
+    left: cellsLeft,
+    right: cellsRight,
+    delta: cellsDelta
+  };
+}
+
+function lognormalPdf(x: number, mu: number, sigma: number): number {
+  if (x <= 0 || sigma <= 0) {
+    return 0;
+  }
+  const denom = x * sigma * Math.sqrt(2 * Math.PI);
+  const exponent = -((Math.log(x) - mu) ** 2) / (2 * sigma ** 2);
+  return Math.exp(exponent) / denom;
+}
+
+function geometricRange(minValue: number, maxValue: number, points: number): number[] {
+  const safeMin = Math.max(minValue, EPSILON);
+  const safeMax = Math.max(maxValue, safeMin * 1.0001);
+  const logMin = Math.log(safeMin);
+  const logMax = Math.log(safeMax);
+
+  return Array.from({ length: points }, (_, index) => {
+    const t = index / (points - 1);
+    return Math.exp(logMin + t * (logMax - logMin));
+  });
+}
+
+function deriveIncomeDomain(context: CompareContext): { min: number; max: number } {
+  const ranges: Array<{ min: number; max: number }> = [];
+
+  for (const side of [
+    { version: context.leftVersion, config: context.leftConfig },
+    { version: context.rightVersion, config: context.rightConfig }
+  ]) {
+    const dataPath = side.config.get('DATA_INCOME_GIVEN_AGE');
+    if (!dataPath) {
+      continue;
+    }
+
+    const absolute = resolveConfigDataFilePath(context.repoRoot, side.version, dataPath);
+    if (!fs.existsSync(absolute)) {
+      continue;
+    }
+
+    const rows = readNumericCsvRows(absolute).filter((row) => row.length >= 4);
+    if (rows.length === 0) {
+      continue;
+    }
+
+    const minLog = Math.min(...rows.map((row) => row[2]));
+    const maxLog = Math.max(...rows.map((row) => row[3]));
+    ranges.push({ min: Math.exp(minLog), max: Math.exp(maxLog) });
+  }
+
+  if (ranges.length === 0) {
+    return { min: 10_000, max: 250_000 };
+  }
+
+  return {
+    min: Math.max(1_000, Math.min(...ranges.map((r) => r.min))),
+    max: Math.max(...ranges.map((r) => r.max))
+  };
+}
+
+function buildLognormalCurves(muLeft: number, sigmaLeft: number, muRight: number, sigmaRight: number) {
+  const min = Math.exp(Math.min(muLeft - 3 * sigmaLeft, muRight - 3 * sigmaRight));
+  const max = Math.exp(Math.max(muLeft + 3 * sigmaLeft, muRight + 3 * sigmaRight));
+  const xs = geometricRange(min, max, 180);
+
+  const curveLeft: CurvePoint[] = xs.map((x) => ({ x, y: lognormalPdf(x, muLeft, sigmaLeft) }));
+  const curveRight: CurvePoint[] = xs.map((x) => ({ x, y: lognormalPdf(x, muRight, sigmaRight) }));
+
+  return {
+    domain: { min, max },
+    curveLeft,
+    curveRight
+  };
+}
+
+function getBinnedScaleType(parameterId: string): AxisScaleType {
+  switch (parameterId) {
+    case 'btl_probability_bins':
+    case 'age_distribution':
+    case 'national_insurance_rates':
+    case 'income_tax_rates':
+      return 'linear';
+    default:
+      return 'linear';
+  }
+}
+
+function useStepRateComparison(parameterId: string): boolean {
+  return parameterId === 'national_insurance_rates' || parameterId === 'income_tax_rates';
+}
+
+function getJointAxisScaleTypes(parameterId: string): { xScaleType: AxisScaleType; yScaleType: AxisScaleType } {
+  switch (parameterId) {
+    case 'income_given_age_joint':
+      return { xScaleType: 'linear', yScaleType: 'log' };
+    case 'wealth_given_income_joint':
+      return { xScaleType: 'log', yScaleType: 'log' };
+    default:
+      return { xScaleType: 'linear', yScaleType: 'linear' };
+  }
+}
+
+function createSourceInfo(context: CompareContext, meta: ParameterCardMeta) {
+  const leftFiles = (meta.dataFileConfigKeys ?? [])
+    .map((key) => context.leftConfig.get(key))
+    .filter((value): value is string => Boolean(value))
+    .map((value) => resolveConfigDataFilePath(context.repoRoot, context.leftVersion, value))
+    .filter((absolutePath) => fs.existsSync(absolutePath))
+    .map((absolutePath) => asRelative(context.repoRoot, absolutePath));
+
+  const rightFiles = (meta.dataFileConfigKeys ?? [])
+    .map((key) => context.rightConfig.get(key))
+    .filter((value): value is string => Boolean(value))
+    .map((value) => resolveConfigDataFilePath(context.repoRoot, context.rightVersion, value))
+    .filter((absolutePath) => fs.existsSync(absolutePath))
+    .map((absolutePath) => asRelative(context.repoRoot, absolutePath));
+
+  return {
+    configPathLeft: asRelative(context.repoRoot, getConfigPath(context.repoRoot, context.leftVersion)),
+    configPathRight: asRelative(context.repoRoot, getConfigPath(context.repoRoot, context.rightVersion)),
+    configKeys: meta.configKeys,
+    dataFilesLeft: leftFiles,
+    dataFilesRight: rightFiles
+  };
+}
+
+function ensureVersionExists(repoRoot: string, version: string): void {
+  const versionPath = resolveVersionPath(repoRoot, version);
+  if (!fs.existsSync(versionPath)) {
+    throw new Error(`Unknown version: ${version}`);
+  }
+}
+
+function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): CompareResult {
+  const sourceInfo = createSourceInfo(context, meta);
+  const changeOriginsInRange = toChangeOriginsInRange(context, meta);
+
+  switch (meta.format) {
+    case 'scalar': {
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'scalar',
+          values
+        }
+      };
+    }
+
+    case 'scalar_pair': {
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'scalar',
+          values
+        }
+      };
+    }
+
+    case 'binned_distribution': {
+      const key = meta.dataFileConfigKeys?.[0];
+      if (!key) {
+        throw new Error(`Missing data file key mapping for ${meta.id}`);
+      }
+      const leftFileConfig = context.leftConfig.get(key);
+      const rightFileConfig = context.rightConfig.get(key);
+      if (!leftFileConfig || !rightFileConfig) {
+        throw new Error(`Missing file config value for ${meta.id}`);
+      }
+
+      const leftRows = readNumericCsvRows(
+        resolveConfigDataFilePath(context.repoRoot, context.leftVersion, leftFileConfig)
+      );
+      const rightRows = readNumericCsvRows(
+        resolveConfigDataFilePath(context.repoRoot, context.rightVersion, rightFileConfig)
+      );
+      const bins = useStepRateComparison(meta.id)
+        ? buildStepRateComparison(leftRows, rightRows)
+        : buildBinnedComparison(leftRows, rightRows, getBinnedScaleType(meta.id));
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: bins.every((bin) => isNearlyZero(bin.delta)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'binned_distribution',
+          bins
+        }
+      };
+    }
+
+    case 'joint_distribution': {
+      const key = meta.dataFileConfigKeys?.[0];
+      if (!key) {
+        throw new Error(`Missing data file key mapping for ${meta.id}`);
+      }
+      const leftFileConfig = context.leftConfig.get(key);
+      const rightFileConfig = context.rightConfig.get(key);
+      if (!leftFileConfig || !rightFileConfig) {
+        throw new Error(`Missing file config value for ${meta.id}`);
+      }
+
+      const leftRows = readNumericCsvRows(
+        resolveConfigDataFilePath(context.repoRoot, context.leftVersion, leftFileConfig)
+      );
+      const rightRows = readNumericCsvRows(
+        resolveConfigDataFilePath(context.repoRoot, context.rightVersion, rightFileConfig)
+      );
+
+      const { xScaleType, yScaleType } = getJointAxisScaleTypes(meta.id);
+      const matrix = buildJointPayload(leftRows, rightRows, xScaleType, yScaleType);
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: matrix.delta.every((cell) => isNearlyZero(cell.value)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'joint_distribution',
+          matrix
+        }
+      };
+    }
+
+    case 'lognormal_pair': {
+      if (meta.configKeys.length !== 2) {
+        throw new Error(`Expected two config keys for lognormal pair: ${meta.id}`);
+      }
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+
+      const muLeft = values[0].left;
+      const sigmaLeft = values[1].left;
+      const muRight = values[0].right;
+      const sigmaRight = values[1].right;
+
+      const curves = buildLognormalCurves(muLeft, sigmaLeft, muRight, sigmaRight);
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'lognormal_pair',
+          parameters: values,
+          curveLeft: curves.curveLeft,
+          curveRight: curves.curveRight,
+          domain: curves.domain
+        }
+      };
+    }
+
+    case 'power_law_pair': {
+      if (meta.configKeys.length !== 2) {
+        throw new Error(`Expected two config keys for power-law pair: ${meta.id}`);
+      }
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+      const domain = deriveIncomeDomain(context);
+      const xs = geometricRange(domain.min, domain.max, 180);
+
+      const scaleLeft = values[0].left;
+      const exponentLeft = values[1].left;
+      const scaleRight = values[0].right;
+      const exponentRight = values[1].right;
+
+      const curveLeft = xs.map((x) => ({ x, y: scaleLeft * x ** exponentLeft }));
+      const curveRight = xs.map((x) => ({ x, y: scaleRight * x ** exponentRight }));
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'power_law_pair',
+          parameters: values,
+          curveLeft,
+          curveRight,
+          domain
+        }
+      };
+    }
+
+    case 'buy_quad': {
+      if (meta.configKeys.length !== 4) {
+        throw new Error(`Expected four config keys for buy-quad: ${meta.id}`);
+      }
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+      const domain = deriveIncomeDomain(context);
+      const xs = geometricRange(domain.min, domain.max, 180);
+
+      const [scale, exponent, mu, sigma] = values;
+
+      const budgetLeft = xs.map((x) => ({ x, y: scale.left * x ** exponent.left }));
+      const budgetRight = xs.map((x) => ({ x, y: scale.right * x ** exponent.right }));
+
+      const multiplierMin = Math.exp(Math.min(mu.left - 3 * sigma.left, mu.right - 3 * sigma.right));
+      const multiplierMax = Math.exp(Math.max(mu.left + 3 * sigma.left, mu.right + 3 * sigma.right));
+      const multiplierXs = geometricRange(multiplierMin, multiplierMax, 180);
+
+      const multiplierLeft = multiplierXs.map((x) => ({ x, y: lognormalPdf(x, mu.left, sigma.left) }));
+      const multiplierRight = multiplierXs.map((x) => ({ x, y: lognormalPdf(x, mu.right, sigma.right) }));
+
+      const expectedLeft = Math.exp(mu.left + 0.5 * sigma.left ** 2);
+      const expectedRight = Math.exp(mu.right + 0.5 * sigma.right ** 2);
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'buy_quad',
+          parameters: values,
+          budgetLeft,
+          budgetRight,
+          multiplierLeft,
+          multiplierRight,
+          expectedMultiplier: {
+            left: expectedLeft,
+            right: expectedRight,
+            delta: deltaStat(expectedLeft, expectedRight)
+          },
+          domain
+        }
+      };
+    }
+
+    default:
+      throw new Error(`Unsupported format for ${meta.id}`);
+  }
+}
+
+export function getVersions(repoRoot: string): string[] {
+  return listVersions(path.join(repoRoot, 'input-data-versions'));
+}
+
+export function getParameterCatalog() {
+  return PARAMETER_CATALOG;
+}
+
+export function compareParameters(
+  repoRoot: string,
+  leftVersion: string,
+  rightVersion: string,
+  ids: string[],
+  provenanceScope: ProvenanceScope = 'range'
+): CompareResponse {
+  ensureVersionExists(repoRoot, leftVersion);
+  ensureVersionExists(repoRoot, rightVersion);
+
+  const leftConfig = parseConfigFile(getConfigPath(repoRoot, leftVersion));
+  const rightConfig = parseConfigFile(getConfigPath(repoRoot, rightVersion));
+  const versionNotes = loadVersionNotes(repoRoot);
+
+  const catalogById = new Map(PARAMETER_CATALOG.map((meta) => [meta.id, meta]));
+  const selected = (ids.length > 0 ? ids : PARAMETER_CATALOG.map((meta) => meta.id)).map((id) => {
+    const meta = catalogById.get(id);
+    if (!meta) {
+      throw new Error(`Unknown parameter id: ${id}`);
+    }
+    return meta;
+  });
+
+  const context: CompareContext = {
+    repoRoot,
+    leftVersion,
+    rightVersion,
+    leftConfig,
+    rightConfig,
+    versionNotes,
+    provenanceScope
+  };
+
+  return {
+    left: leftVersion,
+    right: rightVersion,
+    items: selected.map((meta) => buildCompareItem(context, meta))
+  };
+}
