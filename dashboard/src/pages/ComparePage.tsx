@@ -67,6 +67,7 @@ export function ComparePage() {
   const [isSetupOpen, setIsSetupOpen] = useState<boolean>(true);
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>('all');
   const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({});
+  const defaultOpenGroup = GROUP_ORDER[0];
 
   useEffect(() => {
     const load = async () => {
@@ -176,7 +177,19 @@ export function ComparePage() {
   }, [compareData, mode]);
 
   useEffect(() => {
+    if (!compareData) {
+      return;
+    }
+
     setSectionOpen((current) => {
+      if (Object.keys(current).length === 0) {
+        const seeded: Record<string, boolean> = {};
+        for (const groupName of GROUP_ORDER) {
+          seeded[groupName] = groupName === defaultOpenGroup;
+        }
+        return seeded;
+      }
+
       let changed = false;
       const nextState = { ...current };
       for (const groupName of GROUP_ORDER) {
@@ -187,7 +200,7 @@ export function ComparePage() {
       }
       return changed ? nextState : current;
     });
-  }, [compareData]);
+  }, [compareData, defaultOpenGroup]);
 
   const toggleId = (id: string) => {
     setSelectedIds((current) => {
@@ -394,8 +407,13 @@ export function ComparePage() {
 
                 {open && (
                   <div className="result-group-body">
-                    {items.map((item) => (
-                      <CompareCard key={item.id} item={item} mode={mode} />
+                    {items.map((item, index) => (
+                      <CompareCard
+                        key={item.id}
+                        item={item}
+                        mode={mode}
+                        defaultExpanded={groupName === defaultOpenGroup && index === 0}
+                      />
                     ))}
                   </div>
                 )}

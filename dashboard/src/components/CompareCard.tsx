@@ -6,6 +6,7 @@ import { EChart } from './EChart';
 interface CompareCardProps {
   item: CompareResult;
   mode: 'single' | 'compare';
+  defaultExpanded?: boolean;
 }
 
 function formatNumber(value: number): string {
@@ -395,9 +396,10 @@ function itemIsUpdated(item: CompareResult, mode: 'single' | 'compare'): boolean
   return mode === 'single' ? item.changeOriginsInRange.length > 0 : !item.unchanged;
 }
 
-export function CompareCard({ item, mode }: CompareCardProps) {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+export function CompareCard({ item, mode, defaultExpanded = false }: CompareCardProps) {
+  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
   const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
+  const [isMoreInfoOpen, setIsMoreInfoOpen] = useState<boolean>(false);
 
   const updated = itemIsUpdated(item, mode);
 
@@ -651,100 +653,111 @@ export function CompareCard({ item, mode }: CompareCardProps) {
             </div>
           )}
 
-          <div className="card-meta">
+          <div className="card-description">
             <p>{item.explanation}</p>
-            <div className="provenance-block">
-              <h4>
-                {mode === 'single'
-                  ? `Change provenance (through ${item.rightVersion})`
-                  : `Change provenance (${item.leftVersion}, ${item.rightVersion}]`}
-              </h4>
-              {item.changeOriginsInRange.length === 0 ? (
-                <p className="provenance-empty">No tracked update metadata in selected scope.</p>
-              ) : (
-                <ul className="provenance-list">
-                  {item.changeOriginsInRange.map((origin) => (
-                    <li key={`${item.id}-${origin.versionId}`}>
-                      <div className="provenance-head">
-                        <strong>{origin.versionId}</strong>
-                        <span className={`validation-status ${origin.validationStatus}`}>
-                          {validationStatusLabel(origin.validationStatus)}
-                        </span>
-                      </div>
-                      <p>{origin.description}</p>
-                      <p>
-                        <b>Validation dataset:</b> {origin.validationDataset}
-                      </p>
-                      <p>
-                        <b>Updated data sources:</b>{' '}
-                        {origin.updatedDataSources.length > 0 ? origin.updatedDataSources.join(', ') : 'n/a'}
-                      </p>
-                      <p>
-                        <b>Calibration files:</b> {origin.calibrationFiles.length > 0 ? origin.calibrationFiles.join(', ') : 'n/a'}
-                      </p>
-                      <p>
-                        <b>Config parameters:</b> {origin.configParameters.length > 0 ? origin.configParameters.join(', ') : 'n/a'}
-                      </p>
-                      {origin.methodVariations.length > 0 && (
-                        <div className="method-variation-block">
-                          <p>
-                            <b>Method improvements</b>
-                          </p>
-                          <ul>
-                            {origin.methodVariations.map((variation, index) => (
-                              <li key={`${origin.versionId}-variation-${index}`}>
-                                <p>
-                                  <b>Scope:</b> {variation.configParameters.join(', ')}
-                                </p>
-                                <p>
-                                  <b>Improvement:</b> {variation.improvementSummary}
-                                </p>
-                                <p>
-                                  <b>Why:</b> {variation.whyChanged}
-                                </p>
-                                {variation.methodChosen && (
-                                  <p>
-                                    <b>Method chosen:</b> {variation.methodChosen}
-                                  </p>
-                                )}
-                                {variation.decisionLogic && (
-                                  <p>
-                                    <b>Decision logic:</b> {variation.decisionLogic}
-                                  </p>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <dl>
-              <dt>Config keys</dt>
-              <dd>{item.sourceInfo.configKeys.join(', ')}</dd>
-              <dt>Left source</dt>
-              <dd>
-                <code>{item.sourceInfo.configPathLeft}</code>
-                {item.sourceInfo.dataFilesLeft.map((file) => (
-                  <div key={file}>
-                    <code>{file}</code>
-                  </div>
-                ))}
-              </dd>
-              <dt>Right source</dt>
-              <dd>
-                <code>{item.sourceInfo.configPathRight}</code>
-                {item.sourceInfo.dataFilesRight.map((file) => (
-                  <div key={file}>
-                    <code>{file}</code>
-                  </div>
-                ))}
-              </dd>
-            </dl>
           </div>
+
+          <div className="card-section">
+            <button type="button" className="table-toggle" onClick={() => setIsMoreInfoOpen((current) => !current)}>
+              {isMoreInfoOpen ? 'Hide provenance & sources' : 'Provenance & sources'}
+            </button>
+          </div>
+
+          {isMoreInfoOpen && (
+            <div className="card-meta">
+              <div className="provenance-block">
+                <h4>
+                  {mode === 'single'
+                    ? `Change provenance (through ${item.rightVersion})`
+                    : `Change provenance (${item.leftVersion}, ${item.rightVersion}]`}
+                </h4>
+                {item.changeOriginsInRange.length === 0 ? (
+                  <p className="provenance-empty">No tracked update metadata in selected scope.</p>
+                ) : (
+                  <ul className="provenance-list">
+                    {item.changeOriginsInRange.map((origin) => (
+                      <li key={`${item.id}-${origin.versionId}`}>
+                        <div className="provenance-head">
+                          <strong>{origin.versionId}</strong>
+                          <span className={`validation-status ${origin.validationStatus}`}>
+                            {validationStatusLabel(origin.validationStatus)}
+                          </span>
+                        </div>
+                        <p>{origin.description}</p>
+                        <p>
+                          <b>Validation dataset:</b> {origin.validationDataset}
+                        </p>
+                        <p>
+                          <b>Updated data sources:</b>{' '}
+                          {origin.updatedDataSources.length > 0 ? origin.updatedDataSources.join(', ') : 'n/a'}
+                        </p>
+                        <p>
+                          <b>Calibration files:</b> {origin.calibrationFiles.length > 0 ? origin.calibrationFiles.join(', ') : 'n/a'}
+                        </p>
+                        <p>
+                          <b>Config parameters:</b> {origin.configParameters.length > 0 ? origin.configParameters.join(', ') : 'n/a'}
+                        </p>
+                        {origin.methodVariations.length > 0 && (
+                          <div className="method-variation-block">
+                            <p>
+                              <b>Method improvements</b>
+                            </p>
+                            <ul>
+                              {origin.methodVariations.map((variation, index) => (
+                                <li key={`${origin.versionId}-variation-${index}`}>
+                                  <p>
+                                    <b>Scope:</b> {variation.configParameters.join(', ')}
+                                  </p>
+                                  <p>
+                                    <b>Improvement:</b> {variation.improvementSummary}
+                                  </p>
+                                  <p>
+                                    <b>Why:</b> {variation.whyChanged}
+                                  </p>
+                                  {variation.methodChosen && (
+                                    <p>
+                                      <b>Method chosen:</b> {variation.methodChosen}
+                                    </p>
+                                  )}
+                                  {variation.decisionLogic && (
+                                    <p>
+                                      <b>Decision logic:</b> {variation.decisionLogic}
+                                    </p>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <dl>
+                <dt>Config keys</dt>
+                <dd>{item.sourceInfo.configKeys.join(', ')}</dd>
+                <dt>Left source</dt>
+                <dd>
+                  <code>{item.sourceInfo.configPathLeft}</code>
+                  {item.sourceInfo.dataFilesLeft.map((file) => (
+                    <div key={file}>
+                      <code>{file}</code>
+                    </div>
+                  ))}
+                </dd>
+                <dt>Right source</dt>
+                <dd>
+                  <code>{item.sourceInfo.configPathRight}</code>
+                  {item.sourceInfo.dataFilesRight.map((file) => (
+                    <div key={file}>
+                      <code>{file}</code>
+                    </div>
+                  ))}
+                </dd>
+              </dl>
+            </div>
+          )}
         </>
       )}
     </article>

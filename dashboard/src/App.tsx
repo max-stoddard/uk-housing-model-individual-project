@@ -25,7 +25,7 @@ export function App() {
         </Routes>
       </main>
 
-      <footer className="app-footer">Copyright 2025 Max Stoddard</footer>
+      <footer className="app-footer">© 2026 Max Stoddard. All rights reserved.</footer>
     </div>
   );
 }

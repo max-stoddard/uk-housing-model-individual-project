@@ -588,6 +588,18 @@ code {
   color: var(--muted);
 }
 
+.card-description {
+  background: #f6f9f6;
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.7rem;
+}
+
+.card-description p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .provenance-block {
   margin-bottom: 0.7rem;
   padding: 0.55rem;

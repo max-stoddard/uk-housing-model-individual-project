@@ -8,6 +8,15 @@ interface CatalogResponse {
   items: ParameterCardMeta[];
 }
 
+interface GitStatsResponse {
+  baseCommit: string;
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
+  lineChanges: number;
+  commitCount: number;
+}
+
 export async function fetchVersions(): Promise<string[]> {
   const response = await fetch('/api/versions');
   if (!response.ok) {
@@ -24,6 +33,14 @@ export async function fetchCatalog(): Promise<ParameterCardMeta[]> {
   }
   const payload = (await response.json()) as CatalogResponse;
   return payload.items;
+}
+
+export async function fetchGitStats(): Promise<GitStatsResponse> {
+  const response = await fetch('/api/git-stats');
+  if (!response.ok) {
+    throw new Error('Failed to fetch git stats');
+  }
+  return (await response.json()) as GitStatsResponse;
 }
 
 export async function fetchCompare(
