@@ -34,9 +34,9 @@ Dashboard API environment variables:
 - `DASHBOARD_API_PORT` (local fallback): HTTP port when `PORT` is not set.
 - `DASHBOARD_CORS_ORIGIN` (optional): allowed browser origin for cross-origin requests (for split frontend/API deploys).
 - `DASHBOARD_GIT_STATS_BASE_COMMIT` (optional): git base commit used by `/api/git-stats`.
-- `DASHBOARD_GITHUB_REPO` (optional): GitHub repository slug used for `/api/git-stats` fallback (default `max-stoddard/UK-Housing-Market-ABM`).
-- `DASHBOARD_GITHUB_BRANCH` (optional): branch used for `/api/git-stats` fallback commit traversal (default `master`).
-- `DASHBOARD_GITHUB_TOKEN` (optional): GitHub token to raise rate limits for `/api/git-stats` fallback requests.
+- `DASHBOARD_GITHUB_REPO` (optional): GitHub repository slug used for `/api/git-stats` (default `max-stoddard/UK-Housing-Market-ABM`).
+- `DASHBOARD_GITHUB_BRANCH` (optional): branch used for `/api/git-stats` commit traversal (default `master`).
+- `DASHBOARD_GITHUB_TOKEN` (optional): GitHub token to raise rate limits for `/api/git-stats` requests.
 
 Health endpoint:
 
@@ -44,16 +44,18 @@ Health endpoint:
 
 `/api/git-stats` behavior:
 
-- tries local git stats first (`git diff --shortstat` + `git rev-list` from base commit to `HEAD`)
-- if local git metadata is unavailable in deployed environments, falls back to GitHub commit APIs:
+- always uses GitHub APIs (same behavior locally and in deployed environments):
+  - validates the configured base commit with compare API
   - traverses commits from `HEAD` back to the configured base commit
   - aggregates `insertions`, `deletions`, and weekly totals from commit details
   - computes `filesChanged` as unique files touched across commits in range (avoids compare-API 300-file cap)
-- if both methods fail, returns a safe zero-valued payload so homepage rendering remains stable
+- if GitHub requests fail, API returns a safe zero-valued payload so homepage rendering remains stable
 - response includes `weekly` metrics for rolling last 7 days:
   - `weekly.filesChanged`
   - `weekly.lineChanges`
   - `weekly.commitCount`
+
+For reliable local testing and production stability, set `DASHBOARD_GITHUB_TOKEN` to an authenticated token with read access.
 
 ## Render Deployment
 

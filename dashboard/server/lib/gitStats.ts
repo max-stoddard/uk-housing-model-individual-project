@@ -1,5 +1,3 @@
-import { execFileSync } from 'node:child_process';
-
 interface WeeklyGitStats {
   filesChanged: number;
   lineChanges: number;
@@ -60,7 +58,6 @@ const WEEK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const GITHUB_COMMITS_PER_PAGE = 100;
 const GITHUB_MAX_PAGES = 200;
 const GITHUB_DETAIL_CONCURRENCY = 10;
-const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 const githubStatsCache = new Map<string, CachedGitHubStats>();
 
 function asErrorMessage(value: unknown): string {
@@ -86,68 +83,8 @@ export function buildZeroGitStats(baseCommit: string): GitStatsPayload {
   };
 }
 
-function parseShortStatLine(output: string) {
-  const files = Number(output.match(/(\d+)\s+files?\s+changed/)?.[1] ?? 0);
-  const insertions = Number(output.match(/(\d+)\s+insertions?\(\+\)/)?.[1] ?? 0);
-  const deletions = Number(output.match(/(\d+)\s+deletions?\(-\)/)?.[1] ?? 0);
-  return {
-    filesChanged: files,
-    insertions,
-    deletions,
-    lineChanges: insertions + deletions
-  };
-}
-
 function getSinceIsoForWeeklyWindow(): string {
   return new Date(Date.now() - WEEK_WINDOW_MS).toISOString();
-}
-
-function readGitNumber(repoRoot: string, args: string[]): number {
-  const value = Number(
-    execFileSync('git', args, {
-      cwd: repoRoot,
-      encoding: 'utf-8'
-    }).trim()
-  );
-  return Number.isFinite(value) ? value : 0;
-}
-
-function readGitString(repoRoot: string, args: string[]): string {
-  return execFileSync('git', args, {
-    cwd: repoRoot,
-    encoding: 'utf-8'
-  }).trim();
-}
-
-function getLocalWeeklyStats(repoRoot: string, sinceIso: string): WeeklyGitStats {
-  const cutoffCommit = readGitString(repoRoot, ['rev-list', '-1', `--before=${sinceIso}`, 'HEAD']);
-  const weeklyDiffBase = cutoffCommit || EMPTY_TREE_HASH;
-  const weeklyShortStat = readGitString(repoRoot, ['diff', '--shortstat', weeklyDiffBase, 'HEAD']);
-  const weeklyStat = parseShortStatLine(weeklyShortStat);
-  const weeklyCommitCount = readGitNumber(repoRoot, ['rev-list', '--count', `--since=${sinceIso}`, 'HEAD']);
-
-  return {
-    filesChanged: weeklyStat.filesChanged,
-    lineChanges: weeklyStat.lineChanges,
-    commitCount: weeklyCommitCount
-  };
-}
-
-function getLocalGitStats(repoRoot: string, baseCommit: string): GitStatsPayload {
-  const shortStat = execFileSync('git', ['diff', '--shortstat', baseCommit], {
-    cwd: repoRoot,
-    encoding: 'utf-8'
-  }).trim();
-  const commitCount = readGitNumber(repoRoot, ['rev-list', '--count', `${baseCommit}..HEAD`]);
-  const sinceIso = getSinceIsoForWeeklyWindow();
-  const weekly = getLocalWeeklyStats(repoRoot, sinceIso);
-
-  return {
-    baseCommit,
-    ...parseShortStatLine(shortStat),
-    commitCount: Number.isFinite(commitCount) ? commitCount : 0,
-    weekly
-  };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -373,7 +310,7 @@ async function getGitHubWeeklyStats(
   };
 }
 
-async function getGitHubCompareStats(
+async function getGitHubStats(
   baseCommit: string,
   githubRepo: string,
   githubBranch: string,
@@ -404,9 +341,9 @@ async function getGitHubCompareStats(
   });
   const commitDetails = await getGitHubCommitDetails(owner, name, commitShas, headers, detailCache);
   const aggregate = aggregateGitHubCommitDetails(commitDetails);
+
   const weeklySinceIso = getSinceIsoForWeeklyWindow();
   let weekly: WeeklyGitStats;
-
   try {
     weekly = await getGitHubWeeklyStats(owner, name, githubBranch, weeklySinceIso, headers, detailCache);
   } catch {
@@ -441,14 +378,8 @@ export async function getGitStats(options: GitStatsOptions): Promise<GitStatsPay
   const githubToken = options.githubToken?.trim() ?? '';
 
   try {
-    return getLocalGitStats(options.repoRoot, options.baseCommit);
-  } catch (localError) {
-    try {
-      return await getGitHubCompareStats(options.baseCommit, githubRepo, githubBranch, githubToken);
-    } catch (githubError) {
-      throw new Error(
-        `Local git stats failed (${asErrorMessage(localError)}); GitHub fallback failed (${asErrorMessage(githubError)})`
-      );
-    }
+    return await getGitHubStats(options.baseCommit, githubRepo, githubBranch, githubToken);
+  } catch (githubError) {
+    throw new Error(`GitHub stats failed (${asErrorMessage(githubError)})`);
   }
 }

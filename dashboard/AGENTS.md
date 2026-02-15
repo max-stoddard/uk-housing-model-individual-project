@@ -44,13 +44,12 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - API runtime env precedence:
   - port: `PORT` first, fallback `DASHBOARD_API_PORT`, fallback `8787`.
   - CORS allowlist (optional): `DASHBOARD_CORS_ORIGIN`.
-  - git-stats fallback GitHub config (optional): `DASHBOARD_GITHUB_REPO`, `DASHBOARD_GITHUB_BRANCH`, `DASHBOARD_GITHUB_TOKEN`.
+  - git-stats GitHub config (optional): `DASHBOARD_GITHUB_REPO`, `DASHBOARD_GITHUB_BRANCH`, `DASHBOARD_GITHUB_TOKEN`.
 - `/api/git-stats` resolution order:
-  - local git compare from base commit to `HEAD`.
-  - if local git is unavailable, fallback to GitHub commit APIs (commit-list + commit-detail aggregation).
-  - if both fail, return zero-valued stats payload to keep homepage stable.
+  - GitHub commit APIs only (compare validation + commit-list + commit-detail aggregation).
+  - if GitHub requests fail, return zero-valued stats payload to keep homepage stable.
   - payload includes `weekly` rolling 7-day activity stats (`filesChanged`, `lineChanges`, `commitCount`).
-  - fallback semantics: `filesChanged` is unique files touched across commits in range, and `lineChanges` is aggregated commit-level additions+deletions (activity metric).
+  - `filesChanged` is unique files touched across commits in range, and `lineChanges` is aggregated commit-level additions+deletions (activity metric).
 - The dashboard currently compares only the parameter groups explicitly listed in `dashboard/shared/catalog.ts`.
 - Version selector source of truth is folder snapshots under `input-data-versions/` (filtered and sorted by `server/lib/versioning.ts`).
 - Structured version metadata source of truth is `input-data-versions/version-notes.json`.
@@ -62,8 +61,8 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 
 ## Best Practices
 - Keep `shared/types.ts` and backend response shapes synchronized before changing UI rendering.
-- Keep `/api/git-stats` resilient in deployed environments where git metadata may be shallow or unavailable; fallback payloads must keep homepage rendering intact.
-- Keep `/api/git-stats` response shape stable even when data source changes between local git and GitHub fallback.
+- Keep `/api/git-stats` resilient in deployed environments where git metadata may be shallow or unavailable; zero fallback payloads must keep homepage rendering intact.
+- Keep `/api/git-stats` response shape stable even with GitHub-only sourcing.
 - Keep fallback logic independent of GitHub compare `files` length because that endpoint truncates file arrays at 300 entries.
 - Add or change compare cards only through `shared/catalog.ts`; avoid hardcoding IDs in UI components.
 - Prefer extending `server/lib/service.ts` with clear, format-specific helpers rather than one large branching block.
