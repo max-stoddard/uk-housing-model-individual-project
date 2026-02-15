@@ -37,10 +37,14 @@ services:
     envVars:
       - key: DASHBOARD_CORS_ORIGIN
         value: https://uk-housing-market-abm.onrender.com
+      - key: DASHBOARD_GIT_STATS_BASE_COMMIT
+        value: ed148b8d0028049529674299ae294a9597f99ab4
       - key: DASHBOARD_GITHUB_REPO
         value: max-stoddard/UK-Housing-Market-ABM
       - key: DASHBOARD_GITHUB_BRANCH
         value: master
+      - key: DASHBOARD_GITHUB_TOKEN
+        sync: false
     buildFilter:
       paths:
         - dashboard/server/**
