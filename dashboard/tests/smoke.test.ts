@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getGitStats } from '../server/lib/gitStats.js';
 import { compareParameters, getParameterCatalog, getVersions } from '../server/lib/service.js';
 import { getConfigPath, parseConfigFile, readNumericCsvRows, resolveConfigDataFilePath } from '../server/lib/io.js';
 import { loadVersionNotes } from '../server/lib/versionNotes.js';
@@ -235,184 +235,26 @@ assert.ok(
   'buy_quad provenance should include v3.8 as in_progress'
 );
 
-type MockFetchResult = { payload: unknown; status?: number } | null;
-type MockFetchHandler = (url: URL) => MockFetchResult;
-
-function asJsonResponse(payload: unknown, status = 200): Response {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: {
-      'content-type': 'application/json'
-    }
-  });
-}
-
-async function runWithMockFetch(handler: MockFetchHandler, run: () => Promise<void>): Promise<void> {
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
-    const requestUrl =
-      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    const parsedUrl = new URL(requestUrl);
-    const mocked = handler(parsedUrl);
-    if (mocked) {
-      return asJsonResponse(mocked.payload, mocked.status ?? 200);
-    }
-    return asJsonResponse({ message: `Unhandled mock URL: ${parsedUrl.toString()}` }, 404);
-  }) as typeof fetch;
-
-  try {
-    await run();
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-}
-
-function makeFiles(start: number, end: number): Array<{ filename: string; additions: number; deletions: number }> {
-  return Array.from({ length: end - start }, (_, offset) => {
-    const index = start + offset;
-    return {
-      filename: `file-${index}.txt`,
-      additions: 1,
-      deletions: 0
-    };
-  });
-}
-
-async function assertGitStatsFallbackAggregation(): Promise<void> {
-  await runWithMockFetch((url) => {
-    if (url.pathname === '/repos/example/repo/compare/base-sha...master') {
-      return {
-        payload: { total_commits: 3, files: [] }
-      };
-    }
-
-    if (url.pathname === '/repos/example/repo/commits') {
-      const page = url.searchParams.get('page');
-      const since = url.searchParams.get('since');
-      if (page !== '1') {
-        return { payload: [] };
-      }
-      if (since) {
-        return { payload: [{ sha: 'c3' }, { sha: 'c2' }] };
-      }
-      return {
-        payload: [{ sha: 'c3' }, { sha: 'c2' }, { sha: 'c1' }, { sha: 'base-sha' }]
-      };
-    }
-
-    if (url.pathname === '/repos/example/repo/commits/c3') {
-      return {
-        payload: {
-          stats: { additions: 10, deletions: 1 },
-          files: [
-            { filename: 'a.ts', additions: 6, deletions: 1 },
-            { filename: 'b.ts', additions: 4, deletions: 0 }
-          ]
-        }
-      };
-    }
-
-    if (url.pathname === '/repos/example/repo/commits/c2') {
-      return {
-        payload: {
-          stats: { additions: 5, deletions: 2 },
-          files: [
-            { filename: 'b.ts', additions: 2, deletions: 1 },
-            { filename: 'c.ts', additions: 3, deletions: 1 }
-          ]
-        }
-      };
-    }
-
-    if (url.pathname === '/repos/example/repo/commits/c1') {
-      return {
-        payload: {
-          stats: { additions: 1, deletions: 3 },
-          files: [{ filename: 'd.ts', additions: 1, deletions: 3 }]
-        }
-      };
-    }
-
-    return null;
-  }, async () => {
-    const stats = await getGitStats({
-      repoRoot: path.resolve(repoRoot, '__missing_repo_for_git_stats__'),
-      baseCommit: 'base-sha',
-      githubRepo: 'example/repo',
-      githubBranch: 'master',
-      githubToken: 'token'
-    });
-
-    assert.equal(stats.filesChanged, 4, 'Fallback filesChanged should count unique files across commit details');
-    assert.equal(stats.insertions, 16, 'Fallback insertions should aggregate commit additions');
-    assert.equal(stats.deletions, 6, 'Fallback deletions should aggregate commit deletions');
-    assert.equal(stats.lineChanges, 22, 'Fallback lineChanges should equal insertions + deletions');
-    assert.equal(stats.commitCount, 3, 'Fallback commitCount should equal traversed commit range');
-
-    assert.equal(stats.weekly.filesChanged, 3, 'Weekly filesChanged should count unique files in weekly commit range');
-    assert.equal(stats.weekly.lineChanges, 18, 'Weekly lineChanges should aggregate weekly additions + deletions');
-    assert.equal(stats.weekly.commitCount, 2, 'Weekly commitCount should reflect weekly commit range');
-  });
-}
-
-async function assertGitStatsFallbackAvoids300CapArtifact(): Promise<void> {
-  await runWithMockFetch((url) => {
-    if (url.pathname === '/repos/example/cap-repo/compare/base-cap...master') {
-      return {
-        payload: { total_commits: 2, files: [] }
-      };
-    }
-
-    if (url.pathname === '/repos/example/cap-repo/commits') {
-      const page = url.searchParams.get('page');
-      const since = url.searchParams.get('since');
-      if (page !== '1') {
-        return { payload: [] };
-      }
-      if (since) {
-        return { payload: [{ sha: 'd2' }] };
-      }
-      return {
-        payload: [{ sha: 'd2' }, { sha: 'd1' }, { sha: 'base-cap' }]
-      };
-    }
-
-    if (url.pathname === '/repos/example/cap-repo/commits/d2') {
-      return {
-        payload: {
-          stats: { additions: 220, deletions: 20 },
-          files: makeFiles(0, 220)
-        }
-      };
-    }
-
-    if (url.pathname === '/repos/example/cap-repo/commits/d1') {
-      return {
-        payload: {
-          stats: { additions: 220, deletions: 40 },
-          files: makeFiles(180, 400)
-        }
-      };
-    }
-
-    return null;
-  }, async () => {
-    const stats = await getGitStats({
-      repoRoot: path.resolve(repoRoot, '__missing_repo_for_git_stats_cap__'),
-      baseCommit: 'base-cap',
-      githubRepo: 'example/cap-repo',
-      githubBranch: 'master',
-      githubToken: 'token'
-    });
-
-    assert.equal(stats.filesChanged, 400, 'Fallback filesChanged should not be capped at 300');
-    assert.ok(stats.filesChanged > 300, 'Fallback filesChanged should exceed GitHub compare file cap when data supports it');
-    assert.equal(stats.commitCount, 2, 'Fallback commitCount should include both commits in range');
-    assert.equal(stats.weekly.filesChanged, 220, 'Weekly filesChanged should reflect weekly commit details');
-  });
-}
-
-await assertGitStatsFallbackAggregation();
-await assertGitStatsFallbackAvoids300CapArtifact();
+const gitStatsSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/lib/gitStats.ts'), 'utf-8');
+assert.ok(
+  gitStatsSource.includes("execFileSync('git', ['diff', '--shortstat', baseCommit]"),
+  'git-stats should compute totals with local git shortstat semantics'
+);
+assert.ok(
+  gitStatsSource.includes("['rev-list', '--count', `${baseCommit}..HEAD`]"),
+  'git-stats should compute total commits with local git rev-list semantics'
+);
+assert.ok(
+  gitStatsSource.includes("['diff', '--shortstat', weeklyDiffBase, 'HEAD']"),
+  'git-stats should compute weekly totals with local git shortstat semantics'
+);
+assert.ok(
+  gitStatsSource.includes("['rev-list', '--count', `--since=${sinceIso}`, 'HEAD']"),
+  'git-stats should compute weekly commits with local git rev-list semantics'
+);
+assert.ok(
+  !gitStatsSource.includes('api.github.com'),
+  'git-stats should not use GitHub API sourcing for homepage metrics'
+);
 
 console.log('Smoke tests passed.');

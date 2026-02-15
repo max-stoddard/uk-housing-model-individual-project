@@ -13,9 +13,6 @@ const app = express();
 const host = '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
-const githubRepo = process.env.DASHBOARD_GITHUB_REPO ?? 'max-stoddard/UK-Housing-Market-ABM';
-const githubBranch = process.env.DASHBOARD_GITHUB_BRANCH ?? 'master';
-const githubToken = process.env.DASHBOARD_GITHUB_TOKEN ?? '';
 const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
 
 app.use(express.json());
@@ -62,10 +59,7 @@ app.get('/api/git-stats', async (_req, res) => {
   try {
     const stats = await getGitStats({
       repoRoot,
-      baseCommit: gitStatsBaseCommit,
-      githubRepo,
-      githubBranch,
-      githubToken
+      baseCommit: gitStatsBaseCommit
     });
     res.json(stats);
   } catch (error) {

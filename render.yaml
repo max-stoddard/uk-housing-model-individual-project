@@ -31,7 +31,7 @@ services:
     branch: master
     autoDeployTrigger: checksPass
     rootDir: dashboard
-    buildCommand: npm ci --include=dev
+    buildCommand: git fetch --unshallow || true && npm ci --include=dev
     startCommand: npm run start:server
     healthCheckPath: /healthz
     envVars:
