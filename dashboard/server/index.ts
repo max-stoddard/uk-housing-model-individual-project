@@ -1,8 +1,8 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 import { compareParameters, getParameterCatalog, getVersions } from './lib/service';
+import { buildZeroGitStats, getGitStats } from './lib/gitStats';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +13,9 @@ const app = express();
 const host = '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
+const githubRepo = process.env.DASHBOARD_GITHUB_REPO ?? 'max-stoddard/UK-Housing-Market-ABM';
+const githubBranch = process.env.DASHBOARD_GITHUB_BRANCH ?? 'master';
+const githubToken = process.env.DASHBOARD_GITHUB_TOKEN ?? '';
 const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
 
 app.use(express.json());
@@ -38,18 +41,6 @@ app.use((req, res, next) => {
   next();
 });
 
-function parseShortStat(output: string) {
-  const files = Number(output.match(/(\d+)\s+files?\s+changed/)?.[1] ?? 0);
-  const insertions = Number(output.match(/(\d+)\s+insertions?\(\+\)/)?.[1] ?? 0);
-  const deletions = Number(output.match(/(\d+)\s+deletions?\(-\)/)?.[1] ?? 0);
-  return {
-    filesChanged: files,
-    insertions,
-    deletions,
-    lineChanges: insertions + deletions
-  };
-}
-
 app.get('/healthz', (_req, res) => {
   res.json({ ok: true });
 });
@@ -67,34 +58,19 @@ app.get('/api/parameter-catalog', (_req, res) => {
   res.json({ items: getParameterCatalog() });
 });
 
-app.get('/api/git-stats', (_req, res) => {
+app.get('/api/git-stats', async (_req, res) => {
   try {
-    const shortStat = execFileSync('git', ['diff', '--shortstat', gitStatsBaseCommit], {
-      cwd: repoRoot,
-      encoding: 'utf-8'
-    }).trim();
-    const commitCount = Number(
-      execFileSync('git', ['rev-list', '--count', `${gitStatsBaseCommit}..HEAD`], {
-        cwd: repoRoot,
-        encoding: 'utf-8'
-      }).trim()
-    );
-
-    res.json({
+    const stats = await getGitStats({
+      repoRoot,
       baseCommit: gitStatsBaseCommit,
-      ...parseShortStat(shortStat),
-      commitCount: Number.isFinite(commitCount) ? commitCount : 0
+      githubRepo,
+      githubBranch,
+      githubToken
     });
+    res.json(stats);
   } catch (error) {
-    console.warn(`[dashboard-api] git stats fallback enabled: ${(error as Error).message}`);
-    res.json({
-      baseCommit: gitStatsBaseCommit,
-      filesChanged: 0,
-      insertions: 0,
-      deletions: 0,
-      lineChanges: 0,
-      commitCount: 0
-    });
+    console.warn(`[dashboard-api] git stats unavailable: ${(error as Error).message}`);
+    res.json(buildZeroGitStats(gitStatsBaseCommit));
   }
 });
 

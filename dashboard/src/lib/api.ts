@@ -15,6 +15,11 @@ interface GitStatsResponse {
   deletions: number;
   lineChanges: number;
   commitCount: number;
+  weekly: {
+    filesChanged: number;
+    lineChanges: number;
+    commitCount: number;
+  };
 }
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
