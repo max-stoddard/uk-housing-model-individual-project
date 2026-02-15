@@ -1,0 +1,47 @@
+# Author: Max Stoddard
+services:
+  - type: web
+    runtime: static
+    name: uk-housing-market-abm
+    plan: free
+    branch: main
+    autoDeployTrigger: checksPass
+    rootDir: dashboard
+    buildCommand: npm ci --include=dev && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://uk-housing-market-abm-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    buildFilter:
+      paths:
+        - dashboard/src/**
+        - dashboard/shared/**
+        - dashboard/package.json
+        - dashboard/package-lock.json
+        - dashboard/vite.config.ts
+        - dashboard/index.html
+
+  - type: web
+    runtime: node
+    name: uk-housing-market-abm-api
+    plan: free
+    branch: main
+    autoDeployTrigger: checksPass
+    rootDir: dashboard
+    buildCommand: npm ci --include=dev
+    startCommand: npm run start:server
+    healthCheckPath: /healthz
+    envVars:
+      - key: DASHBOARD_CORS_ORIGIN
+        value: https://uk-housing-market-abm.onrender.com
+    buildFilter:
+      paths:
+        - dashboard/server/**
+        - dashboard/shared/**
+        - dashboard/package.json
+        - dashboard/package-lock.json
+        - input-data-versions/**

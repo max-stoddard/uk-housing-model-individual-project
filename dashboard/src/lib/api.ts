@@ -17,8 +17,15 @@ interface GitStatsResponse {
   commitCount: number;
 }
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
+
+function buildApiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return apiBaseUrl ? `${apiBaseUrl}${normalizedPath}` : normalizedPath;
+}
+
 export async function fetchVersions(): Promise<string[]> {
-  const response = await fetch('/api/versions');
+  const response = await fetch(buildApiUrl('/api/versions'));
   if (!response.ok) {
     throw new Error('Failed to fetch versions');
   }
@@ -27,7 +34,7 @@ export async function fetchVersions(): Promise<string[]> {
 }
 
 export async function fetchCatalog(): Promise<ParameterCardMeta[]> {
-  const response = await fetch('/api/parameter-catalog');
+  const response = await fetch(buildApiUrl('/api/parameter-catalog'));
   if (!response.ok) {
     throw new Error('Failed to fetch parameter catalog');
   }
@@ -36,7 +43,7 @@ export async function fetchCatalog(): Promise<ParameterCardMeta[]> {
 }
 
 export async function fetchGitStats(): Promise<GitStatsResponse> {
-  const response = await fetch('/api/git-stats');
+  const response = await fetch(buildApiUrl('/api/git-stats'));
   if (!response.ok) {
     throw new Error('Failed to fetch git stats');
   }
@@ -56,7 +63,7 @@ export async function fetchCompare(
     provenanceScope
   });
 
-  const response = await fetch(`/api/compare?${params.toString()}`);
+  const response = await fetch(`${buildApiUrl('/api/compare')}?${params.toString()}`);
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
     throw new Error(payload.error ?? 'Failed to fetch comparison');

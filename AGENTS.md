@@ -29,6 +29,8 @@ If Python-script context is needed, read the instructions in [`scripts/python/AG
 - `dashboard/shared`: Shared TypeScript types and parameter catalog metadata.
 - `dashboard/AGENTS.md`: Folder-scoped dashboard guide for structure, API contracts, and agent best practices.
 - `run-dashboard.sh`: Root entrypoint to install/start dashboard API + frontend locally.
+- `render.yaml`: Render Blueprint for deploying dashboard static site + API service from this monorepo.
+- `.github/workflows/dashboard-ci.yml`: GitHub Actions deployment gate for dashboard lint/build/smoke checks.
 - `src/main/java`: Java model implementation (core simulation code).
 - `scripts/python`: Python calibration/validation/experiments and helper modules.
 - `scripts/python/calibration/ppd`: PPD house-price calibration entry modules.

@@ -10,10 +10,33 @@ const dashboardRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(dashboardRoot, '..');
 
 const app = express();
-const port = Number.parseInt(process.env.DASHBOARD_API_PORT ?? '8787', 10);
+const host = '0.0.0.0';
+const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
+const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
 
 app.use(express.json());
+app.use((req, res, next) => {
+  if (!corsOrigin) {
+    next();
+    return;
+  }
+
+  const requestOrigin = req.get('origin');
+  if (requestOrigin && requestOrigin === corsOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Vary', 'Origin');
+  }
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
+  next();
+});
 
 function parseShortStat(output: string) {
   const files = Number(output.match(/(\d+)\s+files?\s+changed/)?.[1] ?? 0);
@@ -26,6 +49,10 @@ function parseShortStat(output: string) {
     lineChanges: insertions + deletions
   };
 }
+
+app.get('/healthz', (_req, res) => {
+  res.json({ ok: true });
+});
 
 app.get('/api/versions', (_req, res) => {
   try {
@@ -59,7 +86,15 @@ app.get('/api/git-stats', (_req, res) => {
       commitCount: Number.isFinite(commitCount) ? commitCount : 0
     });
   } catch (error) {
-    res.status(500).json({ error: `Failed to read git stats: ${(error as Error).message}` });
+    console.warn(`[dashboard-api] git stats fallback enabled: ${(error as Error).message}`);
+    res.json({
+      baseCommit: gitStatsBaseCommit,
+      filesChanged: 0,
+      insertions: 0,
+      deletions: 0,
+      lineChanges: 0,
+      commitCount: 0
+    });
   }
 });
 
@@ -89,6 +124,6 @@ app.get('/api/compare', (req, res) => {
   }
 });
 
-app.listen(port, '127.0.0.1', () => {
-  console.log(`[dashboard-api] http://localhost:${port}`);
+app.listen(port, host, () => {
+  console.log(`[dashboard-api] listening on ${host}:${port}`);
 });

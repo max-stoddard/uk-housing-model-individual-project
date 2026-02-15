@@ -21,7 +21,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - `dashboard/src/lib/api.ts`: Frontend API calls.
 - `dashboard/src/lib/chartAxes.ts`: Canonical axis-title/unit mapping for all charted parameter cards.
 - `dashboard/server`: Express API server.
-- `dashboard/server/index.ts`: API route registration (`/api/versions`, `/api/parameter-catalog`, `/api/compare`).
+- `dashboard/server/index.ts`: API route registration (`/healthz`, `/api/versions`, `/api/parameter-catalog`, `/api/git-stats`, `/api/compare`).
 - `dashboard/server/lib/service.ts`: Comparison engine and payload builders.
 - `dashboard/server/lib/io.ts`: Config/CSV parsing helpers.
 - `dashboard/server/lib/versioning.ts`: Version discovery and semantic ordering.
@@ -33,9 +33,17 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 
 ## Runtime Contract
 - API endpoints:
+  - `GET /healthz`
   - `GET /api/versions`
   - `GET /api/parameter-catalog`
+  - `GET /api/git-stats`
   - `GET /api/compare?left=<version>&right=<version>&ids=<csv>&provenanceScope=range|through_right`
+- Frontend API base URL behavior:
+  - if `VITE_API_BASE_URL` is set, frontend calls `${VITE_API_BASE_URL}/api/*`.
+  - if unset, frontend calls relative `/api/*` (same-origin).
+- API runtime env precedence:
+  - port: `PORT` first, fallback `DASHBOARD_API_PORT`, fallback `8787`.
+  - CORS allowlist (optional): `DASHBOARD_CORS_ORIGIN`.
 - The dashboard currently compares only the parameter groups explicitly listed in `dashboard/shared/catalog.ts`.
 - Version selector source of truth is folder snapshots under `input-data-versions/` (filtered and sorted by `server/lib/versioning.ts`).
 - Structured version metadata source of truth is `input-data-versions/version-notes.json`.
@@ -47,6 +55,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 
 ## Best Practices
 - Keep `shared/types.ts` and backend response shapes synchronized before changing UI rendering.
+- Keep `/api/git-stats` resilient in deployed environments where git metadata may be shallow or unavailable; fallback payloads must keep homepage rendering intact.
 - Add or change compare cards only through `shared/catalog.ts`; avoid hardcoding IDs in UI components.
 - Prefer extending `server/lib/service.ts` with clear, format-specific helpers rather than one large branching block.
 - Keep step-rate handling for `national_insurance_rates` and `income_tax_rates` as piecewise-threshold logic (not mass rebinning).
@@ -75,6 +84,7 @@ From `dashboard/`:
 npm run lint
 npm run build
 npm run test:smoke
+npm run start:server
 ```
 
 From repo root:
@@ -82,6 +92,11 @@ From repo root:
 ```bash
 ./run-dashboard.sh
 ```
+
+Deployment workflow-critical files live at repository root:
+
+- `render.yaml`: Render Blueprint for static web + API web services.
+- `.github/workflows/dashboard-ci.yml`: deploy-gating CI workflow for dashboard checks.
 
 ## Guardrails
 - Do not read private datasets directly for dashboard work unless specifically required and approved.
