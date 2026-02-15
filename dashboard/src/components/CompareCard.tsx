@@ -17,6 +17,7 @@ import {
 interface CompareCardProps {
   item: CompareResult;
   mode: 'single' | 'compare';
+  inProgressVersions: string[];
   defaultExpanded?: boolean;
 }
 
@@ -38,6 +39,10 @@ function deltaClassName(value: number): string {
 
 function validationStatusLabel(status: string): string {
   return status === 'in_progress' ? 'In progress' : 'Complete';
+}
+
+function withInProgressLabel(version: string, inProgressVersions: Set<string>): string {
+  return inProgressVersions.has(version) ? `${version} (In progress)` : version;
 }
 
 function renderScalarTable(values: ScalarDatum[], mode: 'single' | 'compare') {
@@ -110,12 +115,25 @@ function buildAdaptiveHeatmapLayout(
   });
 }
 
-export function CompareCard({ item, mode, defaultExpanded = false }: CompareCardProps) {
+export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = false }: CompareCardProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
   const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
   const [isMoreInfoOpen, setIsMoreInfoOpen] = useState<boolean>(false);
 
   const updated = itemIsUpdated(item, mode);
+  const inProgressVersionSet = useMemo(() => new Set(inProgressVersions), [inProgressVersions]);
+  const leftVersionLabel = useMemo(
+    () => withInProgressLabel(item.leftVersion, inProgressVersionSet),
+    [item.leftVersion, inProgressVersionSet]
+  );
+  const rightVersionLabel = useMemo(
+    () => withInProgressLabel(item.rightVersion, inProgressVersionSet),
+    [item.rightVersion, inProgressVersionSet]
+  );
+  const hasInProgressOrigin = useMemo(
+    () => item.changeOriginsInRange.some((origin) => origin.validationStatus === 'in_progress'),
+    [item.changeOriginsInRange]
+  );
   const axisSpec = useMemo(() => getAxisSpec(item.id), [item.id]);
 
   const jointRanges = useMemo(() => {
@@ -174,7 +192,10 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
             <h3>{item.title}</h3>
           </span>
         </button>
-        <span className={`change-pill ${updated ? 'updated' : 'neutral'}`}>{updated ? 'Updated' : 'No change'}</span>
+        <div className="card-status-pills">
+          {hasInProgressOrigin && <span className="status-pill-in-progress">In progress</span>}
+          <span className={`change-pill ${updated ? 'updated' : 'neutral'}`}>{updated ? 'Updated' : 'No change'}</span>
+        </div>
       </header>
 
       {isExpanded && (
@@ -199,14 +220,14 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                   mode === 'single'
                     ? scalarSingleOption(
                         item.visualPayload.values,
-                        item.rightVersion,
+                        rightVersionLabel,
                         axisSpec.scalar.xTitle,
                         axisSpec.scalar.yTitle
                       )
                     : scalarOption(
                         item.visualPayload.values,
-                        item.leftVersion,
-                        item.rightVersion,
+                        leftVersionLabel,
+                        rightVersionLabel,
                         axisSpec.scalar.xTitle,
                         axisSpec.scalar.yTitle
                       )
@@ -221,8 +242,11 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               <EChart
                 option={
                   mode === 'single'
-                    ? binnedSingleOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle)
-                    : binnedOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle, axisSpec.binned.yDeltaTitle)
+                    ? binnedSingleOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle, rightVersionLabel)
+                    : binnedOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle, axisSpec.binned.yDeltaTitle, {
+                        leftLabel: leftVersionLabel,
+                        rightLabel: rightVersionLabel
+                      })
                 }
                 className="chart"
               />
@@ -234,7 +258,7 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
               {mode === 'single' ? (
                 <EChart
                   option={jointHeatmapOption({
-                    title: item.rightVersion,
+                    title: rightVersionLabel,
                     cells: item.visualPayload.matrix.right,
                     xLabels: item.visualPayload.matrix.xAxis.labels,
                     yLabels: item.visualPayload.matrix.yAxis.labels,
@@ -258,7 +282,7 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                   <div className="heatmap-grid heatmap-grid-compare">
                     <EChart
                       option={jointHeatmapOption({
-                        title: item.leftVersion,
+                        title: leftVersionLabel,
                         cells: item.visualPayload.matrix.left,
                         xLabels: item.visualPayload.matrix.xAxis.labels,
                         yLabels: item.visualPayload.matrix.yAxis.labels,
@@ -279,7 +303,7 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                     />
                     <EChart
                       option={jointHeatmapOption({
-                        title: item.rightVersion,
+                        title: rightVersionLabel,
                         cells: item.visualPayload.matrix.right,
                         xLabels: item.visualPayload.matrix.xAxis.labels,
                         yLabels: item.visualPayload.matrix.yAxis.labels,
@@ -331,15 +355,15 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                 option={
                   mode === 'single'
                     ? curveSingleOption(
-                        item.rightVersion,
+                        rightVersionLabel,
                         item.visualPayload.curveRight,
                         axisSpec.curve.xTitle,
                         axisSpec.curve.yTitle,
                         (value) => formatNumber(value)
                       )
                     : curveOption(
-                        item.leftVersion,
-                        item.rightVersion,
+                        leftVersionLabel,
+                        rightVersionLabel,
                         item.visualPayload.curveLeft,
                         item.visualPayload.curveRight,
                         axisSpec.curve.xTitle,
@@ -358,15 +382,15 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                 option={
                   mode === 'single'
                     ? curveSingleOption(
-                        item.rightVersion,
+                        rightVersionLabel,
                         item.visualPayload.curveRight,
                         axisSpec.curve.xTitle,
                         axisSpec.curve.yTitle,
                         (value) => formatNumber(value)
                       )
                     : curveOption(
-                        item.leftVersion,
-                        item.rightVersion,
+                        leftVersionLabel,
+                        rightVersionLabel,
                         item.visualPayload.curveLeft,
                         item.visualPayload.curveRight,
                         axisSpec.curve.xTitle,
@@ -397,15 +421,15 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                 option={
                   mode === 'single'
                     ? curveSingleOption(
-                        item.rightVersion,
+                        rightVersionLabel,
                         item.visualPayload.budgetRight,
                         axisSpec.buyBudget.xTitle,
                         axisSpec.buyBudget.yTitle,
                         (value) => formatNumber(value)
                       )
                     : curveOption(
-                        item.leftVersion,
-                        item.rightVersion,
+                        leftVersionLabel,
+                        rightVersionLabel,
                         item.visualPayload.budgetLeft,
                         item.visualPayload.budgetRight,
                         axisSpec.buyBudget.xTitle,
@@ -419,15 +443,15 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                 option={
                   mode === 'single'
                     ? curveSingleOption(
-                        item.rightVersion,
+                        rightVersionLabel,
                         item.visualPayload.multiplierRight,
                         axisSpec.buyMultiplier.xTitle,
                         axisSpec.buyMultiplier.yTitle,
                         (value) => formatNumber(value)
                       )
                     : curveOption(
-                        item.leftVersion,
-                        item.rightVersion,
+                        leftVersionLabel,
+                        rightVersionLabel,
                         item.visualPayload.multiplierLeft,
                         item.visualPayload.multiplierRight,
                         axisSpec.buyMultiplier.xTitle,

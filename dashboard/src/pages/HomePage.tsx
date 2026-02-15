@@ -99,6 +99,7 @@ function buildPreviewOption(item: CompareResult): EChartsOption {
 
 export function HomePage({ showDevFeatures }: HomePageProps) {
   const [versionsCount, setVersionsCount] = useState<number>(0);
+  const [inProgressVersions, setInProgressVersions] = useState<string[]>([]);
   const [latestVersion, setLatestVersion] = useState<string>('...');
   const [cardsCount, setCardsCount] = useState<number>(0);
   const [filesChanged, setFilesChanged] = useState<number>(0);
@@ -123,6 +124,7 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
       ]);
       const versions = versionsPayload.versions;
       setVersionsCount(versions.length);
+      setInProgressVersions(versionsPayload.inProgressVersions);
       setLatestVersion(versions[versions.length - 1] ?? 'n/a');
       setCardsCount(cards.length);
       setFilesChanged(gitStats.filesChanged);
@@ -145,6 +147,7 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
 
     load().catch(() => {
       setVersionsCount(0);
+      setInProgressVersions([]);
       setLatestVersion('n/a');
       setCardsCount(0);
       setFilesChanged(0);
@@ -176,6 +179,7 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
   }, [previewItems.length, isPreviewPaused]);
 
   const previewItem = previewItems[previewIndex];
+  const latestIsInProgress = inProgressVersions.includes(latestVersion);
 
   return (
     <section className="home-layout">
@@ -184,7 +188,7 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
         <h2>Purpose and Model Context</h2>
         <p>
           I&apos;m Max Stoddard, and this website is the primary interface for my Imperial College London BEng Individual
-          project: improving the UK Housing Market ABM in collaboration with the Bank of England.
+          project: improving the UK Housing Market ABM based on the ABM developed by the Bank of England.
         </p>
         <p>
           My work focuses on speeding up the model, updating calibration inputs to reflect post-COVID UK conditions,
@@ -279,7 +283,10 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
         </article>
         <article>
           <p>Latest Snapshot</p>
-          <strong>{latestVersion}</strong>
+          <strong className="snapshot-value">
+            <span>{latestVersion}</span>
+            {latestIsInProgress && <span className="status-pill-in-progress">In progress</span>}
+          </strong>
         </article>
       </div>
 

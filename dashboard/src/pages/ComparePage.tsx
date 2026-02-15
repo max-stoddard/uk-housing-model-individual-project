@@ -54,6 +54,7 @@ function groupCompareItems(compareData: CompareResponse | null, filter: ChangeFi
 
 export function ComparePage() {
   const [versions, setVersions] = useState<string[]>([]);
+  const [inProgressVersions, setInProgressVersions] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<ParameterCardMeta[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
@@ -74,6 +75,7 @@ export function ComparePage() {
       const [versionsPayload, catalogList] = await Promise.all([fetchVersions(), fetchCatalog()]);
       const versionList = versionsPayload.versions;
       setVersions(versionList);
+      setInProgressVersions(versionsPayload.inProgressVersions);
       setCatalog(catalogList);
       setSelectedIds(catalogList.map((item) => item.id));
       setSelectedVersion(versionList[versionList.length - 1] ?? '');
@@ -227,6 +229,10 @@ export function ComparePage() {
     : 0;
 
   const titleText = mode === 'single' ? `Model parameters at ${selectedVersion || 'n/a'}` : `${left} vs ${right}`;
+  const inProgressSet = useMemo(() => new Set(inProgressVersions), [inProgressVersions]);
+  const isInProgressVersion = (version: string) => inProgressSet.has(version);
+  const withInProgressLabel = (version: string) =>
+    isInProgressVersion(version) ? `${version} (In progress)` : version;
 
   return (
     <section className={`compare-layout ${isSetupOpen ? '' : 'setup-collapsed'}`}>
@@ -272,7 +278,7 @@ export function ComparePage() {
               <select id="single-version" value={selectedVersion} onChange={(event) => setSelectedVersion(event.target.value)}>
                 {versions.map((version) => (
                   <option key={version} value={version}>
-                    {version}
+                    {withInProgressLabel(version)}
                   </option>
                 ))}
               </select>
@@ -283,7 +289,7 @@ export function ComparePage() {
               <select id="left-version" value={left} onChange={(event) => setLeft(event.target.value)}>
                 {versions.map((version) => (
                   <option key={version} value={version}>
-                    {version}
+                    {withInProgressLabel(version)}
                   </option>
                 ))}
               </select>
@@ -292,7 +298,7 @@ export function ComparePage() {
               <select id="right-version" value={right} onChange={(event) => setRight(event.target.value)}>
                 {versions.map((version) => (
                   <option key={version} value={version}>
-                    {version}
+                    {withInProgressLabel(version)}
                   </option>
                 ))}
               </select>
@@ -353,6 +359,19 @@ export function ComparePage() {
 
         <header className="results-head">
           <h2>{titleText}</h2>
+          {(mode === 'single' ? isInProgressVersion(selectedVersion) : isInProgressVersion(left) || isInProgressVersion(right)) && (
+            <div className="results-version-tags">
+              {mode === 'single' && isInProgressVersion(selectedVersion) && (
+                <span className="status-pill-in-progress">Version {selectedVersion} in progress</span>
+              )}
+              {mode === 'compare' && isInProgressVersion(left) && (
+                <span className="status-pill-in-progress">Left {left} in progress</span>
+              )}
+              {mode === 'compare' && isInProgressVersion(right) && (
+                <span className="status-pill-in-progress">Right {right} in progress</span>
+              )}
+            </div>
+          )}
           <p>
             Visualizing tracked model parameters and calibration provenance from
             <code> input-data-versions/version-notes.json</code>
@@ -426,6 +445,7 @@ export function ComparePage() {
                         key={item.id}
                         item={item}
                         mode={mode}
+                        inProgressVersions={inProgressVersions}
                         defaultExpanded={groupName === defaultOpenGroup && index === 0}
                       />
                     ))}

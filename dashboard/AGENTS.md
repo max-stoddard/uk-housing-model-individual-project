@@ -53,12 +53,17 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
   - `Lines Written`, `Files Changed`, and `Commits` cards are hidden in production.
   - in local development only, these cards render with an orange `Dev only` pill and a red `To fix` pill.
   - when dev features are disabled (production or local `Preview non-dev` mode), homepage does not call `/api/git-stats`.
+  - latest snapshot card displays a red `In progress` pill when the latest version is in `/api/versions.inProgressVersions`.
 - Dev-only page visibility behavior:
   - `Run Model` and `Experiments` navigation entries and routes are dev-only.
   - when previewing non-dev in local development, those entries/routes are hidden and direct route access redirects to `/`.
 - Compare setup panel behavior:
   - when open, setup collapse control is a compact icon button in the setup header.
   - when closed, setup restore control is a compact top-left icon button (not a full rail label).
+  - version selectors append `(In progress)` for versions in `/api/versions.inProgressVersions`.
+  - results header displays red `In progress` pills for selected in-progress versions.
+  - compare-card graph legends/tooltips/titles append `(In progress)` to in-progress version labels.
+  - compare cards with `changeOriginsInRange` containing `validationStatus=in_progress` display a red `In progress` status pill.
 - API runtime env precedence:
   - port: `PORT` first, fallback `DASHBOARD_API_PORT`, fallback `8787`.
   - CORS allowlist (optional): `DASHBOARD_CORS_ORIGIN`.

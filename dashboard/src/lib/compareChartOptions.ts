@@ -139,11 +139,15 @@ export function binnedOption(
   item: CompareResult,
   xAxisName: string,
   yAxisName: string,
-  deltaAxisName: string
+  deltaAxisName: string,
+  labels?: { leftLabel?: string; rightLabel?: string }
 ): EChartsOption {
   if (item.visualPayload.type !== 'binned_distribution') {
     return {};
   }
+
+  const leftLabel = labels?.leftLabel ?? item.leftVersion;
+  const rightLabel = labels?.rightLabel ?? item.rightVersion;
 
   return {
     tooltip: {
@@ -151,10 +155,10 @@ export function binnedOption(
       formatter: (rawParams: unknown) => {
         const rows = Array.isArray(rawParams) ? rawParams : [rawParams];
         const axis = String((rows[0] as any)?.axisValueLabel ?? (rows[0] as any)?.axisValue ?? '');
-        const left = (rows.find((entry: any) => entry.seriesName === item.leftVersion) as any)?.data ?? 0;
-        const right = (rows.find((entry: any) => entry.seriesName === item.rightVersion) as any)?.data ?? 0;
+        const left = (rows.find((entry: any) => entry.seriesName === leftLabel) as any)?.data ?? 0;
+        const right = (rows.find((entry: any) => entry.seriesName === rightLabel) as any)?.data ?? 0;
         const delta = (rows.find((entry: any) => entry.seriesName === 'Delta') as any)?.data ?? 0;
-        return `${axis}<br/>${item.leftVersion}: ${formatChartNumber(Number(left))}<br/>${item.rightVersion}: ${formatChartNumber(
+        return `${axis}<br/>${leftLabel}: ${formatChartNumber(Number(left))}<br/>${rightLabel}: ${formatChartNumber(
           Number(right)
         )}<br/>Delta: ${formatChartNumber(Number(delta))}`;
       }
@@ -189,14 +193,14 @@ export function binnedOption(
     ],
     series: [
       {
-        name: item.leftVersion,
+        name: leftLabel,
         type: 'bar',
         data: item.visualPayload.bins.map((bin) => bin.left),
         barGap: '-100%',
         itemStyle: { color: 'rgba(20, 84, 214, 0.55)' }
       },
       {
-        name: item.rightVersion,
+        name: rightLabel,
         type: 'bar',
         data: item.visualPayload.bins.map((bin) => bin.right),
         itemStyle: { color: 'rgba(24, 149, 139, 0.55)' }
@@ -213,10 +217,17 @@ export function binnedOption(
   };
 }
 
-export function binnedSingleOption(item: CompareResult, xAxisName: string, yAxisName: string): EChartsOption {
+export function binnedSingleOption(
+  item: CompareResult,
+  xAxisName: string,
+  yAxisName: string,
+  versionLabel?: string
+): EChartsOption {
   if (item.visualPayload.type !== 'binned_distribution') {
     return {};
   }
+
+  const label = versionLabel ?? item.rightVersion;
 
   return {
     tooltip: { trigger: 'axis' },
@@ -242,7 +253,7 @@ export function binnedSingleOption(item: CompareResult, xAxisName: string, yAxis
     ],
     series: [
       {
-        name: item.rightVersion,
+        name: label,
         type: 'bar',
         data: item.visualPayload.bins.map((bin) => bin.right),
         itemStyle: { color: 'rgba(11, 114, 133, 0.72)' }
