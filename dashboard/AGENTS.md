@@ -103,7 +103,8 @@ From repo root:
 Deployment workflow-critical files live at repository root:
 
 - `render.yaml`: Render Blueprint for static web + API web services.
-- `.github/workflows/dashboard-ci.yml`: deploy-gating CI workflow for dashboard checks.
+- `.github/workflows/dashboard-ci.yml`: deploy-gating CI workflow for dashboard checks plus optional Render deploy-hook fallback on `master` pushes.
+- Optional GitHub secrets for fallback triggers: `RENDER_STATIC_DEPLOY_HOOK`, `RENDER_API_DEPLOY_HOOK`.
 
 ## Guardrails
 - Do not read private datasets directly for dashboard work unless specifically required and approved.

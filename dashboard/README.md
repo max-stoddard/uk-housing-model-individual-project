@@ -60,3 +60,10 @@ Repository root includes `render.yaml` with:
 - API web service: `uk-housing-market-abm-api`
 
 Deploys are configured from `master` and gated by passing GitHub checks.
+
+If Render stops showing commit events (for example, "No event for this commit"), first re-link the service repository in Render to the current GitHub repo identity (`max-stoddard/UK-Housing-Market-ABM`) and re-sync the Blueprint.
+
+Optional resilience fallback:
+
+- add `RENDER_STATIC_DEPLOY_HOOK` and `RENDER_API_DEPLOY_HOOK` as GitHub repository secrets
+- `.github/workflows/dashboard-ci.yml` will call these hooks after checks pass on `master`, only when matching service paths changed
