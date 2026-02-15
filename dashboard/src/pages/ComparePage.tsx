@@ -233,12 +233,19 @@ export function ComparePage() {
         <aside className="sidebar">
           <div className="sidebar-head">
             <h2>Workspace Setup</h2>
-            <p>{selectedIds.length} tracked</p>
+            <div className="sidebar-head-actions">
+              <p>{selectedIds.length} tracked</p>
+              <button
+                type="button"
+                className="sidebar-icon-toggle"
+                onClick={() => setIsSetupOpen(false)}
+                aria-label="Collapse setup panel"
+                title="Collapse setup"
+              >
+                ◂
+              </button>
+            </div>
           </div>
-
-          <button type="button" className="secondary-button sidebar-collapse" onClick={() => setIsSetupOpen(false)}>
-            Collapse setup
-          </button>
 
           <label>Mode</label>
           <div className="mode-switch-row">
@@ -322,8 +329,14 @@ export function ComparePage() {
           </div>
         </aside>
       ) : (
-        <button type="button" className="setup-rail-toggle" onClick={() => setIsSetupOpen(true)}>
-          ▸ Setup
+        <button
+          type="button"
+          className="setup-rail-toggle"
+          onClick={() => setIsSetupOpen(true)}
+          aria-label="Open setup panel"
+          title="Open setup"
+        >
+          ☰
         </button>
       )}
 

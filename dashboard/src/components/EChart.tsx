@@ -18,12 +18,16 @@ export function EChart({ option, className }: EChartProps) {
     const instance = echarts.init(containerRef.current);
     instanceRef.current = instance;
     instance.setOption(option);
+    instance.resize();
 
     const resizeHandler = () => instance.resize();
     window.addEventListener('resize', resizeHandler);
+    const observer = new ResizeObserver(() => instance.resize());
+    observer.observe(containerRef.current);
 
     return () => {
       window.removeEventListener('resize', resizeHandler);
+      observer.disconnect();
       instance.dispose();
       instanceRef.current = null;
     };
