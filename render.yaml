@@ -3,8 +3,7 @@ services:
   - type: web
     runtime: static
     name: uk-housing-market-abm
-    plan: free
-    branch: main
+    branch: master
     autoDeployTrigger: checksPass
     rootDir: dashboard
     buildCommand: npm ci --include=dev && npm run build
@@ -29,7 +28,7 @@ services:
     runtime: node
     name: uk-housing-market-abm-api
     plan: free
-    branch: main
+    branch: master
     autoDeployTrigger: checksPass
     rootDir: dashboard
     buildCommand: npm ci --include=dev

@@ -46,4 +46,4 @@ Repository root includes `render.yaml` with:
 - static web service: `uk-housing-market-abm`
 - API web service: `uk-housing-market-abm-api`
 
-Deploys are configured from `main` and gated by passing GitHub checks.
+Deploys are configured from `master` and gated by passing GitHub checks.

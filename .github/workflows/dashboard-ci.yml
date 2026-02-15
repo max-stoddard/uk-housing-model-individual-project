@@ -4,14 +4,14 @@ name: Dashboard CI
 on:
   pull_request:
     branches:
-      - main
+      - master
     paths:
       - dashboard/**
       - input-data-versions/**
       - .github/workflows/dashboard-ci.yml
   push:
     branches:
-      - main
+      - master
     paths:
       - dashboard/**
       - input-data-versions/**
