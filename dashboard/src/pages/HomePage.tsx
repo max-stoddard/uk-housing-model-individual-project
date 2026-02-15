@@ -5,7 +5,14 @@ import type { CompareResult } from '../../shared/types';
 import { fetchCatalog, fetchCompare, fetchGitStats, fetchVersions } from '../lib/api';
 import { EChart } from '../components/EChart';
 import { getAxisSpec } from '../lib/chartAxes';
-import { jointHeatmapOption, type JointHeatmapLayoutOverrides } from '../lib/jointHeatmapOption';
+import { jointHeatmapOption } from '../lib/jointHeatmapOption';
+import {
+  binnedSingleOption,
+  curveSingleOption,
+  formatChartNumber,
+  jointLayoutOverrides,
+  scalarSingleOption
+} from '../lib/compareChartOptions';
 
 const PREVIEW_PARAMETER_IDS = [
   'wealth_given_income_joint',
@@ -14,137 +21,37 @@ const PREVIEW_PARAMETER_IDS = [
   'btl_probability_bins'
 ];
 
-function formatPreviewNumber(value: number): string {
-  if (Math.abs(value) >= 1000) {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
-  }
-  if (Math.abs(value) >= 1) {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
-  }
-  return value.toLocaleString('en-GB', { maximumFractionDigits: 8 });
+interface HomePageProps {
+  showDevFeatures: boolean;
 }
 
-function formatPreviewScientific(value: number, digits = 2): string {
-  const [mantissa, exponent] = value.toExponential(digits).split('e');
-  const trimmedMantissa = mantissa.replace(/\.?0+$/, '');
-  const normalizedExponent = exponent.replace('+', '').replace(/^(-?)0+(\d)/, '$1$2');
-  return `${trimmedMantissa}e${normalizedExponent}`;
-}
-
-function formatPreviewCurveValue(value: number): string {
-  const absolute = Math.abs(value);
-  if (absolute < 1e-12) {
-    return '0';
+const ZERO_GIT_STATS = {
+  filesChanged: 0,
+  lineChanges: 0,
+  commitCount: 0,
+  weekly: {
+    filesChanged: 0,
+    lineChanges: 0,
+    commitCount: 0
   }
-  if (absolute < 0.001) {
-    return formatPreviewScientific(value, 2);
-  }
-  if (absolute < 1) {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 6 });
-  }
-  return formatPreviewNumber(value);
-}
-
-function formatPreviewAxisTick(value: number): string {
-  const absolute = Math.abs(value);
-  if (absolute < 1e-12) {
-    return '0';
-  }
-  if (absolute >= 1) {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
-  }
-  if (absolute >= 0.01) {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
-  }
-  if (absolute >= 0.001) {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
-  }
-  return formatPreviewScientific(value, 1);
-}
-
-function jointLayoutOverrides(itemId: string): JointHeatmapLayoutOverrides | undefined {
-  if (itemId === 'wealth_given_income_joint') {
-    return {
-      xAxisNameGap: 70,
-      gridBottom: 108
-    };
-  }
-  return undefined;
-}
+};
 
 function buildPreviewOption(item: CompareResult): EChartsOption {
   const axisSpec = getAxisSpec(item.id);
 
   switch (item.visualPayload.type) {
-    case 'scalar': {
-      const payload = item.visualPayload;
-      return {
-        tooltip: { trigger: 'axis' },
-        grid: { left: 58, right: 20, top: 28, bottom: 84, containLabel: true },
-        xAxis: {
-          type: 'category',
-          data: payload.values.map((value) => value.key),
-          axisLabel: { rotate: 25, fontSize: 10 },
-          name: axisSpec.scalar.xTitle,
-          nameLocation: 'middle',
-          nameGap: 54,
-          nameTextStyle: { fontSize: 10 }
-        },
-        yAxis: {
-          type: 'value',
-          name: axisSpec.scalar.yTitle,
-          nameLocation: 'middle',
-          nameGap: 46,
-          nameTextStyle: { fontSize: 10 }
-        },
-        series: [
-          {
-            name: item.rightVersion,
-            type: 'bar',
-            data: payload.values.map((value) => value.right),
-            itemStyle: { color: '#0b7285' }
-          }
-        ]
-      };
-    }
+    case 'scalar':
+      return scalarSingleOption(item.visualPayload.values, item.rightVersion, axisSpec.scalar.xTitle, axisSpec.scalar.yTitle);
 
-    case 'binned_distribution': {
-      const payload = item.visualPayload;
-      return {
-        tooltip: { trigger: 'axis' },
-        grid: { left: 62, right: 20, top: 28, bottom: 90, containLabel: true },
-        xAxis: {
-          type: 'category',
-          data: payload.bins.map((bin) => bin.label),
-          axisLabel: { rotate: 32, fontSize: 10 },
-          name: axisSpec.binned.xTitle,
-          nameLocation: 'middle',
-          nameGap: 56,
-          nameTextStyle: { fontSize: 10 }
-        },
-        yAxis: {
-          type: 'value',
-          name: axisSpec.binned.yTitle,
-          nameLocation: 'middle',
-          nameGap: 48,
-          nameTextStyle: { fontSize: 10 }
-        },
-        series: [
-          {
-            name: item.rightVersion,
-            type: 'bar',
-            data: payload.bins.map((bin) => bin.right),
-            itemStyle: { color: 'rgba(11, 114, 133, 0.74)' }
-          }
-        ]
-      };
-    }
+    case 'binned_distribution':
+      return binnedSingleOption(item, axisSpec.binned.xTitle, axisSpec.binned.yTitle);
 
     case 'joint_distribution': {
       const payload = item.visualPayload;
-      const values = payload.matrix.right.map((cell) => cell.value);
-      const min = Math.min(...values);
-      const max = Math.max(...values);
+      const leftValues = payload.matrix.left.map((cell) => cell.value);
+      const rightValues = payload.matrix.right.map((cell) => cell.value);
+      const min = Math.min(...leftValues, ...rightValues);
+      const max = Math.max(...leftValues, ...rightValues);
       return jointHeatmapOption({
         title: item.rightVersion,
         cells: payload.matrix.right,
@@ -155,108 +62,35 @@ function buildPreviewOption(item: CompareResult): EChartsOption {
         colors: ['#eff6ff', '#1d4ed8'],
         xAxisName: axisSpec.joint.xTitle,
         yAxisName: axisSpec.joint.yTitle,
-        valueFormatter: formatPreviewNumber,
         layout: jointLayoutOverrides(item.id)
       });
     }
 
     case 'lognormal_pair':
-    case 'power_law_pair': {
-      const payload = item.visualPayload;
-      return {
-        tooltip: {
-          trigger: 'axis',
-          formatter: (rawParams: unknown) => {
-            const rows = Array.isArray(rawParams) ? rawParams : [rawParams];
-            const xValue = Number((rows[0] as any)?.axisValue ?? 0);
-            const point = (rows[0] as any)?.data;
-            const yValue = Array.isArray(point) ? Number(point[1]) : 0;
-            return `${axisSpec.curve.xTitle}: ${formatPreviewNumber(xValue)}<br/>${item.rightVersion}: ${formatPreviewCurveValue(
-              yValue
-            )}`;
-          }
-        },
-        grid: { left: 62, right: 18, top: 28, bottom: 78, containLabel: true },
-        xAxis: {
-          type: 'value',
-          name: axisSpec.curve.xTitle,
-          nameLocation: 'middle',
-          nameGap: 46,
-          nameTextStyle: { fontSize: 10 }
-        },
-        yAxis: {
-          type: 'value',
-          name: axisSpec.curve.yTitle,
-          nameLocation: 'middle',
-          nameGap: 46,
-          nameTextStyle: { fontSize: 10 },
-          axisLabel: {
-            formatter: (rawValue: number) => formatPreviewAxisTick(Number(rawValue))
-          }
-        },
-        series: [
-          {
-            type: 'line',
-            showSymbol: false,
-            smooth: true,
-            data: payload.curveRight.map((point) => [point.x, point.y]),
-            lineStyle: { color: '#0b7285', width: 2 }
-          }
-        ]
-      };
-    }
+    case 'power_law_pair':
+      return curveSingleOption(
+        item.rightVersion,
+        item.visualPayload.curveRight,
+        axisSpec.curve.xTitle,
+        axisSpec.curve.yTitle,
+        (value) => formatChartNumber(value)
+      );
 
-    case 'buy_quad': {
-      const payload = item.visualPayload;
-      return {
-        tooltip: {
-          trigger: 'axis',
-          formatter: (rawParams: unknown) => {
-            const rows = Array.isArray(rawParams) ? rawParams : [rawParams];
-            const xValue = Number((rows[0] as any)?.axisValue ?? 0);
-            const point = (rows[0] as any)?.data;
-            const yValue = Array.isArray(point) ? Number(point[1]) : 0;
-            return `${axisSpec.buyBudget.xTitle}: ${formatPreviewNumber(xValue)}<br/>${item.rightVersion}: ${formatPreviewCurveValue(
-              yValue
-            )}`;
-          }
-        },
-        grid: { left: 62, right: 18, top: 28, bottom: 78, containLabel: true },
-        xAxis: {
-          type: 'value',
-          name: axisSpec.buyBudget.xTitle,
-          nameLocation: 'middle',
-          nameGap: 46,
-          nameTextStyle: { fontSize: 10 }
-        },
-        yAxis: {
-          type: 'value',
-          name: axisSpec.buyBudget.yTitle,
-          nameLocation: 'middle',
-          nameGap: 46,
-          nameTextStyle: { fontSize: 10 },
-          axisLabel: {
-            formatter: (rawValue: number) => formatPreviewAxisTick(Number(rawValue))
-          }
-        },
-        series: [
-          {
-            type: 'line',
-            showSymbol: false,
-            smooth: true,
-            data: payload.budgetRight.map((point) => [point.x, point.y]),
-            lineStyle: { color: '#0b7285', width: 2 }
-          }
-        ]
-      };
-    }
+    case 'buy_quad':
+      return curveSingleOption(
+        item.rightVersion,
+        item.visualPayload.budgetRight,
+        axisSpec.buyBudget.xTitle,
+        axisSpec.buyBudget.yTitle,
+        (value) => formatChartNumber(value)
+      );
 
     default:
       return {};
   }
 }
 
-export function HomePage() {
+export function HomePage({ showDevFeatures }: HomePageProps) {
   const [versionsCount, setVersionsCount] = useState<number>(0);
   const [latestVersion, setLatestVersion] = useState<string>('...');
   const [cardsCount, setCardsCount] = useState<number>(0);
@@ -275,7 +109,11 @@ export function HomePage() {
 
   useEffect(() => {
     const load = async () => {
-      const [versions, cards, gitStats] = await Promise.all([fetchVersions(), fetchCatalog(), fetchGitStats()]);
+      const [versions, cards, gitStats] = await Promise.all([
+        fetchVersions(),
+        fetchCatalog(),
+        showDevFeatures ? fetchGitStats() : Promise.resolve(ZERO_GIT_STATS)
+      ]);
       setVersionsCount(versions.length);
       setLatestVersion(versions[versions.length - 1] ?? 'n/a');
       setCardsCount(cards.length);
@@ -309,7 +147,7 @@ export function HomePage() {
       setCommitCountWeekly(0);
       setPreviewItems([]);
     });
-  }, []);
+  }, [showDevFeatures]);
 
   useEffect(() => {
     if (previewItems.length === 0) {
@@ -385,45 +223,6 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="stats-grid fade-up-delay">
-        <article>
-          <p className="stat-title">
-            <span>Lines Written</span>
-            <span className="status-pill-fix">To fix</span>
-          </p>
-          <strong>
-            <span className="stat-value">{formatCount(linesWritten)}</span>
-            <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
-              {formatSignedCount(linesWrittenWeekly)} this week
-            </span>
-          </strong>
-        </article>
-        <article>
-          <p className="stat-title">
-            <span>Files Changed</span>
-            <span className="status-pill-fix">To fix</span>
-          </p>
-          <strong>
-            <span className="stat-value">{formatCount(filesChanged)}</span>
-            <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
-              {formatSignedCount(filesChangedWeekly)} this week
-            </span>
-          </strong>
-        </article>
-        <article>
-          <p className="stat-title">
-            <span>Commits</span>
-            <span className="status-pill-fix">To fix</span>
-          </p>
-          <strong>
-            <span className="stat-value">{formatCount(commitCount)}</span>
-            <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>
-              {formatSignedCount(commitCountWeekly)} this week
-            </span>
-          </strong>
-        </article>
-      </div>
-
       <div className="hero-card fade-up">
         <div className="hero-label-row">
           <p className="eyebrow">Interactive ABM Workspace</p>
@@ -475,6 +274,50 @@ export function HomePage() {
           <strong>{latestVersion}</strong>
         </article>
       </div>
+
+      {showDevFeatures && (
+        <div className="stats-grid fade-up-delay">
+          <article>
+            <p className="stat-title">
+              <span>Lines Written</span>
+              <span className="status-pill-dev-only">Dev only</span>
+              <span className="status-pill-fix">To fix</span>
+            </p>
+            <strong>
+              <span className="stat-value">{formatCount(linesWritten)}</span>
+              <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
+                {formatSignedCount(linesWrittenWeekly)} this week
+              </span>
+            </strong>
+          </article>
+          <article>
+            <p className="stat-title">
+              <span>Files Changed</span>
+              <span className="status-pill-dev-only">Dev only</span>
+              <span className="status-pill-fix">To fix</span>
+            </p>
+            <strong>
+              <span className="stat-value">{formatCount(filesChanged)}</span>
+              <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
+                {formatSignedCount(filesChangedWeekly)} this week
+              </span>
+            </strong>
+          </article>
+          <article>
+            <p className="stat-title">
+              <span>Commits</span>
+              <span className="status-pill-dev-only">Dev only</span>
+              <span className="status-pill-fix">To fix</span>
+            </p>
+            <strong>
+              <span className="stat-value">{formatCount(commitCount)}</span>
+              <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>
+                {formatSignedCount(commitCountWeekly)} this week
+              </span>
+            </strong>
+          </article>
+        </div>
+      )}
     </section>
   );
 }
