@@ -116,11 +116,12 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
 
   useEffect(() => {
     const load = async () => {
-      const [versions, cards, gitStats] = await Promise.all([
+      const [versionsPayload, cards, gitStats] = await Promise.all([
         fetchVersions(),
         fetchCatalog(),
         showDevFeatures ? fetchGitStats() : Promise.resolve(ZERO_GIT_STATS)
       ]);
+      const versions = versionsPayload.versions;
       setVersionsCount(versions.length);
       setLatestVersion(versions[versions.length - 1] ?? 'n/a');
       setCardsCount(cards.length);

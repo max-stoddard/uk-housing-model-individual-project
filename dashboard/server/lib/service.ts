@@ -867,6 +867,21 @@ export function getVersions(repoRoot: string): string[] {
   return listVersions(path.join(repoRoot, 'input-data-versions'));
 }
 
+export function getInProgressVersions(repoRoot: string): string[] {
+  const versions = getVersions(repoRoot);
+  const versionSet = new Set(versions);
+  const notes = loadVersionNotes(repoRoot);
+  const inProgress = new Set<string>();
+
+  for (const entry of notes) {
+    if (entry.validation.status === 'in_progress' && versionSet.has(entry.snapshot_folder)) {
+      inProgress.add(entry.snapshot_folder);
+    }
+  }
+
+  return versions.filter((version) => inProgress.has(version));
+}
+
 export function getParameterCatalog() {
   return PARAMETER_CATALOG;
 }

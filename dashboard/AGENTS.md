@@ -36,7 +36,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 ## Runtime Contract
 - API endpoints:
   - `GET /healthz`
-  - `GET /api/versions`
+  - `GET /api/versions` returning `{ versions: string[]; inProgressVersions: string[] }`
   - `GET /api/parameter-catalog`
   - `GET /api/git-stats`
   - `GET /api/compare?left=<version>&right=<version>&ids=<csv>&provenanceScope=range|through_right`
@@ -71,6 +71,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - The dashboard currently compares only the parameter groups explicitly listed in `dashboard/shared/catalog.ts`.
 - Version selector source of truth is folder snapshots under `input-data-versions/` (filtered and sorted by `server/lib/versioning.ts`).
 - Structured version metadata source of truth is `input-data-versions/version-notes.json`.
+- `inProgressVersions` in `/api/versions` is derived from `version-notes.json` entries with `validation.status = in_progress` grouped by `snapshot_folder`.
 - Compare response items include `changeOriginsInRange` provenance entries derived from `version-notes.json`.
 - Provenance scope semantics:
   - `range`: include updates in `(left, right]` (compare mode).

@@ -71,7 +71,8 @@ export function ComparePage() {
 
   useEffect(() => {
     const load = async () => {
-      const [versionList, catalogList] = await Promise.all([fetchVersions(), fetchCatalog()]);
+      const [versionsPayload, catalogList] = await Promise.all([fetchVersions(), fetchCatalog()]);
+      const versionList = versionsPayload.versions;
       setVersions(versionList);
       setCatalog(catalogList);
       setSelectedIds(catalogList.map((item) => item.id));

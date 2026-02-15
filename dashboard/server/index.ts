@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareParameters, getParameterCatalog, getVersions } from './lib/service';
+import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from './lib/service';
 import { buildZeroGitStats, getGitStats } from './lib/gitStats';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,7 +45,8 @@ app.get('/healthz', (_req, res) => {
 app.get('/api/versions', (_req, res) => {
   try {
     const versions = getVersions(repoRoot);
-    res.json({ versions });
+    const inProgressVersions = getInProgressVersions(repoRoot);
+    res.json({ versions, inProgressVersions });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareParameters, getParameterCatalog, getVersions } from '../server/lib/service.js';
+import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from '../server/lib/service.js';
 import { getConfigPath, parseConfigFile, readNumericCsvRows, resolveConfigDataFilePath } from '../server/lib/io.js';
 import { loadVersionNotes } from '../server/lib/versionNotes.js';
 import { assertAxisSpecComplete, getAxisSpec } from '../src/lib/chartAxes.js';
@@ -74,6 +74,12 @@ const versions = getVersions(repoRoot);
 assert.ok(versions.length > 0, 'Expected at least one version folder');
 assert.ok(!versions.includes('v1'), 'v1 should be excluded after cleanup');
 assert.equal(versions[0], 'v0', 'Oldest version should be v0');
+const inProgressVersions = getInProgressVersions(repoRoot);
+assert.ok(
+  inProgressVersions.every((version) => versions.includes(version)),
+  'In-progress versions should resolve to discovered snapshot folders'
+);
+assert.ok(inProgressVersions.includes('v3.8'), 'Expected v3.8 to be reported as an in-progress snapshot');
 
 const notes = loadVersionNotes(repoRoot);
 assert.ok(notes.length > 0, 'Expected at least one version note entry');

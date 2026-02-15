@@ -2,6 +2,12 @@ import type { CompareResponse, ParameterCardMeta } from '../../shared/types';
 
 interface VersionsResponse {
   versions: string[];
+  inProgressVersions?: string[];
+}
+
+export interface VersionsPayload {
+  versions: string[];
+  inProgressVersions: string[];
 }
 
 interface CatalogResponse {
@@ -29,13 +35,16 @@ function buildApiUrl(path: string): string {
   return apiBaseUrl ? `${apiBaseUrl}${normalizedPath}` : normalizedPath;
 }
 
-export async function fetchVersions(): Promise<string[]> {
+export async function fetchVersions(): Promise<VersionsPayload> {
   const response = await fetch(buildApiUrl('/api/versions'));
   if (!response.ok) {
     throw new Error('Failed to fetch versions');
   }
   const payload = (await response.json()) as VersionsResponse;
-  return payload.versions;
+  return {
+    versions: payload.versions,
+    inProgressVersions: payload.inProgressVersions ?? []
+  };
 }
 
 export async function fetchCatalog(): Promise<ParameterCardMeta[]> {
