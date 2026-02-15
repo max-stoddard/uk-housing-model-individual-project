@@ -38,7 +38,7 @@ services:
       - key: DASHBOARD_CORS_ORIGIN
         value: https://uk-housing-market-abm.onrender.com
       - key: DASHBOARD_GIT_STATS_BASE_COMMIT
-        value: ed148b8d0028049529674299ae294a9597f99ab4
+        value: 4e89f5e277cdba4b4ef0c08254e5731e19bd51c3
       - key: DASHBOARD_GITHUB_REPO
         value: max-stoddard/UK-Housing-Market-ABM
       - key: DASHBOARD_GITHUB_BRANCH
