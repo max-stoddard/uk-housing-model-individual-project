@@ -387,7 +387,10 @@ export function HomePage() {
 
       <div className="stats-grid fade-up-delay">
         <article>
-          <p>Lines Written</p>
+          <p className="stat-title">
+            <span>Lines Written</span>
+            <span className="status-pill-fix">To fix</span>
+          </p>
           <strong>
             <span className="stat-value">{formatCount(linesWritten)}</span>
             <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
@@ -396,7 +399,10 @@ export function HomePage() {
           </strong>
         </article>
         <article>
-          <p>Files Changed</p>
+          <p className="stat-title">
+            <span>Files Changed</span>
+            <span className="status-pill-fix">To fix</span>
+          </p>
           <strong>
             <span className="stat-value">{formatCount(filesChanged)}</span>
             <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
@@ -405,7 +411,10 @@ export function HomePage() {
           </strong>
         </article>
         <article>
-          <p>Commits</p>
+          <p className="stat-title">
+            <span>Commits</span>
+            <span className="status-pill-fix">To fix</span>
+          </p>
           <strong>
             <span className="stat-value">{formatCount(commitCount)}</span>
             <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>

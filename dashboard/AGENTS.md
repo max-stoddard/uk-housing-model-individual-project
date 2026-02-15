@@ -14,6 +14,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 
 ## Fast Orientation
 - `dashboard/src`: React frontend (routes, pages, components, styles).
+- `dashboard/public`: Static frontend assets served directly by Vite (for example favicon files).
 - `dashboard/src/pages/HomePage.tsx`: Landing page.
 - `dashboard/src/pages/ComparePage.tsx`: Main comparison workspace.
 - `dashboard/src/components/CompareCard.tsx`: Format-specific rendering logic for comparison cards.
