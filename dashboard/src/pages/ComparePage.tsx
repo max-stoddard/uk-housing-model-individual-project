@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CompareResponse, ParameterCardMeta, ParameterGroup } from '../../shared/types';
-import { fetchCatalog, fetchCompare, fetchVersions } from '../lib/api';
+import { API_RETRY_DELAY_MS, fetchCatalog, fetchCompare, fetchVersions, isRetryableApiError } from '../lib/api';
 import { CompareCard } from '../components/CompareCard';
 
 const GROUP_ORDER: ParameterGroup[] = [
@@ -64,6 +64,9 @@ export function ComparePage() {
   const [search, setSearch] = useState<string>('');
   const [compareData, setCompareData] = useState<CompareResponse | null>(null);
   const [error, setError] = useState<string>('');
+  const [isBootstrapping, setIsBootstrapping] = useState<boolean>(true);
+  const [isBootstrapReady, setIsBootstrapReady] = useState<boolean>(false);
+  const [isWaitingForApi, setIsWaitingForApi] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSetupOpen, setIsSetupOpen] = useState<boolean>(true);
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>('all');
@@ -71,21 +74,59 @@ export function ComparePage() {
   const defaultOpenGroup = GROUP_ORDER[0];
 
   useEffect(() => {
+    let cancelled = false;
+    let retryTimer: number | undefined;
+
     const load = async () => {
-      const [versionsPayload, catalogList] = await Promise.all([fetchVersions(), fetchCatalog()]);
-      const versionList = versionsPayload.versions;
-      setVersions(versionList);
-      setInProgressVersions(versionsPayload.inProgressVersions);
-      setCatalog(catalogList);
-      setSelectedIds(catalogList.map((item) => item.id));
-      setSelectedVersion(versionList[versionList.length - 1] ?? '');
-      setLeft(versionList[0] ?? '');
-      setRight(versionList[versionList.length - 1] ?? '');
+      setError('');
+      setIsBootstrapping(true);
+      setIsWaitingForApi(false);
+
+      try {
+        const [versionsPayload, catalogList] = await Promise.all([fetchVersions(), fetchCatalog()]);
+        if (cancelled) {
+          return;
+        }
+
+        const versionList = versionsPayload.versions;
+        setVersions(versionList);
+        setInProgressVersions(versionsPayload.inProgressVersions);
+        setCatalog(catalogList);
+        setSelectedIds(catalogList.map((item) => item.id));
+        setSelectedVersion(versionList[versionList.length - 1] ?? '');
+        setLeft(versionList[0] ?? '');
+        setRight(versionList[versionList.length - 1] ?? '');
+        setIsBootstrapReady(true);
+        setIsBootstrapping(false);
+      } catch (loadError) {
+        if (cancelled) {
+          return;
+        }
+
+        if (isRetryableApiError(loadError)) {
+          setIsWaitingForApi(true);
+          setIsBootstrapReady(false);
+          setIsBootstrapping(false);
+          retryTimer = window.setTimeout(() => {
+            void load();
+          }, API_RETRY_DELAY_MS);
+          return;
+        }
+
+        setError((loadError as Error).message);
+        setIsBootstrapReady(false);
+        setIsBootstrapping(false);
+      }
     };
 
-    load().catch((loadError) => {
-      setError((loadError as Error).message);
-    });
+    void load();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -100,50 +141,102 @@ export function ComparePage() {
   }, [mode, left, right, versions]);
 
   useEffect(() => {
+    if (!isBootstrapReady) {
+      setCompareData(null);
+      return;
+    }
+
+    let cancelled = false;
+    let retryTimer: number | undefined;
+
     const run = async () => {
       if (selectedIds.length === 0) {
         setCompareData(null);
+        setIsWaitingForApi(false);
         return;
       }
 
       if (mode === 'single') {
         if (!selectedVersion) {
           setCompareData(null);
+          setIsWaitingForApi(false);
           return;
         }
 
         setIsLoading(true);
+        setIsWaitingForApi(false);
         setError('');
         try {
           const payload = await fetchCompare(selectedVersion, selectedVersion, selectedIds, 'through_right');
+          if (cancelled) {
+            return;
+          }
           setCompareData(payload);
         } catch (loadError) {
+          if (cancelled) {
+            return;
+          }
+          if (isRetryableApiError(loadError)) {
+            setIsWaitingForApi(true);
+            retryTimer = window.setTimeout(() => {
+              void run();
+            }, API_RETRY_DELAY_MS);
+            return;
+          }
+          setIsWaitingForApi(false);
           setError((loadError as Error).message);
         } finally {
-          setIsLoading(false);
+          if (!cancelled) {
+            setIsLoading(false);
+          }
         }
         return;
       }
 
       if (!left || !right) {
         setCompareData(null);
+        setIsWaitingForApi(false);
         return;
       }
 
       setIsLoading(true);
+      setIsWaitingForApi(false);
       setError('');
       try {
         const payload = await fetchCompare(left, right, selectedIds, 'range');
+        if (cancelled) {
+          return;
+        }
         setCompareData(payload);
       } catch (loadError) {
+        if (cancelled) {
+          return;
+        }
+        if (isRetryableApiError(loadError)) {
+          setIsWaitingForApi(true);
+          retryTimer = window.setTimeout(() => {
+            void run();
+          }, API_RETRY_DELAY_MS);
+          return;
+        }
+        setIsWaitingForApi(false);
         setError((loadError as Error).message);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    run().catch((loadError) => setError((loadError as Error).message));
-  }, [mode, left, right, selectedVersion, selectedIds]);
+    void run();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+    };
+  }, [isBootstrapReady, mode, left, right, selectedVersion, selectedIds]);
 
   const filteredCatalog = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -405,9 +498,13 @@ export function ComparePage() {
         </header>
 
         {error && <p className="error-banner">{error}</p>}
-        {isLoading && <p className="loading-banner">Loading parameters...</p>}
+        {isBootstrapping && <p className="loading-banner">Loading compare workspace...</p>}
+        {!isBootstrapping && isLoading && <p className="loading-banner">Loading parameters...</p>}
+        {isWaitingForApi && (
+          <p className="waiting-banner">Waiting for API to become available. Retrying every 2 seconds...</p>
+        )}
 
-        {!isLoading && compareData?.items.length === 0 && (
+        {!isBootstrapping && !isLoading && compareData?.items.length === 0 && (
           <p className="loading-banner">No parameters selected.</p>
         )}
 

@@ -2,7 +2,14 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import type { EChartsOption } from 'echarts';
 import type { CompareResult } from '../../shared/types';
-import { fetchCatalog, fetchCompare, fetchGitStats, fetchVersions } from '../lib/api';
+import {
+  API_RETRY_DELAY_MS,
+  fetchCatalog,
+  fetchCompare,
+  fetchGitStats,
+  fetchVersions,
+  isRetryableApiError
+} from '../lib/api';
 import { EChart } from '../components/EChart';
 import { getAxisSpec } from '../lib/chartAxes';
 import { jointHeatmapOption, resolveAdaptiveHeatmapLayout } from '../lib/jointHeatmapOption';
@@ -24,6 +31,8 @@ const PREVIEW_PARAMETER_IDS = [
 interface HomePageProps {
   showDevFeatures: boolean;
 }
+
+type HomeLoadState = 'loading' | 'waiting' | 'ready' | 'error';
 
 const ZERO_GIT_STATS = {
   filesChanged: 0,
@@ -111,41 +120,17 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
   const [previewItems, setPreviewItems] = useState<CompareResult[]>([]);
   const [previewIndex, setPreviewIndex] = useState<number>(0);
   const [isPreviewPaused, setIsPreviewPaused] = useState<boolean>(false);
+  const [loadState, setLoadState] = useState<HomeLoadState>('loading');
+  const [loadError, setLoadError] = useState<string>('');
 
   const formatCount = (value: number) => value.toLocaleString('en-GB');
   const formatSignedCount = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString('en-GB')}`;
 
   useEffect(() => {
-    const load = async () => {
-      const [versionsPayload, cards, gitStats] = await Promise.all([
-        fetchVersions(),
-        fetchCatalog(),
-        showDevFeatures ? fetchGitStats() : Promise.resolve(ZERO_GIT_STATS)
-      ]);
-      const versions = versionsPayload.versions;
-      setVersionsCount(versions.length);
-      setInProgressVersions(versionsPayload.inProgressVersions);
-      setLatestVersion(versions[versions.length - 1] ?? 'n/a');
-      setCardsCount(cards.length);
-      setFilesChanged(gitStats.filesChanged);
-      setLinesWritten(gitStats.lineChanges);
-      setCommitCount(gitStats.commitCount);
-      setFilesChangedWeekly(gitStats.weekly.filesChanged);
-      setLinesWrittenWeekly(gitStats.weekly.lineChanges);
-      setCommitCountWeekly(gitStats.weekly.commitCount);
+    let cancelled = false;
+    let retryTimer: number | undefined;
 
-      const latest = versions[versions.length - 1] ?? '';
-      if (latest) {
-        const previewPayload = await fetchCompare(latest, latest, PREVIEW_PARAMETER_IDS, 'through_right');
-        const byId = new Map(previewPayload.items.map((item) => [item.id, item]));
-        const ordered = PREVIEW_PARAMETER_IDS.map((id) => byId.get(id)).filter((item): item is CompareResult =>
-          Boolean(item)
-        );
-        setPreviewItems(ordered);
-      }
-    };
-
-    load().catch(() => {
+    const resetHomeStats = () => {
       setVersionsCount(0);
       setInProgressVersions([]);
       setLatestVersion('n/a');
@@ -157,7 +142,79 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
       setLinesWrittenWeekly(0);
       setCommitCountWeekly(0);
       setPreviewItems([]);
-    });
+    };
+
+    const load = async () => {
+      setLoadState('loading');
+      setLoadError('');
+
+      try {
+        const [versionsPayload, cards, gitStats] = await Promise.all([
+          fetchVersions(),
+          fetchCatalog(),
+          showDevFeatures ? fetchGitStats() : Promise.resolve(ZERO_GIT_STATS)
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        const versions = versionsPayload.versions;
+        setVersionsCount(versions.length);
+        setInProgressVersions(versionsPayload.inProgressVersions);
+        setLatestVersion(versions[versions.length - 1] ?? 'n/a');
+        setCardsCount(cards.length);
+        setFilesChanged(gitStats.filesChanged);
+        setLinesWritten(gitStats.lineChanges);
+        setCommitCount(gitStats.commitCount);
+        setFilesChangedWeekly(gitStats.weekly.filesChanged);
+        setLinesWrittenWeekly(gitStats.weekly.lineChanges);
+        setCommitCountWeekly(gitStats.weekly.commitCount);
+
+        const latest = versions[versions.length - 1] ?? '';
+        if (latest) {
+          const previewPayload = await fetchCompare(latest, latest, PREVIEW_PARAMETER_IDS, 'through_right');
+          if (cancelled) {
+            return;
+          }
+          const byId = new Map(previewPayload.items.map((item) => [item.id, item]));
+          const ordered = PREVIEW_PARAMETER_IDS.map((id) => byId.get(id)).filter((item): item is CompareResult =>
+            Boolean(item)
+          );
+          setPreviewItems(ordered);
+        } else {
+          setPreviewItems([]);
+        }
+
+        setLoadState('ready');
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        resetHomeStats();
+
+        if (isRetryableApiError(error)) {
+          setLoadState('waiting');
+          retryTimer = window.setTimeout(() => {
+            void load();
+          }, API_RETRY_DELAY_MS);
+          return;
+        }
+
+        setLoadError((error as Error).message);
+        setLoadState('error');
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+    };
   }, [showDevFeatures]);
 
   useEffect(() => {
@@ -183,6 +240,12 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
 
   return (
     <section className="home-layout">
+      {loadState === 'loading' && <p className="loading-banner">Loading homepage data...</p>}
+      {loadState === 'waiting' && (
+        <p className="waiting-banner">Waiting for API to become available. Retrying every 2 seconds...</p>
+      )}
+      {loadState === 'error' && <p className="error-banner">{loadError}</p>}
+
       <div className="summary-card fade-up">
         <p className="eyebrow">Project Summary</p>
         <h2>Purpose and Model Context</h2>

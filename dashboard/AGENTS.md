@@ -54,6 +54,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
   - in local development only, these cards render with an orange `Dev only` pill and a red `To fix` pill.
   - when dev features are disabled (production or local `Preview non-dev` mode), homepage does not call `/api/git-stats`.
   - latest snapshot card displays a red `In progress` pill when the latest version is in `/api/versions.inProgressVersions`.
+  - homepage load retries automatically every 2 seconds when API requests fail with retryable errors, showing a waiting banner until data is available.
 - Dev-only page visibility behavior:
   - `Run Model` and `Experiments` navigation entries and routes are dev-only.
   - when previewing non-dev in local development, those entries/routes are hidden and direct route access redirects to `/`.
@@ -64,6 +65,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
   - results header displays red `In progress` pills for selected in-progress versions.
   - compare-card graph legends/tooltips/titles append `(In progress)` to in-progress version labels.
   - compare cards with `changeOriginsInRange` containing `validationStatus=in_progress` display a red `In progress` status pill.
+  - compare bootstrapping and parameter fetches auto-retry every 2 seconds on retryable API errors, showing a waiting banner until API responses recover.
 - API runtime env precedence:
   - port: `PORT` first, fallback `DASHBOARD_API_PORT`, fallback `8787`.
   - CORS allowlist (optional): `DASHBOARD_CORS_ORIGIN`.

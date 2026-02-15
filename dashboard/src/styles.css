@@ -716,6 +716,7 @@ code {
 }
 
 .loading-banner,
+.waiting-banner,
 .error-banner {
   margin: 0;
   border-radius: 0.7rem;
@@ -724,6 +725,12 @@ code {
 
 .loading-banner {
   background: #f8f9fa;
+}
+
+.waiting-banner {
+  color: #9c4b00;
+  background: #fff4e6;
+  border: 1px solid rgba(240, 140, 0, 0.28);
 }
 
 .error-banner {

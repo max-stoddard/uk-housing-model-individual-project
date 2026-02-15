@@ -28,6 +28,20 @@ interface GitStatsResponse {
   };
 }
 
+export class ApiRequestError extends Error {
+  retryable: boolean;
+  status: number | null;
+
+  constructor(message: string, retryable: boolean, status: number | null) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.retryable = retryable;
+    this.status = status;
+  }
+}
+
+export const API_RETRY_DELAY_MS = 2000;
+
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
 
 function buildApiUrl(path: string): string {
@@ -35,12 +49,47 @@ function buildApiUrl(path: string): string {
   return apiBaseUrl ? `${apiBaseUrl}${normalizedPath}` : normalizedPath;
 }
 
-export async function fetchVersions(): Promise<VersionsPayload> {
-  const response = await fetch(buildApiUrl('/api/versions'));
-  if (!response.ok) {
-    throw new Error('Failed to fetch versions');
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+async function readErrorMessage(response: Response, fallbackMessage: string): Promise<string> {
+  try {
+    const payload = (await response.json()) as { error?: string; message?: string };
+    if (payload.error) {
+      return payload.error;
+    }
+    if (payload.message) {
+      return payload.message;
+    }
+  } catch {
+    return fallbackMessage;
   }
-  const payload = (await response.json()) as VersionsResponse;
+  return fallbackMessage;
+}
+
+async function requestJson<T>(url: string, fallbackMessage: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new ApiRequestError(fallbackMessage, true, null);
+  }
+
+  if (!response.ok) {
+    const message = await readErrorMessage(response, fallbackMessage);
+    throw new ApiRequestError(message, isRetryableStatus(response.status), response.status);
+  }
+
+  return (await response.json()) as T;
+}
+
+export function isRetryableApiError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.retryable;
+}
+
+export async function fetchVersions(): Promise<VersionsPayload> {
+  const payload = await requestJson<VersionsResponse>(buildApiUrl('/api/versions'), 'Failed to fetch versions');
   return {
     versions: payload.versions,
     inProgressVersions: payload.inProgressVersions ?? []
@@ -48,20 +97,12 @@ export async function fetchVersions(): Promise<VersionsPayload> {
 }
 
 export async function fetchCatalog(): Promise<ParameterCardMeta[]> {
-  const response = await fetch(buildApiUrl('/api/parameter-catalog'));
-  if (!response.ok) {
-    throw new Error('Failed to fetch parameter catalog');
-  }
-  const payload = (await response.json()) as CatalogResponse;
+  const payload = await requestJson<CatalogResponse>(buildApiUrl('/api/parameter-catalog'), 'Failed to fetch parameter catalog');
   return payload.items;
 }
 
 export async function fetchGitStats(): Promise<GitStatsResponse> {
-  const response = await fetch(buildApiUrl('/api/git-stats'));
-  if (!response.ok) {
-    throw new Error('Failed to fetch git stats');
-  }
-  return (await response.json()) as GitStatsResponse;
+  return requestJson<GitStatsResponse>(buildApiUrl('/api/git-stats'), 'Failed to fetch git stats');
 }
 
 export async function fetchCompare(
@@ -77,11 +118,5 @@ export async function fetchCompare(
     provenanceScope
   });
 
-  const response = await fetch(`${buildApiUrl('/api/compare')}?${params.toString()}`);
-  if (!response.ok) {
-    const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? 'Failed to fetch comparison');
-  }
-
-  return (await response.json()) as CompareResponse;
+  return requestJson<CompareResponse>(`${buildApiUrl('/api/compare')}?${params.toString()}`, 'Failed to fetch comparison');
 }
