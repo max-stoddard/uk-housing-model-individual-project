@@ -20,6 +20,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - `dashboard/src/components/CompareCard.tsx`: Format-specific rendering logic for comparison cards.
 - `dashboard/src/components/EChart.tsx`: ECharts wrapper.
 - `dashboard/src/lib/api.ts`: Frontend API calls.
+- `dashboard/src/lib/compareChartOptions.ts`: Shared ECharts option builders reused by homepage previews and compare cards.
 - `dashboard/src/lib/chartAxes.ts`: Canonical axis-title/unit mapping for all charted parameter cards.
 - `dashboard/server`: Express API server.
 - `dashboard/server/index.ts`: API route registration (`/healthz`, `/api/versions`, `/api/parameter-catalog`, `/api/git-stats`, `/api/compare`).
@@ -42,6 +43,19 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - Frontend API base URL behavior:
   - if `VITE_API_BASE_URL` is set, frontend calls `${VITE_API_BASE_URL}/api/*`.
   - if unset, frontend calls relative `/api/*` (same-origin).
+- Favicon behavior:
+  - production uses `/favicon.svg` (white house icon).
+  - local development uses `/favicon-dev.svg` (orange house icon) via `import.meta.env.DEV` in `src/main.tsx`.
+- Header environment tag behavior:
+  - local development renders an orange `Dev` pill next to the `UK Housing Market ABM` title via `import.meta.env.DEV` in `src/App.tsx`.
+  - local development also renders an orange `Preview non-dev` toggle next to that title; this toggle hides dev-only UI while remaining available so developers can switch back.
+- Homepage git-stats visibility behavior:
+  - `Lines Written`, `Files Changed`, and `Commits` cards are hidden in production.
+  - in local development only, these cards render with an orange `Dev only` pill and a red `To fix` pill.
+  - when dev features are disabled (production or local `Preview non-dev` mode), homepage does not call `/api/git-stats`.
+- Dev-only page visibility behavior:
+  - `Run Model` and `Experiments` navigation entries and routes are dev-only.
+  - when previewing non-dev in local development, those entries/routes are hidden and direct route access redirects to `/`.
 - API runtime env precedence:
   - port: `PORT` first, fallback `DASHBOARD_API_PORT`, fallback `8787`.
   - CORS allowlist (optional): `DASHBOARD_CORS_ORIGIN`.
