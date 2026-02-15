@@ -145,6 +145,20 @@ code {
   padding: 0.2rem 0.55rem;
 }
 
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.22rem 0.56rem;
+  background: #fff4e6;
+  color: #d9480f;
+  border: 1px solid rgba(217, 72, 15, 0.2);
+}
+
 .summary-card {
   background: var(--panel);
   border-radius: 1rem;
@@ -223,6 +237,12 @@ code {
 .hero-card p {
   color: var(--muted);
   max-width: 70ch;
+}
+
+.hero-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .hero-preview {
@@ -343,8 +363,37 @@ code {
 
 .stats-grid strong {
   margin-top: 0.5rem;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1.55rem;
+  line-height: 1;
+}
+
+.stat-value {
+  display: inline-block;
+  line-height: 1;
+}
+
+.stat-delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: #2b8a3e;
+  background: #ebfbee;
+  border: 1px solid rgba(43, 138, 62, 0.18);
+  border-radius: 999px;
+  padding: 0.16rem 0.48rem;
+}
+
+.stat-delta.negative {
+  color: #c92a2a;
+  background: #fff5f5;
+  border-color: rgba(201, 42, 42, 0.2);
 }
 
 .compare-layout {

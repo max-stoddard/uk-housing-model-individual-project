@@ -5,6 +5,7 @@ import type { CompareResult } from '../../shared/types';
 import { fetchCatalog, fetchCompare, fetchGitStats, fetchVersions } from '../lib/api';
 import { EChart } from '../components/EChart';
 import { getAxisSpec } from '../lib/chartAxes';
+import { jointHeatmapOption, type JointHeatmapLayoutOverrides } from '../lib/jointHeatmapOption';
 
 const PREVIEW_PARAMETER_IDS = [
   'wealth_given_income_joint',
@@ -59,6 +60,16 @@ function formatPreviewAxisTick(value: number): string {
     return value.toLocaleString('en-GB', { maximumFractionDigits: 4 });
   }
   return formatPreviewScientific(value, 1);
+}
+
+function jointLayoutOverrides(itemId: string): JointHeatmapLayoutOverrides | undefined {
+  if (itemId === 'wealth_given_income_joint') {
+    return {
+      xAxisNameGap: 70,
+      gridBottom: 108
+    };
+  }
+  return undefined;
 }
 
 function buildPreviewOption(item: CompareResult): EChartsOption {
@@ -134,70 +145,19 @@ function buildPreviewOption(item: CompareResult): EChartsOption {
       const values = payload.matrix.right.map((cell) => cell.value);
       const min = Math.min(...values);
       const max = Math.max(...values);
-      return {
-        tooltip: {
-          trigger: 'item',
-          confine: true,
-          transitionDuration: 0.12,
-          formatter: (param: any) => {
-            const [xIndex, yIndex, value] = param.data as [number, number, number];
-            const xLabel = payload.matrix.xAxis.labels[xIndex];
-            const yLabel = payload.matrix.yAxis.labels[yIndex];
-            return `${xLabel} / ${yLabel}<br/>${formatPreviewNumber(value)}`;
-          }
-        },
-        grid: { left: 106, right: 56, top: 28, bottom: 84, containLabel: true },
-        xAxis: {
-          type: 'category',
-          data: payload.matrix.xAxis.labels,
-          axisLabel: { rotate: 38, fontSize: 10, margin: 10 },
-          name: axisSpec.joint.xTitle,
-          nameLocation: 'middle',
-          nameGap: 46,
-          nameTextStyle: { fontSize: 10 }
-        },
-        yAxis: {
-          type: 'category',
-          data: payload.matrix.yAxis.labels,
-          axisLabel: { fontSize: 10, margin: 8 },
-          name: axisSpec.joint.yTitle,
-          nameLocation: 'middle',
-          nameGap: 88,
-          nameTextStyle: { fontSize: 10 }
-        },
-        visualMap: {
-          show: true,
-          type: 'continuous',
-          min,
-          max,
-          orient: 'vertical',
-          right: 8,
-          top: 'middle',
-          calculable: false,
-          realtime: true,
-          showLabel: false,
-          precision: 8,
-          formatter: '{value}',
-          itemWidth: 10,
-          itemHeight: 136,
-          text: ['High', 'Low'],
-          textGap: 6,
-          textStyle: { color: '#495057', fontSize: 9 },
-          inRange: { color: ['#eff6ff', '#1d4ed8'] }
-        },
-        series: [
-          {
-            type: 'heatmap',
-            data: payload.matrix.right.map((cell) => [cell.xIndex, cell.yIndex, cell.value]),
-            emphasis: {
-              itemStyle: {
-                borderColor: '#212529',
-                borderWidth: 1
-              }
-            }
-          }
-        ]
-      };
+      return jointHeatmapOption({
+        title: item.rightVersion,
+        cells: payload.matrix.right,
+        xLabels: payload.matrix.xAxis.labels,
+        yLabels: payload.matrix.yAxis.labels,
+        min,
+        max,
+        colors: ['#eff6ff', '#1d4ed8'],
+        xAxisName: axisSpec.joint.xTitle,
+        yAxisName: axisSpec.joint.yTitle,
+        valueFormatter: formatPreviewNumber,
+        layout: jointLayoutOverrides(item.id)
+      });
     }
 
     case 'lognormal_pair':
@@ -303,11 +263,15 @@ export function HomePage() {
   const [filesChanged, setFilesChanged] = useState<number>(0);
   const [linesWritten, setLinesWritten] = useState<number>(0);
   const [commitCount, setCommitCount] = useState<number>(0);
+  const [filesChangedWeekly, setFilesChangedWeekly] = useState<number>(0);
+  const [linesWrittenWeekly, setLinesWrittenWeekly] = useState<number>(0);
+  const [commitCountWeekly, setCommitCountWeekly] = useState<number>(0);
   const [previewItems, setPreviewItems] = useState<CompareResult[]>([]);
   const [previewIndex, setPreviewIndex] = useState<number>(0);
   const [isPreviewPaused, setIsPreviewPaused] = useState<boolean>(false);
 
   const formatCount = (value: number) => value.toLocaleString('en-GB');
+  const formatSignedCount = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString('en-GB')}`;
 
   useEffect(() => {
     const load = async () => {
@@ -318,6 +282,9 @@ export function HomePage() {
       setFilesChanged(gitStats.filesChanged);
       setLinesWritten(gitStats.lineChanges);
       setCommitCount(gitStats.commitCount);
+      setFilesChangedWeekly(gitStats.weekly.filesChanged);
+      setLinesWrittenWeekly(gitStats.weekly.lineChanges);
+      setCommitCountWeekly(gitStats.weekly.commitCount);
 
       const latest = versions[versions.length - 1] ?? '';
       if (latest) {
@@ -337,6 +304,9 @@ export function HomePage() {
       setFilesChanged(0);
       setLinesWritten(0);
       setCommitCount(0);
+      setFilesChangedWeekly(0);
+      setLinesWrittenWeekly(0);
+      setCommitCountWeekly(0);
       setPreviewItems([]);
     });
   }, []);
@@ -367,15 +337,19 @@ export function HomePage() {
         <p className="eyebrow">Project Summary</p>
         <h2>Purpose and Model Context</h2>
         <p>
-          This website is the main workspace for my individual project. It exists to visualize calibrated model parameters,
-          track iterative updates, and provide transparent provenance for how each model input evolves over time.
+          I&apos;m Max Stoddard, and this website is the primary interface for my Imperial College London BEng individual
+          project: improving the UK Housing Market ABM in collaboration context with the Bank of England.
         </p>
         <p>
-          The model is an agent-based simulation of the UK housing market, including owner-occupiers, renters, buy-to-let
-          investors, banks, government, and policy mechanisms that affect affordability and wealth outcomes.
+          My work focuses on speeding up the model, updating calibration inputs to reflect post-2023 UK conditions,
+          strengthening validation against real-world patterns, and improving interpretability through clearer visual tools.
+        </p>
+        <p>
+          The aim of this website is to make the model genuinely interactive: a place where anyone can explore UK housing
+          market dynamics, run and compare scenarios, and see key outputs in a clear, visual form.
         </p>
         <div className="summary-links">
-          <a href="https://github.com/max-stoddard/uk-housing-model-individual-project" target="_blank" rel="noreferrer">
+          <a href="https://github.com/max-stoddard/UK-Housing-Market-ABM" target="_blank" rel="noreferrer">
             <span className="summary-link-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" role="img" focusable="false">
                 <path
@@ -414,20 +388,38 @@ export function HomePage() {
       <div className="stats-grid fade-up-delay">
         <article>
           <p>Lines Written</p>
-          <strong>{formatCount(linesWritten)}</strong>
+          <strong>
+            <span className="stat-value">{formatCount(linesWritten)}</span>
+            <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
+              {formatSignedCount(linesWrittenWeekly)} this week
+            </span>
+          </strong>
         </article>
         <article>
           <p>Files Changed</p>
-          <strong>{formatCount(filesChanged)}</strong>
+          <strong>
+            <span className="stat-value">{formatCount(filesChanged)}</span>
+            <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
+              {formatSignedCount(filesChangedWeekly)} this week
+            </span>
+          </strong>
         </article>
         <article>
           <p>Commits</p>
-          <strong>{formatCount(commitCount)}</strong>
+          <strong>
+            <span className="stat-value">{formatCount(commitCount)}</span>
+            <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>
+              {formatSignedCount(commitCountWeekly)} this week
+            </span>
+          </strong>
         </article>
       </div>
 
       <div className="hero-card fade-up">
-        <p className="eyebrow">Main Individual Project Website</p>
+        <div className="hero-label-row">
+          <p className="eyebrow">Interactive ABM Workspace</p>
+          <span className="tag-pill">Just Launched</span>
+        </div>
         <h2>Visualize and track calibrated UK housing model parameters</h2>
         {previewItem && (
           <div

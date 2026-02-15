@@ -9,7 +9,7 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand-wrap">
-          <p className="eyebrow">UK Housing Model</p>
+          <p className="eyebrow">UK Housing Market ABM</p>
           <h1>Individual Project Dashboard</h1>
         </div>
         <nav className="main-nav" aria-label="Main">
