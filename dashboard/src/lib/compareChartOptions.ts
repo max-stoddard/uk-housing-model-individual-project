@@ -252,12 +252,7 @@ export function binnedSingleOption(item: CompareResult, xAxisName: string, yAxis
 }
 
 export function jointLayoutOverrides(itemId: string): JointHeatmapLayoutOverrides | undefined {
-  if (itemId === 'wealth_given_income_joint') {
-    return {
-      xAxisNameGap: 70,
-      gridBottom: 108
-    };
-  }
+  void itemId;
   return undefined;
 }
 

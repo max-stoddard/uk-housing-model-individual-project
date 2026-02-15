@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { CompareResult, ScalarDatum } from '../../shared/types';
 import { EChart } from './EChart';
 import { getAxisSpec } from '../lib/chartAxes';
-import { jointHeatmapOption } from '../lib/jointHeatmapOption';
+import { jointHeatmapOption, resolveAdaptiveHeatmapLayout } from '../lib/jointHeatmapOption';
 import {
   binnedOption,
   binnedSingleOption,
@@ -90,6 +90,24 @@ function renderScalarTable(values: ScalarDatum[], mode: 'single' | 'compare') {
 
 function itemIsUpdated(item: CompareResult, mode: 'single' | 'compare'): boolean {
   return mode === 'single' ? item.changeOriginsInRange.length > 0 : !item.unchanged;
+}
+
+function buildAdaptiveHeatmapLayout(
+  context: 'compare' | 'single' | 'preview',
+  item: CompareResult,
+  axisSpec: ReturnType<typeof getAxisSpec>,
+  xLabels: string[],
+  yLabels: string[]
+) {
+  const baseLayout = jointLayoutOverrides(item.id);
+  return resolveAdaptiveHeatmapLayout({
+    context,
+    xLabels,
+    yLabels,
+    xAxisName: axisSpec.joint.xTitle,
+    yAxisName: axisSpec.joint.yTitle,
+    layout: baseLayout
+  });
 }
 
 export function CompareCard({ item, mode, defaultExpanded = false }: CompareCardProps) {
@@ -225,57 +243,83 @@ export function CompareCard({ item, mode, defaultExpanded = false }: CompareCard
                     colors: ['#eff6ff', '#1d4ed8'],
                     xAxisName: axisSpec.joint.xTitle,
                     yAxisName: axisSpec.joint.yTitle,
-                    layout: jointLayoutOverrides(item.id)
+                    layout: buildAdaptiveHeatmapLayout(
+                      'single',
+                      item,
+                      axisSpec,
+                      item.visualPayload.matrix.xAxis.labels,
+                      item.visualPayload.matrix.yAxis.labels
+                    )
                   })}
                   className="chart chart-heatmap"
                 />
               ) : (
-                <div className="heatmap-grid">
-                  <EChart
-                    option={jointHeatmapOption({
-                      title: item.leftVersion,
-                      cells: item.visualPayload.matrix.left,
-                      xLabels: item.visualPayload.matrix.xAxis.labels,
-                      yLabels: item.visualPayload.matrix.yAxis.labels,
-                      min: jointRanges.sharedMin,
-                      max: jointRanges.sharedMax,
-                      colors: ['#eff6ff', '#1d4ed8'],
-                      xAxisName: axisSpec.joint.xTitle,
-                      yAxisName: axisSpec.joint.yTitle,
-                      layout: jointLayoutOverrides(item.id)
-                    })}
-                    className="chart chart-heatmap"
-                  />
-                  <EChart
-                    option={jointHeatmapOption({
-                      title: item.rightVersion,
-                      cells: item.visualPayload.matrix.right,
-                      xLabels: item.visualPayload.matrix.xAxis.labels,
-                      yLabels: item.visualPayload.matrix.yAxis.labels,
-                      min: jointRanges.sharedMin,
-                      max: jointRanges.sharedMax,
-                      colors: ['#e8f7f6', '#18958b'],
-                      xAxisName: axisSpec.joint.xTitle,
-                      yAxisName: axisSpec.joint.yTitle,
-                      layout: jointLayoutOverrides(item.id)
-                    })}
-                    className="chart chart-heatmap"
-                  />
-                  <EChart
-                    option={jointHeatmapOption({
-                      title: 'Delta',
-                      cells: item.visualPayload.matrix.delta,
-                      xLabels: item.visualPayload.matrix.xAxis.labels,
-                      yLabels: item.visualPayload.matrix.yAxis.labels,
-                      min: jointRanges.deltaMin,
-                      max: jointRanges.deltaMax,
-                      colors: ['#1d4ed8', '#f8fafc', '#18958b'],
-                      xAxisName: axisSpec.joint.xTitle,
-                      yAxisName: axisSpec.joint.yTitle,
-                      layout: jointLayoutOverrides(item.id)
-                    })}
-                    className="chart chart-heatmap"
-                  />
+                <div className="heatmap-scroll">
+                  <div className="heatmap-grid heatmap-grid-compare">
+                    <EChart
+                      option={jointHeatmapOption({
+                        title: item.leftVersion,
+                        cells: item.visualPayload.matrix.left,
+                        xLabels: item.visualPayload.matrix.xAxis.labels,
+                        yLabels: item.visualPayload.matrix.yAxis.labels,
+                        min: jointRanges.sharedMin,
+                        max: jointRanges.sharedMax,
+                        colors: ['#eff6ff', '#1d4ed8'],
+                        xAxisName: axisSpec.joint.xTitle,
+                        yAxisName: axisSpec.joint.yTitle,
+                        layout: buildAdaptiveHeatmapLayout(
+                          'compare',
+                          item,
+                          axisSpec,
+                          item.visualPayload.matrix.xAxis.labels,
+                          item.visualPayload.matrix.yAxis.labels
+                        )
+                      })}
+                      className="chart chart-heatmap"
+                    />
+                    <EChart
+                      option={jointHeatmapOption({
+                        title: item.rightVersion,
+                        cells: item.visualPayload.matrix.right,
+                        xLabels: item.visualPayload.matrix.xAxis.labels,
+                        yLabels: item.visualPayload.matrix.yAxis.labels,
+                        min: jointRanges.sharedMin,
+                        max: jointRanges.sharedMax,
+                        colors: ['#e8f7f6', '#18958b'],
+                        xAxisName: axisSpec.joint.xTitle,
+                        yAxisName: axisSpec.joint.yTitle,
+                        layout: buildAdaptiveHeatmapLayout(
+                          'compare',
+                          item,
+                          axisSpec,
+                          item.visualPayload.matrix.xAxis.labels,
+                          item.visualPayload.matrix.yAxis.labels
+                        )
+                      })}
+                      className="chart chart-heatmap"
+                    />
+                    <EChart
+                      option={jointHeatmapOption({
+                        title: 'Delta',
+                        cells: item.visualPayload.matrix.delta,
+                        xLabels: item.visualPayload.matrix.xAxis.labels,
+                        yLabels: item.visualPayload.matrix.yAxis.labels,
+                        min: jointRanges.deltaMin,
+                        max: jointRanges.deltaMax,
+                        colors: ['#1d4ed8', '#f8fafc', '#18958b'],
+                        xAxisName: axisSpec.joint.xTitle,
+                        yAxisName: axisSpec.joint.yTitle,
+                        layout: buildAdaptiveHeatmapLayout(
+                          'compare',
+                          item,
+                          axisSpec,
+                          item.visualPayload.matrix.xAxis.labels,
+                          item.visualPayload.matrix.yAxis.labels
+                        )
+                      })}
+                      className="chart chart-heatmap"
+                    />
+                  </div>
                 </div>
               )}
             </div>

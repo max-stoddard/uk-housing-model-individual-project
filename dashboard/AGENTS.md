@@ -18,7 +18,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - `dashboard/src/pages/HomePage.tsx`: Landing page.
 - `dashboard/src/pages/ComparePage.tsx`: Main comparison workspace.
 - `dashboard/src/components/CompareCard.tsx`: Format-specific rendering logic for comparison cards.
-- `dashboard/src/components/EChart.tsx`: ECharts wrapper.
+- `dashboard/src/components/EChart.tsx`: ECharts wrapper with `ResizeObserver`-based container resizing.
 - `dashboard/src/lib/api.ts`: Frontend API calls.
 - `dashboard/src/lib/compareChartOptions.ts`: Shared ECharts option builders reused by homepage previews and compare cards.
 - `dashboard/src/lib/chartAxes.ts`: Canonical axis-title/unit mapping for all charted parameter cards.
@@ -56,6 +56,9 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - Dev-only page visibility behavior:
   - `Run Model` and `Experiments` navigation entries and routes are dev-only.
   - when previewing non-dev in local development, those entries/routes are hidden and direct route access redirects to `/`.
+- Compare setup panel behavior:
+  - when open, setup collapse control is a compact icon button in the setup header.
+  - when closed, setup restore control is a compact top-left icon button (not a full rail label).
 - API runtime env precedence:
   - port: `PORT` first, fallback `DASHBOARD_API_PORT`, fallback `8787`.
   - CORS allowlist (optional): `DASHBOARD_CORS_ORIGIN`.
@@ -96,6 +99,9 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - Good to know for joint heatmaps:
   - use built-in interactive ECharts `visualMap` on the right side (`orient: vertical`, `calculable: true`) for consistent draggable keys.
   - avoid replacing it with custom non-interactive `graphic` legends unless explicitly requested.
+  - use adaptive heatmap margin solving from label/title geometry (not fixed large `gridLeft`/`gridBottom` constants) to maximize heatmap body area.
+  - compare-mode heatmaps should use explicit grid layout (`containLabel: false`, `outerBoundsMode: none`) to prevent auto-shifting from long labels.
+  - compare-mode should keep `old`, `new`, and `delta` heatmaps side-by-side in one row; allow horizontal scroll when viewport width is constrained.
 - Maintain concise, practical explanations in catalog metadata (meaning + likely directional effect).
 - Keep charts readable first (labels, units, deltas); avoid adding decorative complexity that obscures comparisons.
 

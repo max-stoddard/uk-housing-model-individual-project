@@ -5,7 +5,7 @@ import type { CompareResult } from '../../shared/types';
 import { fetchCatalog, fetchCompare, fetchGitStats, fetchVersions } from '../lib/api';
 import { EChart } from '../components/EChart';
 import { getAxisSpec } from '../lib/chartAxes';
-import { jointHeatmapOption } from '../lib/jointHeatmapOption';
+import { jointHeatmapOption, resolveAdaptiveHeatmapLayout } from '../lib/jointHeatmapOption';
 import {
   binnedSingleOption,
   curveSingleOption,
@@ -62,7 +62,14 @@ function buildPreviewOption(item: CompareResult): EChartsOption {
         colors: ['#eff6ff', '#1d4ed8'],
         xAxisName: axisSpec.joint.xTitle,
         yAxisName: axisSpec.joint.yTitle,
-        layout: jointLayoutOverrides(item.id)
+        layout: resolveAdaptiveHeatmapLayout({
+          context: 'preview',
+          xLabels: payload.matrix.xAxis.labels,
+          yLabels: payload.matrix.yAxis.labels,
+          xAxisName: axisSpec.joint.xTitle,
+          yAxisName: axisSpec.joint.yTitle,
+          layout: jointLayoutOverrides(item.id)
+        })
       });
     }
 

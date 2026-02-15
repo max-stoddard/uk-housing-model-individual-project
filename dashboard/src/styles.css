@@ -485,10 +485,11 @@ code {
   grid-template-columns: minmax(260px, 320px) 1fr;
   gap: 1rem;
   min-height: calc(100vh - 185px);
+  align-items: start;
 }
 
 .compare-layout.setup-collapsed {
-  grid-template-columns: 46px 1fr;
+  grid-template-columns: 42px 1fr;
 }
 
 .sidebar {
@@ -503,19 +504,21 @@ code {
   height: fit-content;
 }
 
-.sidebar-collapse {
-  margin-bottom: 0.3rem;
-}
-
 .setup-rail-toggle {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  position: sticky;
+  top: 0.75rem;
+  justify-self: start;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(17, 32, 24, 0.12);
   background: var(--panel);
   color: var(--muted);
-  border-radius: 0.75rem;
+  border-radius: 0.6rem;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: var(--shadow);
@@ -529,7 +532,42 @@ code {
 .sidebar-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sidebar-head-actions p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.sidebar-icon-toggle {
+  width: 1.85rem;
+  height: 1.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(17, 32, 24, 0.14);
+  background: #fff;
+  color: var(--muted);
+  border-radius: 0.52rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.setup-rail-toggle:hover,
+.sidebar-icon-toggle:hover {
+  background: #f5f7f5;
 }
 
 .sidebar label {
@@ -816,13 +854,23 @@ code {
 }
 
 .chart-heatmap {
-  height: 390px;
+  height: 410px;
+}
+
+.heatmap-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.2rem;
 }
 
 .heatmap-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.6rem;
+}
+
+.heatmap-grid-compare {
+  grid-template-columns: repeat(3, minmax(340px, 1fr));
+  min-width: 1040px;
 }
 
 .kpi-inline {
@@ -1008,14 +1056,17 @@ code {
   }
 
   .setup-rail-toggle {
-    writing-mode: horizontal-tb;
-    transform: none;
+    position: static;
     justify-self: start;
-    padding: 0.5rem 0.7rem;
   }
 
   .heatmap-grid {
     grid-template-columns: 1fr;
+  }
+
+  .heatmap-grid.heatmap-grid-compare {
+    grid-template-columns: repeat(3, minmax(320px, 1fr));
+    min-width: 980px;
   }
 }
 
