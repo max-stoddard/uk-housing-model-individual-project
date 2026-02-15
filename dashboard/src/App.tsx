@@ -9,8 +9,8 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand-wrap">
-          <p className="eyebrow">UK Housing Market ABM</p>
-          <h1>Individual Project Dashboard</h1>
+          <p className="eyebrow">Max Stoddard BEng Individual Project</p>
+          <h1>UK Housing Market ABM</h1>
         </div>
         <nav className="main-nav" aria-label="Main">
           <NavLink to="/" end>

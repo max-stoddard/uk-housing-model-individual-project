@@ -337,15 +337,15 @@ export function HomePage() {
         <p className="eyebrow">Project Summary</p>
         <h2>Purpose and Model Context</h2>
         <p>
-          I&apos;m Max Stoddard, and this website is the primary interface for my Imperial College London BEng individual
-          project: improving the UK Housing Market ABM in collaboration context with the Bank of England.
+          I&apos;m Max Stoddard, and this website is the primary interface for my Imperial College London BEng Individual
+          project: improving the UK Housing Market ABM in collaboration with the Bank of England.
         </p>
         <p>
-          My work focuses on speeding up the model, updating calibration inputs to reflect post-2023 UK conditions,
+          My work focuses on speeding up the model, updating calibration inputs to reflect post-COVID UK conditions,
           strengthening validation against real-world patterns, and improving interpretability through clearer visual tools.
         </p>
         <p>
-          The aim of this website is to make the model genuinely interactive: a place where anyone can explore UK housing
+          The aim of this website is to make the model genuinely interactive: a place where anyone can explore the UK housing
           market dynamics, run and compare scenarios, and see key outputs in a clear, visual form.
         </p>
         <div className="summary-links">
