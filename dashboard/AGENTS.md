@@ -93,7 +93,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - Prefer extending `server/lib/service.ts` with clear, format-specific helpers rather than one large branching block.
 - Keep step-rate handling for `national_insurance_rates` and `income_tax_rates` as piecewise-threshold logic (not mass rebinning).
 - Keep page mode semantics stable:
-  - default `single` mode renders latest version and provenance `through_right`.
+  - default `single` mode renders the latest non-`in_progress` version (falling back to latest when all are in progress) and provenance `through_right`.
   - optional `compare` mode renders left/right delta with provenance `range`.
 - When adding a new visualization format, do all three:
   - add type in `shared/types.ts`

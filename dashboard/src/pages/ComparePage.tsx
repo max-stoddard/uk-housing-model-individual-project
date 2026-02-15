@@ -14,6 +14,17 @@ const GROUP_ORDER: ParameterGroup[] = [
 type ChangeFilter = 'all' | 'updated' | 'unchanged';
 type ViewMode = 'single' | 'compare';
 
+function getDefaultDisplayVersion(versions: string[], inProgressVersions: string[]): string {
+  const inProgressSet = new Set(inProgressVersions);
+  for (let index = versions.length - 1; index >= 0; index -= 1) {
+    const version = versions[index];
+    if (!inProgressSet.has(version)) {
+      return version;
+    }
+  }
+  return versions[versions.length - 1] ?? '';
+}
+
 function groupCatalog(catalog: ParameterCardMeta[]) {
   const grouped = new Map<string, ParameterCardMeta[]>();
   for (const item of catalog) {
@@ -89,13 +100,14 @@ export function ComparePage() {
         }
 
         const versionList = versionsPayload.versions;
+        const defaultDisplayVersion = getDefaultDisplayVersion(versionList, versionsPayload.inProgressVersions);
         setVersions(versionList);
         setInProgressVersions(versionsPayload.inProgressVersions);
         setCatalog(catalogList);
         setSelectedIds(catalogList.map((item) => item.id));
-        setSelectedVersion(versionList[versionList.length - 1] ?? '');
+        setSelectedVersion(defaultDisplayVersion);
         setLeft(versionList[0] ?? '');
-        setRight(versionList[versionList.length - 1] ?? '');
+        setRight(defaultDisplayVersion);
         setIsBootstrapReady(true);
         setIsBootstrapping(false);
       } catch (loadError) {
@@ -135,10 +147,10 @@ export function ComparePage() {
         setLeft(versions[0]);
       }
       if (!right && versions.length > 0) {
-        setRight(versions[versions.length - 1]);
+        setRight(getDefaultDisplayVersion(versions, inProgressVersions));
       }
     }
-  }, [mode, left, right, versions]);
+  }, [mode, left, right, versions, inProgressVersions]);
 
   useEffect(() => {
     if (!isBootstrapReady) {
