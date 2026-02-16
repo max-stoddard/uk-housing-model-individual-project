@@ -285,24 +285,6 @@ export function HomePage() {
 
       <div className="stats-grid fade-up-delay">
         <article>
-          <p>Snapshot Versions</p>
-          <strong>{formatCount(versionsCount)}</strong>
-        </article>
-        <article>
-          <p>Tracked Parameter Cards</p>
-          <strong>{formatCount(cardsCount)}</strong>
-        </article>
-        <article>
-          <p>Latest Snapshot</p>
-          <strong className="snapshot-value">
-            <span>{latestVersion}</span>
-            {latestIsInProgress && <span className="status-pill-in-progress">In progress</span>}
-          </strong>
-        </article>
-      </div>
-
-      <div className="stats-grid fade-up-delay">
-        <article>
           <p className="stat-title">
             <span>Lines Written</span>
           </p>
@@ -372,6 +354,24 @@ export function HomePage() {
         <Link to="/compare" className="primary-button">
           Open Model Parameters
         </Link>
+      </div>
+
+      <div className="stats-grid fade-up-delay">
+        <article>
+          <p>Snapshot Versions</p>
+          <strong>{formatCount(versionsCount)}</strong>
+        </article>
+        <article>
+          <p>Tracked Parameter Cards</p>
+          <strong>{formatCount(cardsCount)}</strong>
+        </article>
+        <article>
+          <p>Latest Snapshot</p>
+          <strong className="snapshot-value">
+            <span>{latestVersion}</span>
+            {latestIsInProgress && <span className="status-pill-in-progress">In progress</span>}
+          </strong>
+        </article>
       </div>
     </section>
   );
