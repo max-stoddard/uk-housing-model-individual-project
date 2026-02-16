@@ -283,43 +283,6 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="hero-card fade-up">
-        <div className="hero-label-row">
-          <p className="eyebrow">Interactive ABM Workspace</p>
-          <span className="tag-pill">Just Launched</span>
-        </div>
-        <h2>Visualize and track calibrated UK housing model parameters</h2>
-        {previewItem && (
-          <div
-            className="hero-preview"
-            onMouseEnter={() => setIsPreviewPaused(true)}
-            onMouseLeave={() => setIsPreviewPaused(false)}
-          >
-            <div className="hero-preview-head">
-              <p>Preview from Model Parameters</p>
-              <strong>{previewItem.title}</strong>
-            </div>
-            <div key={previewItem.id} className="hero-preview-chart-shell">
-              <EChart option={buildPreviewOption(previewItem)} className="chart hero-preview-chart" />
-            </div>
-            <div className="hero-preview-dots" role="tablist" aria-label="Parameter preview selector">
-              {previewItems.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={index === previewIndex ? 'active' : ''}
-                  onClick={() => setPreviewIndex(index)}
-                  aria-label={`Show preview ${index + 1}: ${item.title}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-        <Link to="/compare" className="primary-button">
-          Open Model Parameters
-        </Link>
-      </div>
-
       <div className="stats-grid fade-up-delay">
         <article>
           <p>Snapshot Versions</p>
@@ -372,6 +335,43 @@ export function HomePage() {
             </span>
           </strong>
         </article>
+      </div>
+
+      <div className="hero-card fade-up">
+        <div className="hero-label-row">
+          <p className="eyebrow">Interactive ABM Workspace</p>
+          <span className="tag-pill">Just Launched</span>
+        </div>
+        <h2>Visualize and track calibrated UK housing model parameters</h2>
+        {previewItem && (
+          <div
+            className="hero-preview"
+            onMouseEnter={() => setIsPreviewPaused(true)}
+            onMouseLeave={() => setIsPreviewPaused(false)}
+          >
+            <div className="hero-preview-head">
+              <p>Preview from Model Parameters</p>
+              <strong>{previewItem.title}</strong>
+            </div>
+            <div key={previewItem.id} className="hero-preview-chart-shell">
+              <EChart option={buildPreviewOption(previewItem)} className="chart hero-preview-chart" />
+            </div>
+            <div className="hero-preview-dots" role="tablist" aria-label="Parameter preview selector">
+              {previewItems.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={index === previewIndex ? 'active' : ''}
+                  onClick={() => setPreviewIndex(index)}
+                  aria-label={`Show preview ${index + 1}: ${item.title}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        <Link to="/compare" className="primary-button">
+          Open Model Parameters
+        </Link>
       </div>
     </section>
   );
