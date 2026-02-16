@@ -82,7 +82,8 @@ function readGitNumber(repoRoot: string, args: string[]): number {
   const value = Number(
     execFileSync('git', args, {
       cwd: repoRoot,
-      encoding: 'utf-8'
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe']
     }).trim()
   );
   return Number.isFinite(value) ? value : 0;
@@ -91,7 +92,8 @@ function readGitNumber(repoRoot: string, args: string[]): number {
 function readGitString(repoRoot: string, args: string[]): string {
   return execFileSync('git', args, {
     cwd: repoRoot,
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    stdio: ['pipe', 'pipe', 'pipe']
   }).trim();
 }
 
@@ -112,7 +114,8 @@ function getLocalWeeklyStats(repoRoot: string, sinceIso: string): WeeklyGitStats
 function getLocalGitStats(repoRoot: string, baseCommit: string): GitStatsPayload {
   const shortStat = execFileSync('git', ['diff', '--shortstat', baseCommit], {
     cwd: repoRoot,
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    stdio: ['pipe', 'pipe', 'pipe']
   }).trim();
   const commitCount = readGitNumber(repoRoot, ['rev-list', '--count', `${baseCommit}..HEAD`]);
   const sinceIso = getSinceIsoForWeeklyWindow();
@@ -218,11 +221,18 @@ async function getContributorStats(
 ): Promise<{ total: { insertions: number; deletions: number; lineChanges: number; commitCount: number }; weekly: { lineChanges: number; commitCount: number } }> {
   const url = `https://api.github.com/repos/${config.repo}/stats/contributors`;
   const response = await fetchWithRetry(url, config.token);
+  if (response.status === 202) {
+    throw new Error('GitHub contributors API still computing (202) after retries');
+  }
   if (!response.ok) {
     throw new Error(`GitHub contributors API returned ${response.status}`);
   }
 
-  const contributors: ContributorEntry[] = await response.json();
+  const body = await response.json();
+  if (!Array.isArray(body)) {
+    throw new Error('GitHub contributors API returned non-array body');
+  }
+  const contributors: ContributorEntry[] = body;
   const baseDate = new Date(baseCommitDateIso).getTime() / 1000;
   const sinceDate = new Date(sinceIso).getTime() / 1000;
 
@@ -349,6 +359,7 @@ export async function getGitStats(options: GitStatsOptions): Promise<GitStatsPay
   // 1. Check cache
   const cached = readCache(options.baseCommit);
   if (cached) {
+    console.log('[git-stats] using cached result');
     return cached;
   }
 
@@ -356,9 +367,10 @@ export async function getGitStats(options: GitStatsOptions): Promise<GitStatsPay
   try {
     const local = getLocalGitStats(options.repoRoot, options.baseCommit);
     writeCache(options.baseCommit, local);
+    console.log('[git-stats] local git succeeded');
     return local;
-  } catch {
-    // local git unavailable (e.g. deployed on Render with no repo)
+  } catch (error) {
+    console.log(`[git-stats] local git failed: ${(error as Error).message}`);
   }
 
   // 3. Try GitHub API
@@ -366,6 +378,7 @@ export async function getGitStats(options: GitStatsOptions): Promise<GitStatsPay
     try {
       const remote = await getGitHubStats(options.github, options.baseCommit);
       writeCache(options.baseCommit, remote);
+      console.log('[git-stats] GitHub API succeeded');
       return remote;
     } catch (error) {
       console.warn(`[git-stats] GitHub API fallback failed: ${(error as Error).message}`);
@@ -373,5 +386,6 @@ export async function getGitStats(options: GitStatsOptions): Promise<GitStatsPay
   }
 
   // 4. Return zeros
+  console.log('[git-stats] returning zeros');
   return buildZeroGitStats(options.baseCommit);
 }
