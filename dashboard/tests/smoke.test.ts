@@ -259,8 +259,8 @@ assert.ok(
   'git-stats should compute weekly commits with local git rev-list semantics'
 );
 assert.ok(
-  !gitStatsSource.includes('api.github.com'),
-  'git-stats should not use GitHub API sourcing for homepage metrics'
+  gitStatsSource.includes('api.github.com/repos'),
+  'git-stats should include GitHub API fallback for production environments without local git'
 );
 
 console.log('Smoke tests passed.');

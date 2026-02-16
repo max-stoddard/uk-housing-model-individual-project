@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from './lib/service';
-import { buildZeroGitStats, getGitStats } from './lib/gitStats';
+import { buildZeroGitStats, getGitStats, type GitHubConfig } from './lib/gitStats';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +14,12 @@ const host = '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
 const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
+
+const ghToken = process.env.DASHBOARD_GITHUB_TOKEN?.trim() ?? '';
+const ghRepo = process.env.DASHBOARD_GITHUB_REPO?.trim() ?? '';
+const ghBranch = process.env.DASHBOARD_GITHUB_BRANCH?.trim() || 'master';
+const githubConfig: GitHubConfig | undefined =
+  ghToken && ghRepo ? { token: ghToken, repo: ghRepo, branch: ghBranch } : undefined;
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -60,7 +66,8 @@ app.get('/api/git-stats', async (_req, res) => {
   try {
     const stats = await getGitStats({
       repoRoot,
-      baseCommit: gitStatsBaseCommit
+      baseCommit: gitStatsBaseCommit,
+      github: githubConfig
     });
     res.json(stats);
   } catch (error) {

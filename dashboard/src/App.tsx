@@ -42,7 +42,7 @@ export function App() {
 
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<HomePage showDevFeatures={showDevFeatures} />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/compare" element={<ComparePage />} />
           <Route
             path="/run-model"

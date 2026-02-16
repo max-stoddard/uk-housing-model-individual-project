@@ -28,22 +28,7 @@ const PREVIEW_PARAMETER_IDS = [
   'btl_probability_bins'
 ];
 
-interface HomePageProps {
-  showDevFeatures: boolean;
-}
-
 type HomeLoadState = 'loading' | 'waiting' | 'ready' | 'error';
-
-const ZERO_GIT_STATS = {
-  filesChanged: 0,
-  lineChanges: 0,
-  commitCount: 0,
-  weekly: {
-    filesChanged: 0,
-    lineChanges: 0,
-    commitCount: 0
-  }
-};
 
 function buildPreviewOption(item: CompareResult): EChartsOption {
   const axisSpec = getAxisSpec(item.id);
@@ -106,7 +91,7 @@ function buildPreviewOption(item: CompareResult): EChartsOption {
   }
 }
 
-export function HomePage({ showDevFeatures }: HomePageProps) {
+export function HomePage() {
   const [versionsCount, setVersionsCount] = useState<number>(0);
   const [inProgressVersions, setInProgressVersions] = useState<string[]>([]);
   const [latestVersion, setLatestVersion] = useState<string>('...');
@@ -152,7 +137,7 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
         const [versionsPayload, cards, gitStats] = await Promise.all([
           fetchVersions(),
           fetchCatalog(),
-          showDevFeatures ? fetchGitStats() : Promise.resolve(ZERO_GIT_STATS)
+          fetchGitStats()
         ]);
 
         if (cancelled) {
@@ -215,7 +200,7 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
         window.clearTimeout(retryTimer);
       }
     };
-  }, [showDevFeatures]);
+  }, []);
 
   useEffect(() => {
     if (previewItems.length === 0) {
@@ -353,49 +338,41 @@ export function HomePage({ showDevFeatures }: HomePageProps) {
         </article>
       </div>
 
-      {showDevFeatures && (
-        <div className="stats-grid fade-up-delay">
-          <article>
-            <p className="stat-title">
-              <span>Lines Written</span>
-              <span className="status-pill-dev-only">Dev only</span>
-              <span className="status-pill-fix">To fix</span>
-            </p>
-            <strong>
-              <span className="stat-value">{formatCount(linesWritten)}</span>
-              <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
-                {formatSignedCount(linesWrittenWeekly)} this week
-              </span>
-            </strong>
-          </article>
-          <article>
-            <p className="stat-title">
-              <span>Files Changed</span>
-              <span className="status-pill-dev-only">Dev only</span>
-              <span className="status-pill-fix">To fix</span>
-            </p>
-            <strong>
-              <span className="stat-value">{formatCount(filesChanged)}</span>
-              <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
-                {formatSignedCount(filesChangedWeekly)} this week
-              </span>
-            </strong>
-          </article>
-          <article>
-            <p className="stat-title">
-              <span>Commits</span>
-              <span className="status-pill-dev-only">Dev only</span>
-              <span className="status-pill-fix">To fix</span>
-            </p>
-            <strong>
-              <span className="stat-value">{formatCount(commitCount)}</span>
-              <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>
-                {formatSignedCount(commitCountWeekly)} this week
-              </span>
-            </strong>
-          </article>
-        </div>
-      )}
+      <div className="stats-grid fade-up-delay">
+        <article>
+          <p className="stat-title">
+            <span>Lines Written</span>
+          </p>
+          <strong>
+            <span className="stat-value">{formatCount(linesWritten)}</span>
+            <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
+              {formatSignedCount(linesWrittenWeekly)} this week
+            </span>
+          </strong>
+        </article>
+        <article>
+          <p className="stat-title">
+            <span>Files Changed</span>
+          </p>
+          <strong>
+            <span className="stat-value">{formatCount(filesChanged)}</span>
+            <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
+              {formatSignedCount(filesChangedWeekly)} this week
+            </span>
+          </strong>
+        </article>
+        <article>
+          <p className="stat-title">
+            <span>Commits</span>
+          </p>
+          <strong>
+            <span className="stat-value">{formatCount(commitCount)}</span>
+            <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>
+              {formatSignedCount(commitCountWeekly)} this week
+            </span>
+          </strong>
+        </article>
+      </div>
     </section>
   );
 }
