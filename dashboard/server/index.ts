@@ -21,6 +21,12 @@ const ghBranch = process.env.DASHBOARD_GITHUB_BRANCH?.trim() || 'master';
 const githubConfig: GitHubConfig | undefined =
   ghToken && ghRepo ? { token: ghToken, repo: ghRepo, branch: ghBranch } : undefined;
 
+console.log(
+  `[git-stats] config: token=${ghToken ? 'set' : 'MISSING'}, ` +
+  `repo=${ghRepo || 'MISSING'}, branch=${ghBranch}, ` +
+  `fallback=${githubConfig ? 'enabled' : 'DISABLED'}`
+);
+
 app.use(express.json());
 app.use((req, res, next) => {
   if (!corsOrigin) {

@@ -374,6 +374,9 @@ export async function getGitStats(options: GitStatsOptions): Promise<GitStatsPay
   }
 
   // 3. Try GitHub API
+  if (!options.github) {
+    console.log('[git-stats] GitHub API fallback not configured, skipping');
+  }
   if (options.github) {
     try {
       const remote = await getGitHubStats(options.github, options.baseCommit);
