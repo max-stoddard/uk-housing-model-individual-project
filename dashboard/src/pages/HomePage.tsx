@@ -235,7 +235,6 @@ export function HomePage() {
 
   return (
     <section className="home-layout">
-      {loadState === 'loading' && <p className="loading-banner">Loading homepage data...</p>}
       {loadState === 'waiting' && (
         <p className="waiting-banner">Waiting for API to become available. Retrying every 2 seconds...</p>
       )}
