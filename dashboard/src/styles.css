@@ -348,6 +348,14 @@ code {
   background: #0b7285;
 }
 
+.hero-preview-loading {
+  background: linear-gradient(90deg, #e9ecef 25%, #f1f3f5 50%, #e9ecef 75%);
+  background-size: 200% 100%;
+  animation: stat-shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.7rem;
+  min-height: 260px;
+}
+
 @keyframes previewFadeIn {
   from {
     opacity: 0;

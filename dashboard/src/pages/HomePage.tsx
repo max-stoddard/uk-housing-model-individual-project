@@ -341,14 +341,14 @@ export function HomePage() {
           <span className="tag-pill">Just Launched</span>
         </div>
         <h2>Visualize and track calibrated UK housing model parameters</h2>
-        {previewItem && (
+        {previewItem ? (
           <div
             className="hero-preview"
             onMouseEnter={() => setIsPreviewPaused(true)}
             onMouseLeave={() => setIsPreviewPaused(false)}
           >
             <div className="hero-preview-head">
-              <p>Preview from Model Parameters</p>
+              <p>Preview from Calibration Versions</p>
               <strong>{previewItem.title}</strong>
             </div>
             <div key={previewItem.id} className="hero-preview-chart-shell">
@@ -366,26 +366,36 @@ export function HomePage() {
               ))}
             </div>
           </div>
-        )}
+        ) : loadState !== 'error' ? (
+          <div className="hero-preview-loading" />
+        ) : null}
         <Link to="/compare" className="primary-button">
-          Open Model Parameters
+          Open Calibration Versions
         </Link>
       </div>
 
       <div className="stats-grid fade-up-delay">
         <article>
-          <p>Snapshot Versions</p>
-          <strong>{formatCount(versionsCount)}</strong>
+          <p>Calibration Versions</p>
+          <strong className={loadState !== 'ready' ? 'stat-loading' : ''}>
+            {loadState !== 'ready' ? '\u00A0' : formatCount(versionsCount)}
+          </strong>
         </article>
         <article>
-          <p>Tracked Parameter Cards</p>
-          <strong>{formatCount(cardsCount)}</strong>
+          <p>Tracked Parameters</p>
+          <strong className={loadState !== 'ready' ? 'stat-loading' : ''}>
+            {loadState !== 'ready' ? '\u00A0' : formatCount(cardsCount)}
+          </strong>
         </article>
         <article>
-          <p>Latest Snapshot</p>
-          <strong className="snapshot-value">
-            <span>{latestVersion}</span>
-            {latestIsInProgress && <span className="status-pill-in-progress">In progress</span>}
+          <p>Latest Calibration Version</p>
+          <strong className={`snapshot-value${loadState !== 'ready' ? ' stat-loading' : ''}`}>
+            {loadState !== 'ready' ? '\u00A0' : (
+              <>
+                <span>{latestVersion}</span>
+                {latestIsInProgress && <span className="status-pill-in-progress">In progress</span>}
+              </>
+            )}
           </strong>
         </article>
       </div>

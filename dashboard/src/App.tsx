@@ -34,7 +34,7 @@ export function App() {
           <NavLink to="/" end>
             Home
           </NavLink>
-          <NavLink to="/compare">Model Parameters</NavLink>
+          <NavLink to="/compare">Calibration Versions</NavLink>
           {showDevFeatures && <NavLink to="/run-model">Run Model</NavLink>}
           {showDevFeatures && <NavLink to="/experiments">Experiments</NavLink>}
         </nav>

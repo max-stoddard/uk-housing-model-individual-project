@@ -454,7 +454,7 @@ export function ComparePage() {
 
       <div className="compare-results">
         <section className="summary-panel">
-          <h2>Model Parameter Workspace</h2>
+          <h2>Parameter Calibration Workspace</h2>
           <p>
             This page exists to visualize calibrated model parameters and to track iterative project progress as inputs are
             refined over versions. Single-version mode is the default for reviewing the current state; compare mode is
