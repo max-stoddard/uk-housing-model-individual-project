@@ -495,6 +495,25 @@ code {
   border-color: rgba(201, 42, 42, 0.2);
 }
 
+.stat-loading {
+  background: linear-gradient(90deg, #e9ecef 25%, #f1f3f5 50%, #e9ecef 75%);
+  background-size: 200% 100%;
+  animation: stat-shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.35rem;
+  color: transparent !important;
+  min-width: 4rem;
+}
+
+@keyframes stat-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.stat-delta.stat-loading {
+  border-color: transparent;
+  min-width: 6rem;
+}
+
 .compare-layout {
   display: grid;
   grid-template-columns: minmax(260px, 320px) 1fr;

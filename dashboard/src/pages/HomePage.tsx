@@ -105,6 +105,7 @@ export function HomePage() {
   const [previewItems, setPreviewItems] = useState<CompareResult[]>([]);
   const [previewIndex, setPreviewIndex] = useState<number>(0);
   const [isPreviewPaused, setIsPreviewPaused] = useState<boolean>(false);
+  const [gitStatsLoading, setGitStatsLoading] = useState<boolean>(true);
   const [loadState, setLoadState] = useState<HomeLoadState>('loading');
   const [loadError, setLoadError] = useState<string>('');
 
@@ -126,6 +127,7 @@ export function HomePage() {
       setFilesChangedWeekly(0);
       setLinesWrittenWeekly(0);
       setCommitCountWeekly(0);
+      setGitStatsLoading(true);
       setPreviewItems([]);
     };
 
@@ -134,10 +136,24 @@ export function HomePage() {
       setLoadError('');
 
       try {
-        const [versionsPayload, cards, gitStats] = await Promise.all([
+        // Fetch git stats in parallel but independently (it's slower on Render)
+        const gitStatsPromise = fetchGitStats().then((gitStats) => {
+          if (cancelled) return;
+          setFilesChanged(gitStats.filesChanged);
+          setLinesWritten(gitStats.lineChanges);
+          setCommitCount(gitStats.commitCount);
+          setFilesChangedWeekly(gitStats.weekly.filesChanged);
+          setLinesWrittenWeekly(gitStats.weekly.lineChanges);
+          setCommitCountWeekly(gitStats.weekly.commitCount);
+          setGitStatsLoading(false);
+        }).catch(() => {
+          if (!cancelled) setGitStatsLoading(false);
+        });
+
+        const [versionsPayload, cards] = await Promise.all([
           fetchVersions(),
           fetchCatalog(),
-          fetchGitStats()
+          gitStatsPromise
         ]);
 
         if (cancelled) {
@@ -149,12 +165,6 @@ export function HomePage() {
         setInProgressVersions(versionsPayload.inProgressVersions);
         setLatestVersion(versions[versions.length - 1] ?? 'n/a');
         setCardsCount(cards.length);
-        setFilesChanged(gitStats.filesChanged);
-        setLinesWritten(gitStats.lineChanges);
-        setCommitCount(gitStats.commitCount);
-        setFilesChangedWeekly(gitStats.weekly.filesChanged);
-        setLinesWrittenWeekly(gitStats.weekly.lineChanges);
-        setCommitCountWeekly(gitStats.weekly.commitCount);
 
         const latest = versions[versions.length - 1] ?? '';
         if (latest) {
@@ -289,9 +299,11 @@ export function HomePage() {
             <span>Lines Written</span>
           </p>
           <strong>
-            <span className="stat-value">{formatCount(linesWritten)}</span>
-            <span className={`stat-delta ${linesWrittenWeekly < 0 ? 'negative' : ''}`}>
-              {formatSignedCount(linesWrittenWeekly)} this week
+            <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
+              {gitStatsLoading ? '\u00A0' : formatCount(linesWritten)}
+            </span>
+            <span className={`stat-delta${gitStatsLoading ? ' stat-loading' : linesWrittenWeekly < 0 ? ' negative' : ''}`}>
+              {gitStatsLoading ? '\u00A0' : `${formatSignedCount(linesWrittenWeekly)} this week`}
             </span>
           </strong>
         </article>
@@ -300,9 +312,11 @@ export function HomePage() {
             <span>Files Changed</span>
           </p>
           <strong>
-            <span className="stat-value">{formatCount(filesChanged)}</span>
-            <span className={`stat-delta ${filesChangedWeekly < 0 ? 'negative' : ''}`}>
-              {formatSignedCount(filesChangedWeekly)} this week
+            <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
+              {gitStatsLoading ? '\u00A0' : formatCount(filesChanged)}
+            </span>
+            <span className={`stat-delta${gitStatsLoading ? ' stat-loading' : filesChangedWeekly < 0 ? ' negative' : ''}`}>
+              {gitStatsLoading ? '\u00A0' : `${formatSignedCount(filesChangedWeekly)} this week`}
             </span>
           </strong>
         </article>
@@ -311,9 +325,11 @@ export function HomePage() {
             <span>Commits</span>
           </p>
           <strong>
-            <span className="stat-value">{formatCount(commitCount)}</span>
-            <span className={`stat-delta ${commitCountWeekly < 0 ? 'negative' : ''}`}>
-              {formatSignedCount(commitCountWeekly)} this week
+            <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
+              {gitStatsLoading ? '\u00A0' : formatCount(commitCount)}
+            </span>
+            <span className={`stat-delta${gitStatsLoading ? ' stat-loading' : commitCountWeekly < 0 ? ' negative' : ''}`}>
+              {gitStatsLoading ? '\u00A0' : `${formatSignedCount(commitCountWeekly)} this week`}
             </span>
           </strong>
         </article>
