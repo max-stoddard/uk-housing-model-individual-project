@@ -35,8 +35,6 @@ const WEEK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const CACHE_FILE_NAME = 'dashboard-git-stats-cache.json';
-const GITHUB_RETRY_DELAY_MS = 1500;
-const GITHUB_MAX_RETRIES = 3;
 
 interface CacheEntry {
   timestamp: number;
@@ -189,164 +187,103 @@ async function githubFetch(url: string, token: string): Promise<Response> {
   });
 }
 
-async function fetchWithRetry(url: string, token: string): Promise<Response> {
-  for (let attempt = 0; attempt < GITHUB_MAX_RETRIES; attempt++) {
-    const response = await githubFetch(url, token);
-    if (response.status === 202) {
-      // GitHub is still computing stats -wait and retry
-      await new Promise((resolve) => setTimeout(resolve, GITHUB_RETRY_DELAY_MS));
-      continue;
+async function githubFetchDiff(url: string, token: string): Promise<Response> {
+  return fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github.diff',
+      'X-GitHub-Api-Version': '2022-11-28'
     }
-    return response;
+  });
+}
+
+function parseDiffStats(diffText: string): { filesChanged: number; insertions: number; deletions: number } {
+  let filesChanged = 0;
+  let insertions = 0;
+  let deletions = 0;
+
+  const lines = diffText.split('\n');
+  for (const line of lines) {
+    if (line.startsWith('diff --git a/')) {
+      filesChanged++;
+    } else if (line.startsWith('+') && !line.startsWith('+++')) {
+      insertions++;
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      deletions++;
+    }
   }
-  // Return the last response even if still 202
-  return githubFetch(url, token);
+
+  return { filesChanged, insertions, deletions };
 }
 
-interface ContributorWeek {
-  w: number; // unix timestamp (seconds)
-  a: number; // additions
-  d: number; // deletions
-  c: number; // commits
-}
-
-interface ContributorEntry {
-  weeks: ContributorWeek[];
-}
-
-async function getContributorStats(
+async function getDiffStats(
   config: GitHubConfig,
-  baseCommitDateIso: string,
-  sinceIso: string
-): Promise<{ total: { insertions: number; deletions: number; lineChanges: number; commitCount: number }; weekly: { lineChanges: number; commitCount: number } }> {
-  const url = `https://api.github.com/repos/${config.repo}/stats/contributors`;
-  const response = await fetchWithRetry(url, config.token);
-  if (response.status === 202) {
-    throw new Error('GitHub contributors API still computing (202) after retries');
-  }
+  base: string,
+  head: string
+): Promise<{ filesChanged: number; insertions: number; deletions: number }> {
+  const url = `https://api.github.com/repos/${config.repo}/compare/${base}...${head}`;
+  const response = await githubFetchDiff(url, config.token);
   if (!response.ok) {
-    throw new Error(`GitHub contributors API returned ${response.status}`);
+    throw new Error(`GitHub compare diff returned ${response.status}`);
   }
-
-  const body = await response.json();
-  if (!Array.isArray(body)) {
-    throw new Error('GitHub contributors API returned non-array body');
-  }
-  const contributors: ContributorEntry[] = body;
-  const baseDate = new Date(baseCommitDateIso).getTime() / 1000;
-  const sinceDate = new Date(sinceIso).getTime() / 1000;
-
-  let totalInsertions = 0;
-  let totalDeletions = 0;
-  let totalCommits = 0;
-  let weeklyLineChanges = 0;
-  let weeklyCommits = 0;
-
-  for (const contributor of contributors) {
-    for (const week of contributor.weeks) {
-      if (week.w >= baseDate) {
-        totalInsertions += week.a;
-        totalDeletions += week.d;
-        totalCommits += week.c;
-      }
-      if (week.w >= sinceDate) {
-        weeklyLineChanges += week.a + week.d;
-        weeklyCommits += week.c;
-      }
-    }
-  }
-
-  return {
-    total: {
-      insertions: totalInsertions,
-      deletions: totalDeletions,
-      lineChanges: totalInsertions + totalDeletions,
-      commitCount: totalCommits
-    },
-    weekly: {
-      lineChanges: weeklyLineChanges,
-      commitCount: weeklyCommits
-    }
-  };
+  const diffText = await response.text();
+  return parseDiffStats(diffText);
 }
 
-async function getFilesChangedViaCompare(
+async function getCompareCommitCount(
   config: GitHubConfig,
   base: string,
   head: string
 ): Promise<number> {
-  const uniqueFiles = new Set<string>();
-  let page = 1;
-
-  while (true) {
-    const url = `https://api.github.com/repos/${config.repo}/compare/${base}...${head}?per_page=100&page=${page}`;
-    const response = await githubFetch(url, config.token);
-    if (!response.ok) {
-      throw new Error(`GitHub compare API returned ${response.status}`);
-    }
-    const data = await response.json();
-    const files: { filename: string }[] = data.files ?? [];
-    for (const file of files) {
-      uniqueFiles.add(file.filename);
-    }
-    if (files.length < 100) {
-      break;
-    }
-    page++;
-  }
-
-  return uniqueFiles.size;
-}
-
-async function getWeeklyFilesChanged(
-  config: GitHubConfig,
-  sinceIso: string
-): Promise<number> {
-  // Find the commit closest to the weekly cutoff
-  const commitsUrl = `https://api.github.com/repos/${config.repo}/commits?sha=${config.branch}&until=${sinceIso}&per_page=1`;
-  const commitsResponse = await githubFetch(commitsUrl, config.token);
-  if (!commitsResponse.ok) {
-    return 0;
-  }
-  const commits: { sha: string }[] = await commitsResponse.json();
-  if (commits.length === 0) {
-    // All commits are within the weekly window -compare against empty tree
-    return getFilesChangedViaCompare(config, EMPTY_TREE_HASH, config.branch);
-  }
-  return getFilesChangedViaCompare(config, commits[0].sha, config.branch);
-}
-
-async function getBaseCommitDate(config: GitHubConfig, baseCommit: string): Promise<string> {
-  const url = `https://api.github.com/repos/${config.repo}/commits/${baseCommit}`;
+  const url = `https://api.github.com/repos/${config.repo}/compare/${base}...${head}`;
   const response = await githubFetch(url, config.token);
   if (!response.ok) {
-    throw new Error(`GitHub commit API returned ${response.status}`);
+    throw new Error(`GitHub compare API returned ${response.status}`);
   }
   const data = await response.json();
-  return data.commit?.committer?.date ?? data.commit?.author?.date ?? new Date(0).toISOString();
+  return data.total_commits ?? data.ahead_by ?? 0;
+}
+
+async function getWeeklyCutoffCommit(
+  config: GitHubConfig,
+  sinceIso: string
+): Promise<string> {
+  const url = `https://api.github.com/repos/${config.repo}/commits?sha=${config.branch}&until=${sinceIso}&per_page=1`;
+  const response = await githubFetch(url, config.token);
+  if (!response.ok) {
+    return EMPTY_TREE_HASH;
+  }
+  const commits: { sha: string }[] = await response.json();
+  return commits.length > 0 ? commits[0].sha : EMPTY_TREE_HASH;
 }
 
 async function getGitHubStats(config: GitHubConfig, baseCommit: string): Promise<GitStatsPayload> {
   const sinceIso = getSinceIsoForWeeklyWindow();
-  const baseCommitDate = await getBaseCommitDate(config, baseCommit);
 
-  const [contributorData, totalFiles, weeklyFiles] = await Promise.all([
-    getContributorStats(config, baseCommitDate, sinceIso),
-    getFilesChangedViaCompare(config, baseCommit, config.branch),
-    getWeeklyFilesChanged(config, sinceIso)
+  // Phase 1: total stats + weekly cutoff in parallel
+  const [totalDiff, totalCommits, weeklyCutoff] = await Promise.all([
+    getDiffStats(config, baseCommit, config.branch),
+    getCompareCommitCount(config, baseCommit, config.branch),
+    getWeeklyCutoffCommit(config, sinceIso)
+  ]);
+
+  // Phase 2: weekly stats (depends on cutoff SHA)
+  const [weeklyDiff, weeklyCommits] = await Promise.all([
+    getDiffStats(config, weeklyCutoff, config.branch),
+    getCompareCommitCount(config, weeklyCutoff, config.branch)
   ]);
 
   return {
     baseCommit,
-    filesChanged: totalFiles,
-    insertions: contributorData.total.insertions,
-    deletions: contributorData.total.deletions,
-    lineChanges: contributorData.total.lineChanges,
-    commitCount: contributorData.total.commitCount,
+    filesChanged: totalDiff.filesChanged,
+    insertions: totalDiff.insertions,
+    deletions: totalDiff.deletions,
+    lineChanges: totalDiff.insertions + totalDiff.deletions,
+    commitCount: totalCommits,
     weekly: {
-      filesChanged: weeklyFiles,
-      lineChanges: contributorData.weekly.lineChanges,
-      commitCount: contributorData.weekly.commitCount
+      filesChanged: weeklyDiff.filesChanged,
+      lineChanges: weeklyDiff.insertions + weeklyDiff.deletions,
+      commitCount: weeklyCommits
     }
   };
 }
