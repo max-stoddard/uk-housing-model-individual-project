@@ -22,16 +22,6 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
       'This matrix links gross-income bins to net-wealth bins. More mass in higher-wealth cells implies larger available buffers and greater ability to meet down-payment requirements. Lower-wealth concentration tends to tighten borrowing constraints and reduce transaction flexibility.'
   },
   {
-    id: 'btl_probability_bins',
-    title: 'Buy-to-Let Investor Probability by Income Percentile',
-    group: 'BTL & Investor Behavior',
-    format: 'binned_distribution',
-    configKeys: ['DATA_BTL_PROBABILITY'],
-    dataFileConfigKeys: ['DATA_BTL_PROBABILITY'],
-    explanation:
-      'This binned series sets the baseline probability of a household being a buy-to-let investor by income percentile. Higher probabilities in upper percentiles increase investor participation and potential competition with owner-occupiers. Lower values reduce investor-driven demand in the housing market.'
-  },
-  {
     id: 'age_distribution',
     title: 'Household Population Share by Age Group',
     group: 'Household Demographics & Wealth',
@@ -40,6 +30,34 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
     dataFileConfigKeys: ['DATA_AGE_DISTRIBUTION'],
     explanation:
       'This distribution controls household density by age band. It affects how many agents are likely to be entering, moving within, or exiting ownership and rental pathways. Age-mix shifts can indirectly change mortgage demand, tenure transitions, and portfolio turnover.'
+  },
+  {
+    id: 'uk_housing_stock_totals',
+    title: 'UK Household and Dwelling Stock Totals',
+    group: 'Household Demographics & Wealth',
+    format: 'scalar_pair',
+    configKeys: ['UK_HOUSEHOLDS', 'UK_DWELLINGS'],
+    explanation:
+      'These totals anchor the model-scale relationship between households and available dwellings. The relative gap influences structural pressure in occupancy and housing scarcity metrics.'
+  },
+  {
+    id: 'household_consumption_fractions',
+    title: 'Household Consumption Fractions',
+    group: 'Household Demographics & Wealth',
+    format: 'scalar_pair',
+    configKeys: ['ESSENTIAL_CONSUMPTION_FRACTION', 'MAXIMUM_CONSUMPTION_FRACTION'],
+    explanation:
+      'These fractions set essential and capped consumption behavior relative to income/support levels. They shape disposable-income retention and therefore indirectly affect housing affordability resilience.'
+  },
+  {
+    id: 'btl_probability_bins',
+    title: 'Buy-to-Let Investor Probability by Income Percentile',
+    group: 'BTL & Investor Behavior',
+    format: 'binned_distribution',
+    configKeys: ['DATA_BTL_PROBABILITY'],
+    dataFileConfigKeys: ['DATA_BTL_PROBABILITY'],
+    explanation:
+      'This binned series sets the baseline probability of a household being a buy-to-let investor by income percentile. Higher probabilities in upper percentiles increase investor participation and potential competition with owner-occupiers. Lower values reduce investor-driven demand in the housing market.'
   },
   {
     id: 'national_insurance_rates',
@@ -63,12 +81,16 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
   },
   {
     id: 'government_allowance_support',
-    title: 'Government Personal Allowance and Monthly Income Support',
+    title: 'Government Allowance, Income Limit, and Monthly Support',
     group: 'Government & Tax',
-    format: 'scalar_pair',
-    configKeys: ['GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE', 'GOVERNMENT_MONTHLY_INCOME_SUPPORT'],
+    format: 'scalar',
+    configKeys: [
+      'GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE',
+      'GOVERNMENT_INCOME_LIMIT_FOR_PERSONAL_ALLOWANCE',
+      'GOVERNMENT_MONTHLY_INCOME_SUPPORT'
+    ],
     explanation:
-      'Personal allowance influences taxable income, while monthly income support sets a floor for low-income households. Increases generally improve disposable-income resilience and can reduce financial stress in consumption and housing decisions. Decreases have the opposite effect and may tighten constraints.'
+      'Personal allowance and its income-limit taper shape taxable-income relief, while monthly income support sets an income floor. Together they influence post-tax cash flow and affordability buffers for lower- and middle-income households.'
   },
   {
     id: 'house_price_lognormal',
@@ -98,13 +120,105 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
       'Desired rent is modeled as a power function of income. Increasing scale lifts rent willingness at all income levels, while increasing exponent steepens the response for higher incomes. This affects bid intensity in the rental market and competitive pressure on rental prices.'
   },
   {
-    id: 'btl_strategy_split',
-    title: 'Buy-to-Let Strategy Mix: Income Yield vs Capital Growth',
-    group: 'BTL & Investor Behavior',
-    format: 'scalar_pair',
-    configKeys: ['BTL_P_INCOME_DRIVEN', 'BTL_P_CAPITAL_DRIVEN'],
+    id: 'hpa_expectation_params',
+    title: 'Expected House Price Change vs Market Trend',
+    group: 'Housing & Rental Market',
+    format: 'hpa_expectation_line',
+    configKeys: ['HPA_EXPECTATION_FACTOR', 'HPA_EXPECTATION_CONST'],
     explanation:
-      'These probabilities set how many BTL investors primarily target rental income versus capital gains. A higher capital-driven share can increase sensitivity to expected price appreciation. A higher income-driven share emphasizes yield and may stabilize behavior toward rental cash flow.'
+      'This equation view plots expected annual house-price change as trend sensitivity times observed trend plus an intercept. Higher factor steepens trend response, while const shifts the line up or down at every trend level.'
+  },
+  {
+    id: 'hold_period_years',
+    title: 'Owner-Occupier Hold Period',
+    group: 'Housing & Rental Market',
+    format: 'scalar',
+    configKeys: ['HOLD_PERIOD'],
+    explanation:
+      'This parameter sets the average tenure duration before sale for owner-occupiers. Longer hold periods reduce turnover and can dampen listing flow, while shorter periods increase transaction churn.'
+  },
+  {
+    id: 'initial_sale_markup_distribution',
+    title: 'Initial Sale Listing Mark-Up Distribution',
+    group: 'Housing & Rental Market',
+    format: 'binned_distribution',
+    configKeys: ['DATA_INITIAL_SALE_MARKUP_DIST'],
+    dataFileConfigKeys: ['DATA_INITIAL_SALE_MARKUP_DIST'],
+    explanation:
+      'This distribution sets sale-listing mark-up ratios relative to market reference prices. Higher mass above parity implies more aggressive initial pricing and can increase time-on-market and reductions before clearing.'
+  },
+  {
+    id: 'price_reduction_probabilities',
+    title: 'Monthly Probability of Price Reduction (Sale vs Rent)',
+    group: 'Housing & Rental Market',
+    format: 'scalar_pair',
+    configKeys: ['P_SALE_PRICE_REDUCE', 'P_RENT_PRICE_REDUCE'],
+    explanation:
+      'These probabilities set how often listed sale and rental prices are cut each month. Higher values imply faster repricing when listings are above market-clearing levels.'
+  },
+  {
+    id: 'sale_reduction_gaussian',
+    title: 'Sale Reduction Size Distribution (Gaussian)',
+    group: 'Housing & Rental Market',
+    format: 'gaussian_pair',
+    configKeys: ['REDUCTION_MU', 'REDUCTION_SIGMA'],
+    explanation:
+      'These parameters define the normal distribution for log sale-price reduction magnitudes. The chart shows both the direct log-reduction Gaussian and the implied percent-reduction density.'
+  },
+  {
+    id: 'tenancy_length_range',
+    title: 'Tenancy Length Range',
+    group: 'Housing & Rental Market',
+    format: 'scalar_pair',
+    configKeys: ['TENANCY_LENGTH_MIN', 'TENANCY_LENGTH_MAX'],
+    explanation:
+      'These bounds define the discrete uniform range for tenancy durations. Wider or longer ranges can reduce turnover and affect rental market flow dynamics.'
+  },
+  {
+    id: 'initial_rent_markup_distribution',
+    title: 'Initial Rent Listing Mark-Up Distribution',
+    group: 'Housing & Rental Market',
+    format: 'binned_distribution',
+    configKeys: ['DATA_INITIAL_RENT_MARKUP_DIST'],
+    dataFileConfigKeys: ['DATA_INITIAL_RENT_MARKUP_DIST'],
+    explanation:
+      'This distribution sets rental listing mark-up ratios relative to local benchmark rents. Higher mark-up mass raises initial asking rents and can increase subsequent rent reductions before match.'
+  },
+  {
+    id: 'rent_reduction_gaussian',
+    title: 'Rent Reduction Size Distribution (Gaussian)',
+    group: 'Housing & Rental Market',
+    format: 'gaussian_pair',
+    configKeys: ['RENT_REDUCTION_MU', 'RENT_REDUCTION_SIGMA'],
+    explanation:
+      'These parameters define the normal distribution for log rental-price reduction magnitudes. The chart shows both log-reduction density and the implied percent-reduction density.'
+  },
+  {
+    id: 'bidup_multiplier',
+    title: 'Bid-Up Multiplier Under Competition',
+    group: 'Housing & Rental Market',
+    format: 'scalar',
+    configKeys: ['BIDUP'],
+    explanation:
+      'This multiplier sets the price uplift applied in competitive multi-bid sale situations. Higher values amplify short-run price escalation pressure in tight submarkets.'
+  },
+  {
+    id: 'rent_gross_yield',
+    title: 'Initial Buy-to-Let Gross Yield',
+    group: 'Housing & Rental Market',
+    format: 'scalar',
+    configKeys: ['RENT_GROSS_YIELD'],
+    explanation:
+      'This parameter seeds expected gross rental yield for buy-to-let economics. Higher yields improve rental-investment attractiveness relative to capital-gain-only strategies.'
+  },
+  {
+    id: 'market_average_price_decay',
+    title: 'Speed of Market Average Price Adjustment',
+    group: 'Housing & Rental Market',
+    format: 'scalar',
+    configKeys: ['MARKET_AVERAGE_PRICE_DECAY'],
+    explanation:
+      'This decay constant sets the responsiveness of the moving average used for market prices. Higher values make average-price signals adapt faster to new transactions, while lower values smooth shocks and delay adjustment. It influences short-run dynamics and expectation feedback.'
   },
   {
     id: 'mortgage_duration_years',
@@ -134,13 +248,13 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
       'These parameters define down-payment behavior for owner-occupiers beyond first-time buyers. Higher scale increases typical equity contribution at purchase, while higher shape broadens variation between households. This influences leverage, mortgage demand, and transaction pacing.'
   },
   {
-    id: 'market_average_price_decay',
-    title: 'Speed of Market Average Price Adjustment',
-    group: 'Housing & Rental Market',
-    format: 'scalar',
-    configKeys: ['MARKET_AVERAGE_PRICE_DECAY'],
+    id: 'downpayment_btl_profile',
+    title: 'Buy-to-Let Down-Payment Mean and Volatility',
+    group: 'Purchase & Mortgage',
+    format: 'scalar_pair',
+    configKeys: ['DOWNPAYMENT_BTL_MEAN', 'DOWNPAYMENT_BTL_EPSILON'],
     explanation:
-      'This decay constant sets the responsiveness of the moving average used for market prices. Higher values make average-price signals adapt faster to new transactions, while lower values smooth shocks and delay adjustment. It influences short-run dynamics and expectation feedback.'
+      'These parameters set the central tendency and dispersion of BTL down-payment behavior. Higher means increase equity contribution requirements, while larger epsilon broadens investor-level leverage dispersion.'
   },
   {
     id: 'buy_quad',
@@ -150,6 +264,51 @@ export const PARAMETER_CATALOG: ParameterCardMeta[] = [
     configKeys: ['BUY_SCALE', 'BUY_EXPONENT', 'BUY_MU', 'BUY_SIGMA'],
     explanation:
       'This combined set defines desired purchase budget as a power function of income, multiplied by a lognormal noise term. Scale and exponent shape deterministic budget growth with income, while mu and sigma govern multiplicative variation between similar households. Larger sigma creates wider bid dispersion and can increase price-outcome heterogeneity.'
+  },
+  {
+    id: 'bank_rate_credit_response',
+    title: 'Bank Initial Rate and Credit-Supply Response',
+    group: 'Bank & Credit Policy',
+    format: 'scalar',
+    configKeys: ['BANK_INITIAL_RATE', 'BANK_INITIAL_CREDIT_SUPPLY', 'BANK_D_INTEREST_D_DEMAND'],
+    explanation:
+      'These parameters define initial mortgage pricing and the sensitivity of lending rates to credit-demand pressure. They directly shape borrowing costs and credit availability feedback in the model.'
+  },
+  {
+    id: 'bank_ltv_limits',
+    title: 'Bank Hard LTV Limits by Borrower Type',
+    group: 'Bank & Credit Policy',
+    format: 'scalar',
+    configKeys: ['BANK_LTV_HARD_MAX_FTB', 'BANK_LTV_HARD_MAX_HM', 'BANK_LTV_HARD_MAX_BTL'],
+    explanation:
+      'These internal bank caps bound maximum loan-to-value by segment. Tighter caps require larger deposits and can suppress leveraged purchase demand.'
+  },
+  {
+    id: 'bank_lti_limits',
+    title: 'Bank Hard LTI Limits by Borrower Type',
+    group: 'Bank & Credit Policy',
+    format: 'scalar_pair',
+    configKeys: ['BANK_LTI_HARD_MAX_FTB', 'BANK_LTI_HARD_MAX_HM'],
+    explanation:
+      'These hard loan-to-income limits cap borrowing relative to gross income for first-time buyers and home movers. Lower limits tighten affordability constraints and moderate debt-fueled demand.'
+  },
+  {
+    id: 'bank_affordability_icr_limits',
+    title: 'Bank Affordability and ICR Hard Limits',
+    group: 'Bank & Credit Policy',
+    format: 'scalar_pair',
+    configKeys: ['BANK_AFFORDABILITY_HARD_MAX', 'BANK_ICR_HARD_MIN'],
+    explanation:
+      'These constraints cap repayment burden for owner-occupier mortgages and minimum rental-cover for BTL loans. Together they regulate debt service risk tolerance across lending channels.'
+  },
+  {
+    id: 'btl_strategy_split',
+    title: 'Buy-to-Let Strategy Mix: Income Yield vs Capital Growth',
+    group: 'BTL & Investor Behavior',
+    format: 'scalar_pair',
+    configKeys: ['BTL_P_INCOME_DRIVEN', 'BTL_P_CAPITAL_DRIVEN'],
+    explanation:
+      'These probabilities set how many BTL investors primarily target rental income versus capital gains. A higher capital-driven share can increase sensitivity to expected price appreciation. A higher income-driven share emphasizes yield and may stabilize behavior toward rental cash flow.'
   }
 ];
 

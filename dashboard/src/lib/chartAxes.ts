@@ -34,6 +34,30 @@ const AXIS_SPECS: Record<string, ChartAxisSpec> = {
     buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
     buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
   },
+  age_distribution: {
+    scalar: { xTitle: 'Parameter (-)', yTitle: 'Value (-)' },
+    binned: { xTitle: 'Age band (years)', yTitle: 'Household share (-)', yDeltaTitle: 'Share delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  uk_housing_stock_totals: {
+    scalar: { xTitle: 'Stock metric (-)', yTitle: 'Count (households/dwellings)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  household_consumption_fractions: {
+    scalar: { xTitle: 'Consumption parameter (-)', yTitle: 'Fraction (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
   btl_probability_bins: {
     scalar: { xTitle: 'Parameter (-)', yTitle: 'Value (-)' },
     binned: {
@@ -41,14 +65,6 @@ const AXIS_SPECS: Record<string, ChartAxisSpec> = {
       yTitle: 'BTL investor probability (-)',
       yDeltaTitle: 'Probability delta (-)'
     },
-    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
-    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
-    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
-    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
-  },
-  age_distribution: {
-    scalar: { xTitle: 'Parameter (-)', yTitle: 'Value (-)' },
-    binned: { xTitle: 'Age band (years)', yTitle: 'Household share (-)', yDeltaTitle: 'Share delta (-)' },
     joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
     curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
     buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
@@ -79,7 +95,7 @@ const AXIS_SPECS: Record<string, ChartAxisSpec> = {
     buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
   },
   government_allowance_support: {
-    scalar: { xTitle: 'Policy parameter (-)', yTitle: 'Amount (£/month or £/year)' },
+    scalar: { xTitle: 'Policy parameter (-)', yTitle: 'Amount (mixed £ units)' },
     binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
     joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
     curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
@@ -110,8 +126,96 @@ const AXIS_SPECS: Record<string, ChartAxisSpec> = {
     buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
     buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
   },
-  btl_strategy_split: {
-    scalar: { xTitle: 'Investor strategy parameter (-)', yTitle: 'Probability share (-)' },
+  hpa_expectation_params: {
+    scalar: { xTitle: 'Expectation parameter (-)', yTitle: 'Value (mixed units)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Trend dHPI/dt (1/year)', yTitle: 'Expected change (1/year)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  hold_period_years: {
+    scalar: { xTitle: 'Tenure parameter (-)', yTitle: 'Duration (years)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  initial_sale_markup_distribution: {
+    scalar: { xTitle: 'Parameter (-)', yTitle: 'Value (-)' },
+    binned: {
+      xTitle: 'Initial sale mark-up ratio (-)',
+      yTitle: 'Probability mass (-)',
+      yDeltaTitle: 'Mass delta (-)'
+    },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  price_reduction_probabilities: {
+    scalar: { xTitle: 'Reduction probability parameter (-)', yTitle: 'Monthly probability (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  sale_reduction_gaussian: {
+    scalar: { xTitle: 'Sale reduction parameter (-)', yTitle: 'Value (mixed units)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Log reduction value (-)', yTitle: 'Density (1/log-unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Percent reduction (%)', yTitle: 'Density (1/percent)' }
+  },
+  tenancy_length_range: {
+    scalar: { xTitle: 'Tenancy parameter (-)', yTitle: 'Duration (months)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  initial_rent_markup_distribution: {
+    scalar: { xTitle: 'Parameter (-)', yTitle: 'Value (-)' },
+    binned: {
+      xTitle: 'Initial rent mark-up ratio (-)',
+      yTitle: 'Probability mass (-)',
+      yDeltaTitle: 'Mass delta (-)'
+    },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  rent_reduction_gaussian: {
+    scalar: { xTitle: 'Rent reduction parameter (-)', yTitle: 'Value (mixed units)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Log reduction value (-)', yTitle: 'Density (1/log-unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Percent reduction (%)', yTitle: 'Density (1/percent)' }
+  },
+  bidup_multiplier: {
+    scalar: { xTitle: 'Competition parameter (-)', yTitle: 'Multiplier (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  rent_gross_yield: {
+    scalar: { xTitle: 'Yield parameter (-)', yTitle: 'Yield (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  market_average_price_decay: {
+    scalar: { xTitle: 'Market pricing parameter (-)', yTitle: 'Decay factor (-)' },
     binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
     joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
     curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
@@ -142,8 +246,8 @@ const AXIS_SPECS: Record<string, ChartAxisSpec> = {
     buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
     buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
   },
-  market_average_price_decay: {
-    scalar: { xTitle: 'Market pricing parameter (-)', yTitle: 'Decay factor (-)' },
+  downpayment_btl_profile: {
+    scalar: { xTitle: 'BTL down-payment parameter (-)', yTitle: 'Fraction (-)' },
     binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
     joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
     curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
@@ -152,6 +256,46 @@ const AXIS_SPECS: Record<string, ChartAxisSpec> = {
   },
   buy_quad: {
     scalar: { xTitle: 'Parameter (-)', yTitle: 'Value (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  bank_rate_credit_response: {
+    scalar: { xTitle: 'Bank policy parameter (-)', yTitle: 'Value (mixed units)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  bank_ltv_limits: {
+    scalar: { xTitle: 'LTV policy parameter (-)', yTitle: 'Ratio (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  bank_lti_limits: {
+    scalar: { xTitle: 'LTI policy parameter (-)', yTitle: 'Ratio (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  bank_affordability_icr_limits: {
+    scalar: { xTitle: 'Affordability policy parameter (-)', yTitle: 'Ratio (-)' },
+    binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
+    joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
+    curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
+    buyBudget: { xTitle: 'Household income (£/year)', yTitle: 'Purchase budget (£)' },
+    buyMultiplier: { xTitle: 'Budget multiplier (-)', yTitle: 'Probability density (1/unit)' }
+  },
+  btl_strategy_split: {
+    scalar: { xTitle: 'Investor strategy parameter (-)', yTitle: 'Probability share (-)' },
     binned: { xTitle: 'Bin range (-)', yTitle: 'Value (-)', yDeltaTitle: 'Delta (-)' },
     joint: { xTitle: 'X bin (-)', yTitle: 'Y bin (-)', legendTitle: 'Probability mass (-)' },
     curve: { xTitle: 'Value (-)', yTitle: 'Density (1/unit)' },
@@ -211,4 +355,3 @@ export function assertAxisSpecComplete(parameterIds: string[] = PARAMETER_IDS): 
     assertAxisSpecValidity(id, spec);
   }
 }
-

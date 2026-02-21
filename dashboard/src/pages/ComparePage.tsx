@@ -8,6 +8,7 @@ const GROUP_ORDER: ParameterGroup[] = [
   'Government & Tax',
   'Housing & Rental Market',
   'Purchase & Mortgage',
+  'Bank & Credit Policy',
   'BTL & Investor Behavior'
 ];
 

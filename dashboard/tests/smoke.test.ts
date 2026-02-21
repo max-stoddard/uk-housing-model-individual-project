@@ -19,30 +19,73 @@ function assertClose(actual: number, expected: number, tolerance: number, messag
   assert.ok(Math.abs(actual - expected) <= tolerance, `${message}: expected ${expected}, got ${actual}`);
 }
 
+function gaussianPercentDensity(percent: number, mu: number, sigma: number): number {
+  const denominator = percent * sigma * Math.sqrt(2 * Math.PI);
+  const exponent = -((Math.log(percent) - mu) ** 2) / (2 * sigma ** 2);
+  return Math.exp(exponent) / denominator;
+}
+
 const expectedIds = [
   'income_given_age_joint',
   'wealth_given_income_joint',
-  'btl_probability_bins',
   'age_distribution',
+  'uk_housing_stock_totals',
+  'household_consumption_fractions',
+  'btl_probability_bins',
   'national_insurance_rates',
   'income_tax_rates',
   'government_allowance_support',
   'house_price_lognormal',
   'rental_price_lognormal',
   'desired_rent_power',
-  'btl_strategy_split',
+  'hpa_expectation_params',
+  'hold_period_years',
+  'initial_sale_markup_distribution',
+  'price_reduction_probabilities',
+  'sale_reduction_gaussian',
+  'tenancy_length_range',
+  'initial_rent_markup_distribution',
+  'rent_reduction_gaussian',
+  'bidup_multiplier',
+  'rent_gross_yield',
+  'market_average_price_decay',
   'mortgage_duration_years',
   'downpayment_ftb_lognormal',
   'downpayment_oo_lognormal',
-  'market_average_price_decay',
-  'buy_quad'
+  'downpayment_btl_profile',
+  'buy_quad',
+  'bank_rate_credit_response',
+  'bank_ltv_limits',
+  'bank_lti_limits',
+  'bank_affordability_icr_limits',
+  'btl_strategy_split'
 ];
+
+const newlyAddedIds = [
+  'uk_housing_stock_totals',
+  'household_consumption_fractions',
+  'hpa_expectation_params',
+  'hold_period_years',
+  'initial_sale_markup_distribution',
+  'price_reduction_probabilities',
+  'sale_reduction_gaussian',
+  'tenancy_length_range',
+  'initial_rent_markup_distribution',
+  'rent_reduction_gaussian',
+  'bidup_multiplier',
+  'rent_gross_yield',
+  'downpayment_btl_profile',
+  'bank_rate_credit_response',
+  'bank_ltv_limits',
+  'bank_lti_limits',
+  'bank_affordability_icr_limits'
+] as const;
 
 const catalog = getParameterCatalog();
 assert.deepEqual(
   catalog.map((item) => item.id),
   expectedIds,
-  'Catalog should contain exactly the changed parameter cards tracked in version notes'
+  'Catalog should contain exactly all tracked calibrated parameter cards'
 );
 
 assertAxisSpecComplete(expectedIds);
@@ -80,6 +123,7 @@ assert.ok(
   'In-progress versions should resolve to discovered snapshot folders'
 );
 assert.ok(inProgressVersions.includes('v3.8'), 'Expected v3.8 to be reported as an in-progress snapshot');
+const latestVersion = versions[versions.length - 1];
 
 const notes = loadVersionNotes(repoRoot);
 assert.ok(notes.length > 0, 'Expected at least one version note entry');
@@ -147,6 +191,186 @@ assert.ok(formatSet.has('power_law_pair'));
 assert.ok(formatSet.has('buy_quad'));
 assert.ok(formatSet.has('joint_distribution'));
 assert.ok(formatSet.has('binned_distribution'));
+
+const unchangedCards = compareParameters(repoRoot, 'v0', latestVersion, [...newlyAddedIds], 'range');
+assert.equal(unchangedCards.items.length, newlyAddedIds.length, 'Expected all newly added cards in compare payload');
+for (const item of unchangedCards.items) {
+  assert.equal(item.unchanged, true, `Expected newly added card ${item.id} to remain unchanged across versions`);
+}
+
+const saleMarkup = unchangedCards.items.find((item) => item.id === 'initial_sale_markup_distribution');
+assert.ok(
+  saleMarkup && saleMarkup.visualPayload.type === 'binned_distribution',
+  'Expected initial_sale_markup_distribution card with binned payload'
+);
+if (saleMarkup && saleMarkup.visualPayload.type === 'binned_distribution') {
+  assert.ok(
+    saleMarkup.visualPayload.bins.every((bin) => Math.abs(bin.delta) <= 1e-12),
+    'Sale mark-up bins should have zero delta across versions'
+  );
+}
+
+const rentMarkup = unchangedCards.items.find((item) => item.id === 'initial_rent_markup_distribution');
+assert.ok(
+  rentMarkup && rentMarkup.visualPayload.type === 'binned_distribution',
+  'Expected initial_rent_markup_distribution card with binned payload'
+);
+if (rentMarkup && rentMarkup.visualPayload.type === 'binned_distribution') {
+  assert.ok(
+    rentMarkup.visualPayload.bins.every((bin) => Math.abs(bin.delta) <= 1e-12),
+    'Rent mark-up bins should have zero delta across versions'
+  );
+}
+
+const unchangedSingleWithProvenance = compareParameters(
+  repoRoot,
+  latestVersion,
+  latestVersion,
+  [...newlyAddedIds],
+  'through_right'
+);
+for (const item of unchangedSingleWithProvenance.items) {
+  assert.equal(
+    item.changeOriginsInRange.length,
+    0,
+    `Expected no provenance origins for newly added card ${item.id} in through_right scope`
+  );
+}
+
+const reshapedCards = compareParameters(repoRoot, 'v0', latestVersion, [
+  'price_reduction_probabilities',
+  'sale_reduction_gaussian',
+  'rent_reduction_gaussian',
+  'hpa_expectation_params'
+]);
+
+const priceReductionProbabilities = reshapedCards.items.find((item) => item.id === 'price_reduction_probabilities');
+assert.ok(priceReductionProbabilities, 'Expected price_reduction_probabilities card');
+assert.equal(priceReductionProbabilities?.format, 'scalar_pair');
+assert.deepEqual(priceReductionProbabilities?.sourceInfo.configKeys, ['P_SALE_PRICE_REDUCE', 'P_RENT_PRICE_REDUCE']);
+
+const saleReductionGaussian = reshapedCards.items.find((item) => item.id === 'sale_reduction_gaussian');
+assert.ok(saleReductionGaussian, 'Expected sale_reduction_gaussian card');
+assert.equal(saleReductionGaussian?.format, 'gaussian_pair');
+assert.ok(
+  saleReductionGaussian?.visualPayload.type === 'gaussian_pair',
+  'Expected gaussian_pair payload for sale_reduction_gaussian'
+);
+if (saleReductionGaussian?.visualPayload.type === 'gaussian_pair') {
+  assert.equal(saleReductionGaussian.visualPayload.percentDomain.max, 50, 'Sale gaussian percent domain max should be 50');
+  assert.ok(
+    Number.isFinite(saleReductionGaussian.visualPayload.percentCapMassLeft) &&
+      saleReductionGaussian.visualPayload.percentCapMassLeft >= 0 &&
+      saleReductionGaussian.visualPayload.percentCapMassLeft <= 1,
+    'Sale gaussian left cap mass should be a finite probability in [0, 1]'
+  );
+  assert.ok(
+    Number.isFinite(saleReductionGaussian.visualPayload.percentCapMassRight) &&
+      saleReductionGaussian.visualPayload.percentCapMassRight >= 0 &&
+      saleReductionGaussian.visualPayload.percentCapMassRight <= 1,
+    'Sale gaussian right cap mass should be a finite probability in [0, 1]'
+  );
+  assert.ok(
+    saleReductionGaussian.visualPayload.logDomain.min < saleReductionGaussian.visualPayload.logDomain.max,
+    'Sale gaussian log domain should be increasing'
+  );
+  assert.ok(
+    saleReductionGaussian.visualPayload.percentDomain.min < saleReductionGaussian.visualPayload.percentDomain.max,
+    'Sale gaussian percent domain should be increasing'
+  );
+  assert.ok(
+    saleReductionGaussian.visualPayload.logCurveRight.every(
+      (point) => Number.isFinite(point.x) && Number.isFinite(point.y) && point.y >= 0
+    ),
+    'Sale gaussian log curve should contain finite non-negative densities'
+  );
+  assert.ok(
+    saleReductionGaussian.visualPayload.percentCurveRight.every(
+      (point) => Number.isFinite(point.x) && Number.isFinite(point.y) && point.y >= 0 && point.x > 0 && point.x <= 50
+    ),
+    'Sale gaussian percent curve should contain finite non-negative densities within (0, 50]'
+  );
+
+  const muRight = saleReductionGaussian.visualPayload.parameters.find((row) => row.key === 'REDUCTION_MU')?.right;
+  const sigmaRight = saleReductionGaussian.visualPayload.parameters.find((row) => row.key === 'REDUCTION_SIGMA')?.right;
+  assert.ok(muRight !== undefined, 'Expected sale reduction mu in parameters');
+  assert.ok(sigmaRight !== undefined && sigmaRight > 0, 'Expected positive sale reduction sigma in parameters');
+  const sample = saleReductionGaussian.visualPayload.percentCurveRight[
+    Math.floor(saleReductionGaussian.visualPayload.percentCurveRight.length / 2)
+  ];
+  assert.ok(sample, 'Expected sample point for sale percent curve');
+  const expectedDensity = gaussianPercentDensity(sample.x, muRight as number, sigmaRight as number);
+  assertClose(sample.y, expectedDensity, 1e-12, 'Sale percent curve should match transformed Gaussian density');
+}
+
+const rentReductionGaussian = reshapedCards.items.find((item) => item.id === 'rent_reduction_gaussian');
+assert.ok(rentReductionGaussian, 'Expected rent_reduction_gaussian card');
+assert.equal(rentReductionGaussian?.format, 'gaussian_pair');
+assert.ok(
+  rentReductionGaussian?.visualPayload.type === 'gaussian_pair',
+  'Expected gaussian_pair payload for rent_reduction_gaussian'
+);
+if (rentReductionGaussian?.visualPayload.type === 'gaussian_pair') {
+  assert.equal(rentReductionGaussian.visualPayload.percentDomain.max, 50, 'Rent gaussian percent domain max should be 50');
+  assert.ok(
+    Number.isFinite(rentReductionGaussian.visualPayload.percentCapMassLeft) &&
+      rentReductionGaussian.visualPayload.percentCapMassLeft >= 0 &&
+      rentReductionGaussian.visualPayload.percentCapMassLeft <= 1,
+    'Rent gaussian left cap mass should be a finite probability in [0, 1]'
+  );
+  assert.ok(
+    Number.isFinite(rentReductionGaussian.visualPayload.percentCapMassRight) &&
+      rentReductionGaussian.visualPayload.percentCapMassRight >= 0 &&
+      rentReductionGaussian.visualPayload.percentCapMassRight <= 1,
+    'Rent gaussian right cap mass should be a finite probability in [0, 1]'
+  );
+  assert.ok(
+    rentReductionGaussian.visualPayload.logCurveRight.every(
+      (point) => Number.isFinite(point.x) && Number.isFinite(point.y) && point.y >= 0
+    ),
+    'Rent gaussian log curve should contain finite non-negative densities'
+  );
+  assert.ok(
+    rentReductionGaussian.visualPayload.percentCurveRight.every(
+      (point) => Number.isFinite(point.x) && Number.isFinite(point.y) && point.y >= 0 && point.x > 0 && point.x <= 50
+    ),
+    'Rent gaussian percent curve should contain finite non-negative densities within (0, 50]'
+  );
+
+  const muRight = rentReductionGaussian.visualPayload.parameters.find((row) => row.key === 'RENT_REDUCTION_MU')?.right;
+  const sigmaRight = rentReductionGaussian.visualPayload.parameters.find((row) => row.key === 'RENT_REDUCTION_SIGMA')?.right;
+  assert.ok(muRight !== undefined, 'Expected rent reduction mu in parameters');
+  assert.ok(sigmaRight !== undefined && sigmaRight > 0, 'Expected positive rent reduction sigma in parameters');
+  const sample = rentReductionGaussian.visualPayload.percentCurveRight[
+    Math.floor(rentReductionGaussian.visualPayload.percentCurveRight.length / 2)
+  ];
+  assert.ok(sample, 'Expected sample point for rent percent curve');
+  const expectedDensity = gaussianPercentDensity(sample.x, muRight as number, sigmaRight as number);
+  assertClose(sample.y, expectedDensity, 1e-12, 'Rent percent curve should match transformed Gaussian density');
+}
+
+const hpaExpectation = reshapedCards.items.find((item) => item.id === 'hpa_expectation_params');
+assert.ok(hpaExpectation, 'Expected hpa_expectation_params card');
+assert.equal(hpaExpectation?.format, 'hpa_expectation_line');
+assert.ok(
+  hpaExpectation?.visualPayload.type === 'hpa_expectation_line',
+  'Expected hpa_expectation_line payload for hpa_expectation_params'
+);
+if (hpaExpectation?.visualPayload.type === 'hpa_expectation_line') {
+  assert.equal(hpaExpectation.visualPayload.domain.min, -0.2, 'HPA domain min should be -0.2');
+  assert.equal(hpaExpectation.visualPayload.domain.max, 0.2, 'HPA domain max should be 0.2');
+  assert.equal(hpaExpectation.visualPayload.dt, 1, 'HPA expectation DT should equal 1');
+
+  const factorRight = hpaExpectation.visualPayload.parameters.find((row) => row.key === 'HPA_EXPECTATION_FACTOR')?.right;
+  const constRight = hpaExpectation.visualPayload.parameters.find((row) => row.key === 'HPA_EXPECTATION_CONST')?.right;
+  assert.ok(factorRight !== undefined, 'Expected HPA factor in parameters');
+  assert.ok(constRight !== undefined, 'Expected HPA const in parameters');
+
+  const sample = hpaExpectation.visualPayload.curveRight[Math.floor(hpaExpectation.visualPayload.curveRight.length / 2)];
+  assert.ok(sample, 'Expected mid-point sample for HPA curve');
+  const expected = (factorRight as number) * sample.x + (constRight as number);
+  assertClose(sample.y, expected, 1e-12, 'HPA curve should satisfy y = factor*x + const');
+}
 
 for (const item of compare.items) {
   assert.equal(item.leftVersion, 'v0');
