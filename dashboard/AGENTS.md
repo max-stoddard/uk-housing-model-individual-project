@@ -76,6 +76,10 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
   - payload includes `weekly` rolling 7-day activity stats (`filesChanged`, `lineChanges`, `commitCount`).
   - metrics semantics match `scripts/helpers/git-stats.sh` when run on the same branch and `HEAD`.
 - The dashboard currently compares only the parameter groups explicitly listed in `dashboard/shared/catalog.ts`.
+  - Current compare taxonomy: `Household Demographics & Wealth`, `Government & Tax`, `Housing & Rental Market`, `Purchase & Mortgage`, `Bank & Credit Policy`, `BTL & Investor Behavior`.
+- Catalog coverage now includes non-user-set calibrated scalar and file-backed sources from `config.properties` (including sale/rent initial mark-up distributions and bank credit-policy calibration keys).
+- Reduction dynamics coverage is split into one shared probability card (`P_SALE_PRICE_REDUCE`, `P_RENT_PRICE_REDUCE`) plus separate Gaussian cards for sale and rent reduction-size parameters (`*_MU`, `*_SIGMA`).
+- HPA expectation parameters are visualized as the expected-change equation line (`factor * trend + const`, with `DT=1`) across a fixed trend domain.
 - Version selector source of truth is folder snapshots under `input-data-versions/` (filtered and sorted by `server/lib/versioning.ts`).
 - Structured version metadata source of truth is `input-data-versions/version-notes.json`.
 - `inProgressVersions` in `/api/versions` is derived from `version-notes.json` entries with `validation.status = in_progress` grouped by `snapshot_folder`.
@@ -90,6 +94,7 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - Keep `/api/git-stats` resilient in deployed environments where git metadata may be shallow or unavailable; zero fallback payloads must keep homepage rendering intact.
 - Keep `/api/git-stats` response shape stable while preserving local endpoint-diff semantics.
 - Add or change compare cards only through `shared/catalog.ts`; avoid hardcoding IDs in UI components.
+- Keep calibrated-input coverage broad and explicit: when adding newly tracked calibrated sources, prefer extending existing card formats (`scalar`, `scalar_pair`, `binned_distribution`, etc.) rather than introducing custom one-off render paths.
 - Prefer extending `server/lib/service.ts` with clear, format-specific helpers rather than one large branching block.
 - Keep step-rate handling for `national_insurance_rates` and `income_tax_rates` as piecewise-threshold logic (not mass rebinning).
 - Keep page mode semantics stable:
