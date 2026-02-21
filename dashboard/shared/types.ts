@@ -5,6 +5,7 @@ export type ParameterGroup =
   | 'Government & Tax'
   | 'Housing & Rental Market'
   | 'Purchase & Mortgage'
+  | 'Bank & Credit Policy'
   | 'BTL & Investor Behavior';
 
 export type ParameterFormat =
@@ -14,6 +15,8 @@ export type ParameterFormat =
   | 'joint_distribution'
   | 'lognormal_pair'
   | 'power_law_pair'
+  | 'gaussian_pair'
+  | 'hpa_expectation_line'
   | 'buy_quad';
 
 export interface ParameterCardMeta {
@@ -120,6 +123,27 @@ export type VisualPayload =
       curveLeft: CurvePoint[];
       curveRight: CurvePoint[];
       domain: { min: number; max: number };
+    }
+  | {
+      type: 'gaussian_pair';
+      parameters: ScalarDatum[];
+      logCurveLeft: CurvePoint[];
+      logCurveRight: CurvePoint[];
+      percentCurveLeft: CurvePoint[];
+      percentCurveRight: CurvePoint[];
+      logDomain: { min: number; max: number };
+      percentDomain: { min: number; max: number };
+      percentCap: number;
+      percentCapMassLeft: number;
+      percentCapMassRight: number;
+    }
+  | {
+      type: 'hpa_expectation_line';
+      parameters: ScalarDatum[];
+      curveLeft: CurvePoint[];
+      curveRight: CurvePoint[];
+      domain: { min: number; max: number };
+      dt: number;
     }
   | {
       type: 'buy_quad';

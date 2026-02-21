@@ -30,6 +30,16 @@ function formatPercent(value: number | null): string {
   return `${value.toFixed(2)}%`;
 }
 
+function formatProbability(value: number): string {
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function formatProbabilityDelta(value: number): string {
+  const percentagePoints = value * 100;
+  const sign = percentagePoints >= 0 ? '+' : '';
+  return `${sign}${percentagePoints.toFixed(2)} pp`;
+}
+
 function deltaClassName(value: number): string {
   if (Math.abs(value) < 1e-12) {
     return 'neutral';
@@ -175,6 +185,8 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
     if (
       item.visualPayload.type === 'lognormal_pair' ||
       item.visualPayload.type === 'power_law_pair' ||
+      item.visualPayload.type === 'gaussian_pair' ||
+      item.visualPayload.type === 'hpa_expectation_line' ||
       item.visualPayload.type === 'buy_quad'
     ) {
       return item.visualPayload.parameters;
@@ -204,6 +216,8 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
             item.visualPayload.type === 'binned_distribution' ||
             item.visualPayload.type === 'lognormal_pair' ||
             item.visualPayload.type === 'power_law_pair' ||
+            item.visualPayload.type === 'gaussian_pair' ||
+            item.visualPayload.type === 'hpa_expectation_line' ||
             item.visualPayload.type === 'buy_quad') && (
             <div className="card-section">
               <button type="button" className="table-toggle" onClick={() => setIsTableOpen((current) => !current)}>
@@ -378,6 +392,116 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
 
           {item.visualPayload.type === 'power_law_pair' && (
             <div className="card-section">
+              <EChart
+                option={
+                  mode === 'single'
+                    ? curveSingleOption(
+                        rightVersionLabel,
+                        item.visualPayload.curveRight,
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
+                        (value) => formatNumber(value)
+                      )
+                    : curveOption(
+                        leftVersionLabel,
+                        rightVersionLabel,
+                        item.visualPayload.curveLeft,
+                        item.visualPayload.curveRight,
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
+                        (value) => formatNumber(value)
+                      )
+                }
+                className="chart"
+              />
+            </div>
+          )}
+
+          {item.visualPayload.type === 'gaussian_pair' && (
+            <div className="card-section">
+              <div className="kpi-inline">
+                <p>Log-reduction Gaussian:</p>
+              </div>
+              <EChart
+                option={
+                  mode === 'single'
+                    ? curveSingleOption(
+                        rightVersionLabel,
+                        item.visualPayload.logCurveRight,
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
+                        (value) => formatNumber(value)
+                      )
+                    : curveOption(
+                        leftVersionLabel,
+                        rightVersionLabel,
+                        item.visualPayload.logCurveLeft,
+                        item.visualPayload.logCurveRight,
+                        axisSpec.curve.xTitle,
+                        axisSpec.curve.yTitle,
+                        (value) => formatNumber(value)
+                      )
+                }
+                className="chart"
+              />
+              <div className="kpi-inline">
+                <p>Implied percent-reduction density:</p>
+              </div>
+              <div className="kpi-inline">
+                <p>Clipped tail mass at {item.visualPayload.percentCap}% cap:</p>
+                {mode === 'single' ? (
+                  <strong>{formatProbability(item.visualPayload.percentCapMassRight)}</strong>
+                ) : (
+                  <strong>
+                    {formatProbability(item.visualPayload.percentCapMassLeft)} vs{' '}
+                    {formatProbability(item.visualPayload.percentCapMassRight)} ({' '}
+                    <span
+                      className={deltaClassName(
+                        item.visualPayload.percentCapMassRight - item.visualPayload.percentCapMassLeft
+                      )}
+                    >
+                      {formatProbabilityDelta(
+                        item.visualPayload.percentCapMassRight - item.visualPayload.percentCapMassLeft
+                      )}
+                    </span>
+                    )
+                  </strong>
+                )}
+              </div>
+              <EChart
+                option={
+                  mode === 'single'
+                    ? curveSingleOption(
+                        rightVersionLabel,
+                        item.visualPayload.percentCurveRight,
+                        axisSpec.buyMultiplier.xTitle,
+                        axisSpec.buyMultiplier.yTitle,
+                        (value) => formatNumber(value),
+                        item.visualPayload.percentCap,
+                        `${item.visualPayload.percentCap}% cap`
+                      )
+                    : curveOption(
+                        leftVersionLabel,
+                        rightVersionLabel,
+                        item.visualPayload.percentCurveLeft,
+                        item.visualPayload.percentCurveRight,
+                        axisSpec.buyMultiplier.xTitle,
+                        axisSpec.buyMultiplier.yTitle,
+                        (value) => formatNumber(value),
+                        item.visualPayload.percentCap,
+                        `${item.visualPayload.percentCap}% cap`
+                      )
+                }
+                className="chart"
+              />
+            </div>
+          )}
+
+          {item.visualPayload.type === 'hpa_expectation_line' && (
+            <div className="card-section">
+              <div className="kpi-inline">
+                <p>Expected annual change line with DT={item.visualPayload.dt}:</p>
+              </div>
               <EChart
                 option={
                   mode === 'single'

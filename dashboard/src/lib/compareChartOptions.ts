@@ -274,8 +274,25 @@ export function curveOption(
   rightSeries: CurvePoint[],
   xLabel: string,
   yLabel: string,
-  valueFormatter?: (value: number) => string
+  valueFormatter?: (value: number) => string,
+  verticalMarkerX?: number,
+  verticalMarkerLabel?: string
 ): EChartsOption {
+  const marker =
+    verticalMarkerX !== undefined && Number.isFinite(verticalMarkerX)
+      ? {
+          symbol: 'none',
+          silent: true,
+          lineStyle: { type: 'dashed' as const, width: 1.5, color: '#495057' },
+          label: {
+            formatter: verticalMarkerLabel ?? `x=${formatChartNumber(verticalMarkerX)}`,
+            position: 'insideEndTop' as const,
+            color: '#495057'
+          },
+          data: [{ xAxis: verticalMarkerX }]
+        }
+      : undefined;
+
   return {
     tooltip: {
       trigger: 'axis',
@@ -324,7 +341,8 @@ export function curveOption(
         showSymbol: false,
         smooth: true,
         data: rightSeries.map((point) => [point.x, point.y]),
-        lineStyle: { color: '#18958b', width: 2 }
+        lineStyle: { color: '#18958b', width: 2 },
+        ...(marker ? { markLine: marker } : {})
       }
     ]
   };
@@ -335,8 +353,25 @@ export function curveSingleOption(
   series: CurvePoint[],
   xLabel: string,
   yLabel: string,
-  valueFormatter?: (value: number) => string
+  valueFormatter?: (value: number) => string,
+  verticalMarkerX?: number,
+  verticalMarkerLabel?: string
 ): EChartsOption {
+  const marker =
+    verticalMarkerX !== undefined && Number.isFinite(verticalMarkerX)
+      ? {
+          symbol: 'none',
+          silent: true,
+          lineStyle: { type: 'dashed' as const, width: 1.5, color: '#495057' },
+          label: {
+            formatter: verticalMarkerLabel ?? `x=${formatChartNumber(verticalMarkerX)}`,
+            position: 'insideEndTop' as const,
+            color: '#495057'
+          },
+          data: [{ xAxis: verticalMarkerX }]
+        }
+      : undefined;
+
   return {
     tooltip: {
       trigger: 'axis',
@@ -375,7 +410,8 @@ export function curveSingleOption(
         showSymbol: false,
         smooth: true,
         data: series.map((point) => [point.x, point.y]),
-        lineStyle: { color: '#0b7285', width: 2 }
+        lineStyle: { color: '#0b7285', width: 2 },
+        ...(marker ? { markLine: marker } : {})
       }
     ]
   };

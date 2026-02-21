@@ -491,6 +491,53 @@ function lognormalPdf(x: number, mu: number, sigma: number): number {
   return Math.exp(exponent) / denom;
 }
 
+function normalPdf(x: number, mu: number, sigma: number): number {
+  if (sigma <= 0) {
+    return 0;
+  }
+  const z = (x - mu) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+function erf(x: number): number {
+  const sign = x < 0 ? -1 : 1;
+  const absX = Math.abs(x);
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+  const t = 1 / (1 + p * absX);
+  const poly = (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t);
+  return sign * (1 - poly * Math.exp(-absX * absX));
+}
+
+function normalCdf(x: number, mu: number, sigma: number): number {
+  if (sigma <= 0) {
+    return x < mu ? 0 : 1;
+  }
+  const z = (x - mu) / (sigma * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.min(1, Math.max(0, value));
+}
+
+function linearRange(min: number, max: number, points: number): number[] {
+  if (points <= 1) {
+    return [min];
+  }
+  return Array.from({ length: points }, (_, index) => {
+    const t = index / (points - 1);
+    return min + t * (max - min);
+  });
+}
+
 function geometricRange(minValue: number, maxValue: number, points: number): number[] {
   const safeMin = Math.max(minValue, EPSILON);
   const safeMax = Math.max(maxValue, safeMin * 1.0001);
@@ -501,6 +548,68 @@ function geometricRange(minValue: number, maxValue: number, points: number): num
     const t = index / (points - 1);
     return Math.exp(logMin + t * (logMax - logMin));
   });
+}
+
+function buildGaussianCurves(muLeft: number, sigmaLeft: number, muRight: number, sigmaRight: number) {
+  const safeSigmaLeft = Math.max(sigmaLeft, EPSILON);
+  const safeSigmaRight = Math.max(sigmaRight, EPSILON);
+  const min = Math.min(muLeft - 4 * safeSigmaLeft, muRight - 4 * safeSigmaRight);
+  const max = Math.max(muLeft + 4 * safeSigmaLeft, muRight + 4 * safeSigmaRight);
+  const xs = linearRange(min, max, 180);
+  const percentCap = 50;
+  const logPercentCap = Math.log(percentCap);
+  const percentMin = Math.min(Math.exp(min), percentCap * 0.999);
+  const percents = geometricRange(percentMin, percentCap, 180);
+
+  const logCurveLeft: CurvePoint[] = xs.map((x) => ({ x, y: normalPdf(x, muLeft, safeSigmaLeft) }));
+  const logCurveRight: CurvePoint[] = xs.map((x) => ({ x, y: normalPdf(x, muRight, safeSigmaRight) }));
+
+  const percentCurveLeft: CurvePoint[] = percents.map((percent) => {
+    return {
+      x: percent,
+      y: lognormalPdf(percent, muLeft, safeSigmaLeft)
+    };
+  });
+
+  const percentCurveRight: CurvePoint[] = percents.map((percent) => {
+    return {
+      x: percent,
+      y: lognormalPdf(percent, muRight, safeSigmaRight)
+    };
+  });
+
+  const percentDomain = {
+    min: Math.min(...percentCurveLeft.map((point) => point.x), ...percentCurveRight.map((point) => point.x)),
+    max: percentCap
+  };
+  const percentCapMassLeft = clamp01(1 - normalCdf(logPercentCap, muLeft, safeSigmaLeft));
+  const percentCapMassRight = clamp01(1 - normalCdf(logPercentCap, muRight, safeSigmaRight));
+
+  return {
+    logDomain: { min, max },
+    percentDomain,
+    percentCap,
+    percentCapMassLeft,
+    percentCapMassRight,
+    logCurveLeft,
+    logCurveRight,
+    percentCurveLeft,
+    percentCurveRight
+  };
+}
+
+function buildHpaExpectationLines(
+  factorLeft: number,
+  constLeft: number,
+  factorRight: number,
+  constRight: number
+) {
+  const dt = 1;
+  const domain = { min: -0.2, max: 0.2 };
+  const xs = linearRange(domain.min, domain.max, 180);
+  const curveLeft: CurvePoint[] = xs.map((x) => ({ x, y: factorLeft * dt * x + constLeft }));
+  const curveRight: CurvePoint[] = xs.map((x) => ({ x, y: factorRight * dt * x + constRight }));
+  return { domain, dt, curveLeft, curveRight };
 }
 
 function deriveIncomeDomain(context: CompareContext): { min: number; max: number } {
@@ -803,6 +912,69 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
           curveLeft,
           curveRight,
           domain
+        }
+      };
+    }
+
+    case 'gaussian_pair': {
+      if (meta.configKeys.length !== 2) {
+        throw new Error(`Expected two config keys for gaussian pair: ${meta.id}`);
+      }
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+      const curves = buildGaussianCurves(values[0].left, values[1].left, values[0].right, values[1].right);
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'gaussian_pair',
+          parameters: values,
+          logCurveLeft: curves.logCurveLeft,
+          logCurveRight: curves.logCurveRight,
+          percentCurveLeft: curves.percentCurveLeft,
+          percentCurveRight: curves.percentCurveRight,
+          logDomain: curves.logDomain,
+          percentDomain: curves.percentDomain,
+          percentCap: curves.percentCap,
+          percentCapMassLeft: curves.percentCapMassLeft,
+          percentCapMassRight: curves.percentCapMassRight
+        }
+      };
+    }
+
+    case 'hpa_expectation_line': {
+      if (meta.configKeys.length !== 2) {
+        throw new Error(`Expected two config keys for hpa expectation line: ${meta.id}`);
+      }
+      const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
+      const lines = buildHpaExpectationLines(values[0].left, values[1].left, values[0].right, values[1].right);
+
+      return {
+        id: meta.id,
+        title: meta.title,
+        group: meta.group,
+        format: meta.format,
+        unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
+        sourceInfo,
+        explanation: meta.explanation,
+        leftVersion: context.leftVersion,
+        rightVersion: context.rightVersion,
+        changeOriginsInRange,
+        visualPayload: {
+          type: 'hpa_expectation_line',
+          parameters: values,
+          curveLeft: lines.curveLeft,
+          curveRight: lines.curveRight,
+          domain: lines.domain,
+          dt: lines.dt
         }
       };
     }
