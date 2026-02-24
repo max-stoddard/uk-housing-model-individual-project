@@ -84,10 +84,15 @@ This guide is for future agents working only in the dashboard stack. Keep it sho
 - Structured version metadata source of truth is `input-data-versions/version-notes.json`.
 - `inProgressVersions` in `/api/versions` is derived from `version-notes.json` entries with `validation.status = in_progress` grouped by `snapshot_folder`.
 - Compare response items include `changeOriginsInRange` provenance entries derived from `version-notes.json`.
+- Compare provenance origins intentionally exclude `validationDataset`; validation-dataset tracking remains only in `version-notes.json`.
+- Compare provenance origins include `parameterChanges`, where each item has `configParameter` and nullable `datasetSource`.
+- Compare response `sourceInfo` includes version-aware dataset attribution arrays `datasetsLeft` and `datasetsRight`, each item carrying `tag`, `fullName`, `year`, optional `edition`, and optional `evidence`.
 - Provenance scope semantics:
   - `range`: include updates in `(left, right]` (compare mode).
   - `through_right`: include full history through `right` (single-version mode history tracking).
 - Every version-notes entry must include `method_variations` (empty array allowed); compare payload origins include filtered `methodVariations`.
+- Every version-notes entry must include `parameter_changes` (empty array allowed), and `parameter_changes[].config_parameter` must match `config_parameters` as a set.
+- Source-section labels are mode-specific by design: single mode renders only `Source`, compare mode renders `Left source` and `Right source`.
 
 ## Best Practices
 - Keep `shared/types.ts` and backend response shapes synchronized before changing UI rendering.
