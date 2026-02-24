@@ -295,7 +295,7 @@ export function HomePage() {
       <div className="stats-grid fade-up-delay">
         <article>
           <p className="stat-title">
-            <span>Lines Written</span>
+            <span>Lines of Code Written</span>
           </p>
           <strong>
             <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
@@ -321,7 +321,7 @@ export function HomePage() {
         </article>
         <article>
           <p className="stat-title">
-            <span>Commits</span>
+            <span>Git Commits</span>
           </p>
           <strong>
             <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
@@ -375,19 +375,19 @@ export function HomePage() {
 
       <div className="stats-grid fade-up-delay">
         <article>
-          <p>Calibration Versions</p>
+          <p>Updates to Calibration Parameters</p>
           <strong className={loadState !== 'ready' ? 'stat-loading' : ''}>
             {loadState !== 'ready' ? '\u00A0' : formatCount(versionsCount)}
           </strong>
         </article>
         <article>
-          <p>Tracked Parameters</p>
+          <p>Calibration Parameters Visualised</p>
           <strong className={loadState !== 'ready' ? 'stat-loading' : ''}>
             {loadState !== 'ready' ? '\u00A0' : formatCount(cardsCount)}
           </strong>
         </article>
         <article>
-          <p>Latest Calibration Version</p>
+          <p>Latest Calibration Parameter Update</p>
           <strong className={`snapshot-value${loadState !== 'ready' ? ' stat-loading' : ''}`}>
             {loadState !== 'ready' ? '\u00A0' : (
               <>
