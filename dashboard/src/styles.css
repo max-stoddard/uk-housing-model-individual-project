@@ -1018,11 +1018,7 @@ code {
 }
 
 .provenance-block {
-  margin-bottom: 0.7rem;
-  padding: 0.55rem;
-  border-radius: 0.6rem;
-  background: #fff;
-  border: 1px solid rgba(17, 32, 24, 0.08);
+  margin-top: 0.7rem;
 }
 
 .provenance-block h4 {
@@ -1046,17 +1042,46 @@ code {
   gap: 0.55rem;
 }
 
-.provenance-list li {
+.provenance-list > li {
   border: 1px solid rgba(17, 32, 24, 0.08);
-  background: #f7faf7;
+  background: #fff;
   border-radius: 0.55rem;
   padding: 0.5rem 0.55rem;
 }
 
-.provenance-list li p {
+.provenance-list > li p {
   margin: 0.2rem 0;
   color: var(--text);
   font-size: 0.82rem;
+}
+
+.parameter-change-block {
+  margin: 0.25rem 0 0.1rem;
+}
+
+.parameter-change-list {
+  margin: 0.2rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.parameter-change-list li {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.method-variation-block ul {
+  margin: 0.2rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.method-variation-block li {
+  margin-bottom: 0.25rem;
 }
 
 .provenance-head {
@@ -1095,6 +1120,17 @@ code {
 }
 
 .card-meta dd {
+  margin: 0;
+}
+
+.source-dataset-list {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.source-dataset-item {
   margin: 0;
 }
 

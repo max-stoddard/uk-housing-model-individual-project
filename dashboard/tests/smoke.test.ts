@@ -130,8 +130,26 @@ assert.ok(notes.length > 0, 'Expected at least one version note entry');
 for (const entry of notes) {
   assert.ok(Array.isArray(entry.calibration_files), 'calibration_files should be present for every version entry');
   assert.ok(Array.isArray(entry.config_parameters), 'config_parameters should be present for every version entry');
+  assert.ok(Array.isArray(entry.parameter_changes), 'parameter_changes should be present for every version entry');
+  for (const parameterChange of entry.parameter_changes) {
+    assert.equal(typeof parameterChange.config_parameter, 'string', 'parameter_changes.config_parameter should be a string');
+    assert.ok(
+      parameterChange.dataset_source === null || typeof parameterChange.dataset_source === 'string',
+      'parameter_changes.dataset_source should be string or null'
+    );
+  }
   assert.ok(Array.isArray(entry.method_variations), 'method_variations should be present for every version entry');
 }
+const v10Note = notes.find((entry) => entry.version_id === 'v1.0');
+assert.ok(v10Note, 'Expected v1.0 note entry');
+assert.ok(
+  v10Note?.parameter_changes.some(
+    (change) =>
+      change.config_parameter === 'DATA_INCOME_GIVEN_AGE' &&
+      change.dataset_source === 'src/main/resources/AgeGrossIncomeJointDist.csv'
+  ),
+  'Expected v1.0 parameter_changes to include DATA_INCOME_GIVEN_AGE dataset source'
+);
 const v38Note = notes.find((entry) => entry.version_id === 'v3.8');
 assert.ok(v38Note, 'Expected v3.8 note entry');
 assert.equal(v38Note?.validation.status, 'in_progress', 'v3.8 validation should remain in_progress');
@@ -167,6 +185,12 @@ assert.ok(
     variation.configParameters.some((parameter) => parameter.startsWith('BUY_'))
   ),
   'Expected at least one method variation scoped to BUY_* parameters'
+);
+assert.ok(
+  buyQuadV38Origin?.parameterChanges.every(
+    (change) => !change.configParameter.startsWith('BUY_') || change.datasetSource === null
+  ),
+  'Expected v3.8 BUY_* parameter changes to have null dataset_source'
 );
 
 const compare = compareParameters(repoRoot, 'v0', versions[versions.length - 1], [
@@ -376,7 +400,13 @@ for (const item of compare.items) {
   assert.equal(item.leftVersion, 'v0');
   assert.ok(item.sourceInfo.configPathLeft.endsWith('config.properties'));
   assert.ok(item.sourceInfo.configPathRight.endsWith('config.properties'));
+  assert.ok(Array.isArray(item.sourceInfo.datasetsLeft), 'datasetsLeft should be present on every compare item');
+  assert.ok(Array.isArray(item.sourceInfo.datasetsRight), 'datasetsRight should be present on every compare item');
   assert.ok(Array.isArray(item.changeOriginsInRange), 'changeOriginsInRange should be present on every compare item');
+  for (const origin of item.changeOriginsInRange) {
+    assert.ok(Array.isArray(origin.parameterChanges), 'parameterChanges should be present on every provenance origin');
+    assert.ok(!('validationDataset' in origin), 'validationDataset should not be exposed on compare origins');
+  }
 }
 
 const ageDist = compare.items.find((item) => item.id === 'age_distribution');
@@ -463,6 +493,39 @@ assert.ok(buyQuad, 'Expected buy_quad card');
 assert.ok(
   buyQuad?.changeOriginsInRange.some((origin) => origin.versionId === 'v3.8' && origin.validationStatus === 'in_progress'),
   'buy_quad provenance should include v3.8 as in_progress'
+);
+
+const unchangedSingleSource = compareParameters(repoRoot, latestVersion, latestVersion, ['uk_housing_stock_totals'], 'through_right')
+  .items[0];
+assert.ok(unchangedSingleSource, 'Expected uk_housing_stock_totals in single compare payload');
+assert.ok(unchangedSingleSource.unchanged, 'Expected uk_housing_stock_totals to be unchanged at same-version compare');
+assert.ok(
+  unchangedSingleSource.sourceInfo.datasetsRight.length > 0,
+  'Expected unchanged single-version card to include source dataset attribution'
+);
+
+const wasSingle = compareParameters(repoRoot, 'v3.8', 'v3.8', ['age_distribution'], 'through_right').items[0];
+assert.ok(wasSingle, 'Expected age_distribution card in single payload');
+const wasDataset = wasSingle?.sourceInfo.datasetsRight.find((dataset) => dataset.tag === 'was');
+assert.ok(wasDataset, 'Expected WAS dataset attribution for age_distribution');
+assert.equal(wasDataset?.fullName, 'Wealth and Assets Survey', 'Expected WAS full name');
+assert.equal(wasDataset?.year, '2022', 'Expected WAS Round 8 year to resolve to 2022');
+assert.equal(wasDataset?.edition, 'Round 8', 'Expected WAS edition to resolve to Round 8');
+
+const nmgCompare = compareParameters(repoRoot, 'v1.3', 'v3.8', ['rental_price_lognormal'], 'range').items[0];
+assert.ok(nmgCompare, 'Expected rental_price_lognormal card in compare payload');
+const nmgLeft = nmgCompare?.sourceInfo.datasetsLeft.find((dataset) => dataset.tag === 'nmg');
+const nmgRight = nmgCompare?.sourceInfo.datasetsRight.find((dataset) => dataset.tag === 'nmg');
+assert.ok(nmgLeft, 'Expected left-side NMG attribution');
+assert.ok(nmgRight, 'Expected right-side NMG attribution');
+assert.notEqual(nmgLeft?.year, nmgRight?.year, 'Expected NMG attribution year to vary by version side (left vs right)');
+assert.equal(nmgLeft?.year, '2016', 'Expected v1.3 NMG year to be 2016 for rental-price keys');
+assert.equal(nmgRight?.year, '2024', 'Expected v3.8 NMG year to be 2024 for rental-price keys');
+
+const compareCardSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/components/CompareCard.tsx'), 'utf-8');
+assert.ok(
+  !compareCardSource.includes('Validation dataset'),
+  'Compare card should not render Validation dataset field'
 );
 
 const gitStatsSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/lib/gitStats.ts'), 'utf-8');

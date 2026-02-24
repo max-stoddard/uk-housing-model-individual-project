@@ -35,6 +35,8 @@ export interface DataSourceInfo {
   configKeys: string[];
   dataFilesLeft: string[];
   dataFilesRight: string[];
+  datasetsLeft: DatasetAttribution[];
+  datasetsRight: DatasetAttribution[];
 }
 
 export type ValidationStatus = 'complete' | 'in_progress';
@@ -47,13 +49,26 @@ export interface MethodVariationNote {
   decisionLogic?: string;
 }
 
+export interface ParameterChange {
+  configParameter: string;
+  datasetSource: string | null;
+}
+
+export interface DatasetAttribution {
+  tag: string;
+  fullName: string;
+  year: string;
+  edition?: string;
+  evidence?: string;
+}
+
 export interface VersionChangeOrigin {
   versionId: string;
   description: string;
-  validationDataset: string;
   updatedDataSources: string[];
   calibrationFiles: string[];
   configParameters: string[];
+  parameterChanges: ParameterChange[];
   validationStatus: ValidationStatus;
   methodVariations: MethodVariationNote[];
 }

@@ -11,6 +11,11 @@ export interface VersionNoteValidation {
   note?: string;
 }
 
+export interface VersionNoteParameterChange {
+  config_parameter: string;
+  dataset_source: string | null;
+}
+
 export interface VersionNoteEntry {
   version_id: string;
   snapshot_folder: string;
@@ -19,6 +24,7 @@ export interface VersionNoteEntry {
   updated_data_sources: string[];
   calibration_files: string[];
   config_parameters: string[];
+  parameter_changes: VersionNoteParameterChange[];
   method_variations: VersionNoteMethodVariation[];
   validation: VersionNoteValidation;
 }
@@ -100,6 +106,10 @@ function parseEntry(value: unknown, index: number): VersionNoteEntry {
     throw new Error(`Invalid version notes schema: entries[${index}].method_variations must be an array`);
   }
 
+  const configParameters = assertStringArray(value.config_parameters, `entries[${index}].config_parameters`);
+  const parameterChanges = parseParameterChanges(value.parameter_changes, index);
+  assertParameterConsistency(configParameters, parameterChanges, index);
+
   return {
     version_id: assertString(value.version_id, `entries[${index}].version_id`),
     snapshot_folder: assertString(value.snapshot_folder, `entries[${index}].snapshot_folder`),
@@ -107,12 +117,69 @@ function parseEntry(value: unknown, index: number): VersionNoteEntry {
     description: assertString(value.description, `entries[${index}].description`),
     updated_data_sources: assertStringArray(value.updated_data_sources, `entries[${index}].updated_data_sources`),
     calibration_files: assertStringArray(value.calibration_files, `entries[${index}].calibration_files`),
-    config_parameters: assertStringArray(value.config_parameters, `entries[${index}].config_parameters`),
+    config_parameters: configParameters,
+    parameter_changes: parameterChanges,
     method_variations: methodVariations.map((variation, variationIndex) =>
       parseMethodVariation(variation, index, variationIndex)
     ),
     validation: parseValidation(value.validation, `entries[${index}].validation`)
   };
+}
+
+function parseParameterChanges(value: unknown, entryIndex: number): VersionNoteParameterChange[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid version notes schema: entries[${entryIndex}].parameter_changes must be an array`);
+  }
+
+  return value.map((parameterChange, parameterIndex) => {
+    if (!isObject(parameterChange)) {
+      throw new Error(
+        `Invalid version notes schema: entries[${entryIndex}].parameter_changes[${parameterIndex}] must be an object`
+      );
+    }
+
+    const datasetSource = parameterChange.dataset_source;
+    if (datasetSource !== null && typeof datasetSource !== 'string') {
+      throw new Error(
+        `Invalid version notes schema: entries[${entryIndex}].parameter_changes[${parameterIndex}].dataset_source must be a string or null`
+      );
+    }
+
+    return {
+      config_parameter: assertString(
+        parameterChange.config_parameter,
+        `entries[${entryIndex}].parameter_changes[${parameterIndex}].config_parameter`
+      ),
+      dataset_source: datasetSource
+    };
+  });
+}
+
+function assertParameterConsistency(
+  configParameters: string[],
+  parameterChanges: VersionNoteParameterChange[],
+  entryIndex: number
+): void {
+  const configSet = new Set(configParameters);
+  const parameterSet = new Set(parameterChanges.map((change) => change.config_parameter));
+  if (configSet.size !== configParameters.length) {
+    throw new Error(`Invalid version notes schema: entries[${entryIndex}].config_parameters must not contain duplicates`);
+  }
+  if (parameterSet.size !== parameterChanges.length) {
+    throw new Error(`Invalid version notes schema: entries[${entryIndex}].parameter_changes must not contain duplicates`);
+  }
+  if (configSet.size !== parameterSet.size) {
+    throw new Error(
+      `Invalid version notes schema: entries[${entryIndex}].config_parameters and entries[${entryIndex}].parameter_changes must match as sets`
+    );
+  }
+  for (const parameter of configSet) {
+    if (!parameterSet.has(parameter)) {
+      throw new Error(
+        `Invalid version notes schema: entries[${entryIndex}].config_parameters and entries[${entryIndex}].parameter_changes must match as sets`
+      );
+    }
+  }
 }
 
 function parseMethodVariation(value: unknown, entryIndex: number, variationIndex: number): VersionNoteMethodVariation {

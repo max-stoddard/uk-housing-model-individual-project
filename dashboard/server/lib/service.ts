@@ -23,6 +23,11 @@ import {
 } from './io';
 import { compareVersions, listVersions } from './versioning';
 import { loadVersionNotes, type VersionNoteEntry } from './versionNotes';
+import {
+  buildLatestSourceTagsByKey,
+  parseConfigWithComments,
+  resolveDatasetAttributions
+} from './datasetAttribution';
 
 const EPSILON = 1e-12;
 export type ProvenanceScope = 'range' | 'through_right';
@@ -33,6 +38,10 @@ interface CompareContext {
   rightVersion: string;
   leftConfig: Map<string, string>;
   rightConfig: Map<string, string>;
+  leftConfigDetails: Map<string, { value: string; comment: string }>;
+  rightConfigDetails: Map<string, { value: string; comment: string }>;
+  leftFallbackTagsByKey: Map<string, string[]>;
+  rightFallbackTagsByKey: Map<string, string[]>;
   versionNotes: VersionNoteEntry[];
   provenanceScope: ProvenanceScope;
 }
@@ -94,10 +103,13 @@ function toChangeOriginsInRange(context: CompareContext, meta: ParameterCardMeta
     .map((entry) => ({
       versionId: entry.version_id,
       description: entry.description,
-      validationDataset: entry.validation_dataset,
       updatedDataSources: entry.updated_data_sources,
       calibrationFiles: entry.calibration_files,
       configParameters: entry.config_parameters,
+      parameterChanges: entry.parameter_changes.map((change) => ({
+        configParameter: change.config_parameter,
+        datasetSource: change.dataset_source
+      })),
       validationStatus: entry.validation.status,
       methodVariations: entry.method_variations
         .filter((variation) => intersects(meta.configKeys, variation.config_parameters))
@@ -711,7 +723,17 @@ function createSourceInfo(context: CompareContext, meta: ParameterCardMeta) {
     configPathRight: asRelative(context.repoRoot, getConfigPath(context.repoRoot, context.rightVersion)),
     configKeys: meta.configKeys,
     dataFilesLeft: leftFiles,
-    dataFilesRight: rightFiles
+    dataFilesRight: rightFiles,
+    datasetsLeft: resolveDatasetAttributions({
+      configKeys: meta.configKeys,
+      configDetails: context.leftConfigDetails,
+      fallbackTagsByKey: context.leftFallbackTagsByKey
+    }),
+    datasetsRight: resolveDatasetAttributions({
+      configKeys: meta.configKeys,
+      configDetails: context.rightConfigDetails,
+      fallbackTagsByKey: context.rightFallbackTagsByKey
+    })
   };
 }
 
@@ -1071,6 +1093,10 @@ export function compareParameters(
   const leftConfig = parseConfigFile(getConfigPath(repoRoot, leftVersion));
   const rightConfig = parseConfigFile(getConfigPath(repoRoot, rightVersion));
   const versionNotes = loadVersionNotes(repoRoot);
+  const leftConfigDetails = parseConfigWithComments(getConfigPath(repoRoot, leftVersion));
+  const rightConfigDetails = parseConfigWithComments(getConfigPath(repoRoot, rightVersion));
+  const leftFallbackTagsByKey = buildLatestSourceTagsByKey(versionNotes, leftVersion);
+  const rightFallbackTagsByKey = buildLatestSourceTagsByKey(versionNotes, rightVersion);
 
   const catalogById = new Map(PARAMETER_CATALOG.map((meta) => [meta.id, meta]));
   const selected = (ids.length > 0 ? ids : PARAMETER_CATALOG.map((meta) => meta.id)).map((id) => {
@@ -1087,6 +1113,10 @@ export function compareParameters(
     rightVersion,
     leftConfig,
     rightConfig,
+    leftConfigDetails,
+    rightConfigDetails,
+    leftFallbackTagsByKey,
+    rightFallbackTagsByKey,
     versionNotes,
     provenanceScope
   };

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { CompareResult, ScalarDatum } from '../../shared/types';
+import type { CompareResult, DatasetAttribution, ScalarDatum } from '../../shared/types';
 import { EChart } from './EChart';
 import { getAxisSpec } from '../lib/chartAxes';
 import { jointHeatmapOption, resolveAdaptiveHeatmapLayout } from '../lib/jointHeatmapOption';
@@ -53,6 +53,14 @@ function validationStatusLabel(status: string): string {
 
 function withInProgressLabel(version: string, inProgressVersions: Set<string>): string {
   return inProgressVersions.has(version) ? `${version} (In progress)` : version;
+}
+
+function formatDatasetAttribution(dataset: DatasetAttribution): string {
+  const parts = [`Year: ${dataset.year}`];
+  if (dataset.edition) {
+    parts.push(`Edition: ${dataset.edition}`);
+  }
+  return `${dataset.fullName} (${parts.join(', ')})`;
 }
 
 function renderScalarTable(values: ScalarDatum[], mode: 'single' | 'compare') {
@@ -600,12 +608,104 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
 
           {isMoreInfoOpen && (
             <div className="card-meta">
+              <dl>
+                {mode === 'single' ? (
+                  <>
+                    <dt>Datasets</dt>
+                    <dd>
+                      {item.sourceInfo.datasetsRight.length === 0 ? (
+                        'n/a'
+                      ) : (
+                        <div className="source-dataset-list">
+                          {item.sourceInfo.datasetsRight.map((dataset) => (
+                            <div
+                              key={`source-right-${dataset.fullName}-${dataset.year}-${dataset.edition ?? ''}`}
+                              className="source-dataset-item"
+                            >
+                              {formatDatasetAttribution(dataset)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </dd>
+                    <dt>Source Files</dt>
+                    <dd>
+                      <code>{item.sourceInfo.configPathRight}</code>
+                      {item.sourceInfo.dataFilesRight.map((file) => (
+                        <div key={file}>
+                          <code>{file}</code>
+                        </div>
+                      ))}
+                    </dd>
+                    <dt>Config keys</dt>
+                    <dd>{item.sourceInfo.configKeys.join(', ')}</dd>
+                    <dt>Change provenance</dt>
+                    <dd>through {item.rightVersion}</dd>
+                  </>
+                ) : (
+                  <>
+                    <dt>Left Datasets</dt>
+                    <dd>
+                      {item.sourceInfo.datasetsLeft.length === 0 ? (
+                        'n/a'
+                      ) : (
+                        <div className="source-dataset-list">
+                          {item.sourceInfo.datasetsLeft.map((dataset) => (
+                            <div
+                              key={`source-left-${dataset.fullName}-${dataset.year}-${dataset.edition ?? ''}`}
+                              className="source-dataset-item"
+                            >
+                              {formatDatasetAttribution(dataset)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </dd>
+                    <dt>Left Source Files</dt>
+                    <dd>
+                      <code>{item.sourceInfo.configPathLeft}</code>
+                      {item.sourceInfo.dataFilesLeft.map((file) => (
+                        <div key={file}>
+                          <code>{file}</code>
+                        </div>
+                      ))}
+                    </dd>
+                    <dt>Right Datasets</dt>
+                    <dd>
+                      {item.sourceInfo.datasetsRight.length === 0 ? (
+                        'n/a'
+                      ) : (
+                        <div className="source-dataset-list">
+                          {item.sourceInfo.datasetsRight.map((dataset) => (
+                            <div
+                              key={`source-right-${dataset.fullName}-${dataset.year}-${dataset.edition ?? ''}`}
+                              className="source-dataset-item"
+                            >
+                              {formatDatasetAttribution(dataset)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </dd>
+                    <dt>Right Source Files</dt>
+                    <dd>
+                      <code>{item.sourceInfo.configPathRight}</code>
+                      {item.sourceInfo.dataFilesRight.map((file) => (
+                        <div key={file}>
+                          <code>{file}</code>
+                        </div>
+                      ))}
+                    </dd>
+                    <dt>Config keys</dt>
+                    <dd>{item.sourceInfo.configKeys.join(', ')}</dd>
+                    <dt>Change provenance</dt>
+                    <dd>
+                      ({item.leftVersion}, {item.rightVersion}]
+                    </dd>
+                  </>
+                )}
+              </dl>
               <div className="provenance-block">
-                <h4>
-                  {mode === 'single'
-                    ? `Change provenance (through ${item.rightVersion})`
-                    : `Change provenance (${item.leftVersion}, ${item.rightVersion}]`}
-                </h4>
                 {item.changeOriginsInRange.length === 0 ? (
                   <p className="provenance-empty">No tracked update metadata in selected scope.</p>
                 ) : (
@@ -620,9 +720,6 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         </div>
                         <p>{origin.description}</p>
                         <p>
-                          <b>Validation dataset:</b> {origin.validationDataset}
-                        </p>
-                        <p>
                           <b>Updated data sources:</b>{' '}
                           {origin.updatedDataSources.length > 0 ? origin.updatedDataSources.join(', ') : 'n/a'}
                         </p>
@@ -632,10 +729,27 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         <p>
                           <b>Config parameters:</b> {origin.configParameters.length > 0 ? origin.configParameters.join(', ') : 'n/a'}
                         </p>
+                        <div className="parameter-change-block">
+                          <p>
+                            <b>Parameter changes:</b>
+                          </p>
+                          {origin.parameterChanges.length === 0 ? (
+                            <p>n/a</p>
+                          ) : (
+                            <ul className="parameter-change-list">
+                              {origin.parameterChanges.map((parameterChange) => (
+                                <li key={`${origin.versionId}-${parameterChange.configParameter}`}>
+                                  <code>{parameterChange.configParameter}</code> -&gt;{' '}
+                                  <code>{parameterChange.datasetSource ?? 'n/a'}</code>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                         {origin.methodVariations.length > 0 && (
                           <div className="method-variation-block">
                             <p>
-                              <b>Method improvements</b>
+                              <b>Method improvements:</b>
                             </p>
                             <ul>
                               {origin.methodVariations.map((variation, index) => (
@@ -669,28 +783,6 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                   </ul>
                 )}
               </div>
-              <dl>
-                <dt>Config keys</dt>
-                <dd>{item.sourceInfo.configKeys.join(', ')}</dd>
-                <dt>Left source</dt>
-                <dd>
-                  <code>{item.sourceInfo.configPathLeft}</code>
-                  {item.sourceInfo.dataFilesLeft.map((file) => (
-                    <div key={file}>
-                      <code>{file}</code>
-                    </div>
-                  ))}
-                </dd>
-                <dt>Right source</dt>
-                <dd>
-                  <code>{item.sourceInfo.configPathRight}</code>
-                  {item.sourceInfo.dataFilesRight.map((file) => (
-                    <div key={file}>
-                      <code>{file}</code>
-                    </div>
-                  ))}
-                </dd>
-              </dl>
             </div>
           )}
         </>

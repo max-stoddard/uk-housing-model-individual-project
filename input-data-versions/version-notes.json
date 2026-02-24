@@ -1,6 +1,6 @@
 {
   "author": "Max Stoddard",
-  "schema_version": 2,
+  "schema_version": 3,
   "description": "Structured changelog for input-data versions, calibration provenance, and WAS validation diffs.",
   "fields": {
     "version_id": "Display version id in notes (for example v0a, v2.1, v3.8).",
@@ -10,6 +10,9 @@
     "updated_data_sources": "Short source tags previously shown in brackets.",
     "calibration_files": "Calibration or update script path(s) for this version.",
     "config_parameters": "Config keys changed at this version milestone.",
+    "parameter_changes": "Per-parameter change list with config key and resolved dataset source (or null for scalar-only changes).",
+    "config_parameter": "Changed config key name.",
+    "dataset_source": "Resolved config value for file-backed parameters (for example src/main/resources/*.csv); null when not file-backed.",
     "validation": {
       "status": "Validation status: complete | in_progress.",
       "income_diff_pct": "Income total diff percentage from validation output.",
@@ -27,6 +30,7 @@
       "updated_data_sources": [],
       "calibration_files": [],
       "config_parameters": [],
+      "parameter_changes": [],
       "validation": {
         "status": "complete",
         "income_diff_pct": 2.29,
@@ -45,6 +49,7 @@
       ],
       "calibration_files": [],
       "config_parameters": [],
+      "parameter_changes": [],
       "validation": {
         "status": "complete",
         "income_diff_pct": 16.97,
@@ -66,6 +71,12 @@
       ],
       "config_parameters": [
         "DATA_INCOME_GIVEN_AGE"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DATA_INCOME_GIVEN_AGE",
+          "dataset_source": "src/main/resources/AgeGrossIncomeJointDist.csv"
+        }
       ],
       "validation": {
         "status": "complete",
@@ -99,6 +110,12 @@
       "config_parameters": [
         "DATA_WEALTH_GIVEN_INCOME"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DATA_WEALTH_GIVEN_INCOME",
+          "dataset_source": "src/main/resources/GrossIncomeNetWealthJointDist.csv"
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 4.66,
@@ -130,6 +147,12 @@
       ],
       "config_parameters": [
         "DATA_BTL_PROBABILITY"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DATA_BTL_PROBABILITY",
+          "dataset_source": "src/main/resources/BTLProbabilityPerIncomePercentileBin-R8.csv"
+        }
       ],
       "validation": {
         "status": "complete",
@@ -163,6 +186,12 @@
       "config_parameters": [
         "DATA_AGE_DISTRIBUTION"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DATA_AGE_DISTRIBUTION",
+          "dataset_source": "src/main/resources/Age8-R8-Weighted.csv"
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 7.19,
@@ -194,6 +223,12 @@
       ],
       "config_parameters": [
         "DATA_NATIONAL_INSURANCE_RATES"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DATA_NATIONAL_INSURANCE_RATES",
+          "dataset_source": "src/main/resources/NationalInsuranceRates.csv"
+        }
       ],
       "validation": {
         "status": "complete",
@@ -228,6 +263,12 @@
       "config_parameters": [
         "DATA_TAX_RATES"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DATA_TAX_RATES",
+          "dataset_source": "src/main/resources/TaxRates.csv"
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 6.37,
@@ -260,6 +301,16 @@
       "config_parameters": [
         "GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE",
         "GOVERNMENT_MONTHLY_INCOME_SUPPORT"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "GOVERNMENT_GENERAL_PERSONAL_ALLOWANCE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "GOVERNMENT_MONTHLY_INCOME_SUPPORT",
+          "dataset_source": null
+        }
       ],
       "validation": {
         "status": "complete",
@@ -295,6 +346,16 @@
         "HOUSE_PRICES_SCALE",
         "HOUSE_PRICES_SHAPE"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "HOUSE_PRICES_SCALE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "HOUSE_PRICES_SHAPE",
+          "dataset_source": null
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 7.33,
@@ -328,6 +389,16 @@
       "config_parameters": [
         "RENTAL_PRICES_SCALE",
         "RENTAL_PRICES_SHAPE"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "RENTAL_PRICES_SCALE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "RENTAL_PRICES_SHAPE",
+          "dataset_source": null
+        }
       ],
       "validation": {
         "status": "complete",
@@ -363,6 +434,16 @@
         "DESIRED_RENT_SCALE",
         "DESIRED_RENT_EXPONENT"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DESIRED_RENT_SCALE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "DESIRED_RENT_EXPONENT",
+          "dataset_source": null
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 7.41,
@@ -397,6 +478,16 @@
         "BTL_P_INCOME_DRIVEN",
         "BTL_P_CAPITAL_DRIVEN"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "BTL_P_INCOME_DRIVEN",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "BTL_P_CAPITAL_DRIVEN",
+          "dataset_source": null
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 6.72,
@@ -430,6 +521,12 @@
       "config_parameters": [
         "MORTGAGE_DURATION_YEARS"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "MORTGAGE_DURATION_YEARS",
+          "dataset_source": null
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 7.06,
@@ -462,6 +559,16 @@
       "config_parameters": [
         "DOWNPAYMENT_FTB_SCALE",
         "DOWNPAYMENT_FTB_SHAPE"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DOWNPAYMENT_FTB_SCALE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "DOWNPAYMENT_FTB_SHAPE",
+          "dataset_source": null
+        }
       ],
       "validation": {
         "status": "complete",
@@ -497,6 +604,16 @@
         "DOWNPAYMENT_OO_SCALE",
         "DOWNPAYMENT_OO_SHAPE"
       ],
+      "parameter_changes": [
+        {
+          "config_parameter": "DOWNPAYMENT_OO_SCALE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "DOWNPAYMENT_OO_SHAPE",
+          "dataset_source": null
+        }
+      ],
       "validation": {
         "status": "complete",
         "income_diff_pct": 6.86,
@@ -530,6 +647,12 @@
       ],
       "config_parameters": [
         "MARKET_AVERAGE_PRICE_DECAY"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "MARKET_AVERAGE_PRICE_DECAY",
+          "dataset_source": null
+        }
       ],
       "validation": {
         "status": "complete",
@@ -567,6 +690,24 @@
         "BUY_EXPONENT",
         "BUY_MU",
         "BUY_SIGMA"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "BUY_SCALE",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "BUY_EXPONENT",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "BUY_MU",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "BUY_SIGMA",
+          "dataset_source": null
+        }
       ],
       "validation": {
         "status": "in_progress",
