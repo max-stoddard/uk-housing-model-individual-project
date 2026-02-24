@@ -37,6 +37,7 @@ tmp/
 AGENTS.md
 AGENT*.md
 CLAUDE.md
+TODO.md
 
 # dashboard artifacts
 dashboard/node_modules/
