@@ -1,17 +1,31 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from '../server/lib/service.js';
 import {
+  deleteResultsRun,
   getResultsCompare,
   getResultsRunDetail,
   getResultsRunFiles,
   getResultsRuns,
   getResultsSeries
 } from '../server/lib/results.js';
+import {
+  __resetModelRunManagerForTests,
+  __setModelRunSpawnForTests,
+  cancelModelRunJob,
+  clearModelRunJob,
+  getModelRunJobLogs,
+  getModelRunOptions,
+  listModelRunJobs,
+  submitModelRun
+} from '../server/lib/modelRuns.js';
 import { getConfigPath, parseConfigFile, readNumericCsvRows, resolveConfigDataFilePath } from '../server/lib/io.js';
+import { createWriteAuthController, getWriteAuthConfigurationError, resolveDashboardWriteAccess } from '../server/lib/writeAuth.js';
 import { loadVersionNotes } from '../server/lib/versionNotes.js';
 import { assertAxisSpecComplete, getAxisSpec } from '../src/lib/chartAxes.js';
 
@@ -31,6 +45,48 @@ function gaussianPercentDensity(percent: number, mu: number, sigma: number): num
   const denominator = percent * sigma * Math.sqrt(2 * Math.PI);
   const exponent = -((Math.log(percent) - mu) ** 2) / (2 * sigma ** 2);
   return Math.exp(exponent) / denominator;
+}
+
+function waitForAsyncTick(ms = 0): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+class FakeModelProcess extends EventEmitter {
+  stdout = new PassThrough();
+  stderr = new PassThrough();
+  private rejectSigterm = false;
+
+  kill(signal: NodeJS.Signals = 'SIGTERM'): boolean {
+    if (signal === 'SIGTERM' && this.rejectSigterm) {
+      return false;
+    }
+    setTimeout(() => {
+      this.emit('close', signal === 'SIGTERM' ? null : 1, signal);
+    }, 0);
+    return true;
+  }
+
+  disableSigtermDelivery(): void {
+    this.rejectSigterm = true;
+  }
+
+  emitStdout(line: string): void {
+    this.stdout.write(`${line}\n`);
+  }
+
+  emitStderr(line: string): void {
+    this.stderr.write(`${line}\n`);
+  }
+
+  succeed(): void {
+    this.emit('close', 0, null);
+  }
+
+  fail(): void {
+    this.emit('close', 1, null);
+  }
 }
 
 const expectedIds = [
@@ -251,6 +307,87 @@ function createResultsFixtureRepo(): ResultsFixtureContext {
   });
 
   return { root, runIds };
+}
+
+function buildModelRunConfigText(baseSeed: number): string {
+  return `SEED = ${baseSeed}
+N_STEPS = 2000
+N_SIMS = 1
+TARGET_POPULATION = 10000
+TIME_TO_START_RECORDING_TRANSACTIONS = 1000
+ROLLING_WINDOW_SIZE_FOR_CORE_INDICATORS = 6
+CUMULATIVE_WEIGHT_BEYOND_YEAR = 0.25
+recordTransactions = true
+recordNBidUpFrequency = false
+recordCoreIndicators = true
+recordQualityBandPrice = false
+recordHouseholdID = true
+recordEmploymentIncome = true
+recordRentalIncome = true
+recordBankBalance = true
+recordHousingWealth = true
+recordNHousesOwned = true
+recordAge = true
+recordSavingRate = false
+CENTRAL_BANK_INITIAL_BASE_RATE = 0.005
+CENTRAL_BANK_LTV_HARD_MAX_FTB = 0.95
+CENTRAL_BANK_LTV_HARD_MAX_HM = 0.9
+CENTRAL_BANK_LTV_HARD_MAX_BTL = 0.8
+CENTRAL_BANK_LTI_SOFT_MAX_FTB = 5.4
+CENTRAL_BANK_LTI_SOFT_MAX_HM = 5.6
+CENTRAL_BANK_LTI_MAX_FRAC_OVER_SOFT_MAX_FTB = 0.15
+CENTRAL_BANK_LTI_MAX_FRAC_OVER_SOFT_MAX_HM = 0.15
+CENTRAL_BANK_LTI_MONTHS_TO_CHECK = 12
+CENTRAL_BANK_AFFORDABILITY_HARD_MAX = 0.4
+CENTRAL_BANK_ICR_HARD_MIN = 1.2
+DATA_AGE_DISTRIBUTION = "src/main/resources/Age.csv"
+DATA_INCOME_GIVEN_AGE = "src/main/resources/Income.csv"
+`;
+}
+
+function createModelRunFixtureRepo(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dashboard-model-runs-smoke-'));
+  const inputDataRoot = path.join(root, 'input-data-versions');
+  const resultsRoot = path.join(root, 'Results');
+  fs.mkdirSync(inputDataRoot, { recursive: true });
+  fs.mkdirSync(resultsRoot, { recursive: true });
+
+  const baselines = ['v1.0', 'v1.1'];
+  baselines.forEach((baseline, index) => {
+    const baselinePath = path.join(inputDataRoot, baseline);
+    fs.mkdirSync(baselinePath, { recursive: true });
+    fs.writeFileSync(path.join(baselinePath, 'config.properties'), buildModelRunConfigText(index + 1), 'utf-8');
+    fs.writeFileSync(path.join(baselinePath, 'Age.csv'), '0,10,0.1\n', 'utf-8');
+    fs.writeFileSync(path.join(baselinePath, 'Income.csv'), '0,10,0.1\n', 'utf-8');
+  });
+
+  const versionNotes = {
+    author: 'smoke-test',
+    schema_version: 1,
+    description: 'fixture',
+    entries: [
+      {
+        version_id: 'v1.1',
+        snapshot_folder: 'v1.1',
+        validation_dataset: 'R8',
+        description: 'fixture in-progress snapshot',
+        updated_data_sources: [],
+        calibration_files: [],
+        config_parameters: [],
+        parameter_changes: [],
+        method_variations: [],
+        validation: {
+          status: 'in_progress',
+          income_diff_pct: null,
+          housing_wealth_diff_pct: null,
+          financial_wealth_diff_pct: null
+        }
+      }
+    ]
+  };
+
+  fs.writeFileSync(path.join(inputDataRoot, 'version-notes.json'), JSON.stringify(versionNotes, null, 2), 'utf-8');
+  return root;
 }
 
 const catalog = getParameterCatalog();
@@ -744,9 +881,9 @@ try {
       (file) =>
         file.fileName === 'RentalTransactions-run1.csv' &&
         file.coverageStatus === 'unsupported' &&
-        file.note?.includes('Manifest only in Phase 1')
+        file.note?.includes('Manifest only (not charted)')
     ),
-    'Expected heavy transaction files to be manifest-only in Phase 1'
+    'Expected heavy transaction files to be manifest-only (not charted)'
   );
 
   const manifestEmpty = getResultsRunFiles(fixture.root, fixture.runIds.emptyOutput);
@@ -825,9 +962,292 @@ try {
     /Unknown run: \.\./,
     'Expected traversal-style run ids to be rejected'
   );
+
+  const deleted = deleteResultsRun(fixture.root, fixture.runIds.noConfig);
+  assert.equal(deleted.deleted, true, 'Expected delete results API to report success');
+  assert.equal(deleted.runId, fixture.runIds.noConfig, 'Expected delete payload to return the deleted runId');
+  assert.ok(
+    !getResultsRuns(fixture.root).some((run) => run.runId === fixture.runIds.noConfig),
+    'Expected deleted run to be removed from run inventory'
+  );
+  assert.throws(
+    () => deleteResultsRun(fixture.root, '..'),
+    /Unknown run: \.\./,
+    'Expected traversal-style run ids to be rejected for run deletion'
+  );
 } finally {
   fs.rmSync(fixture.root, { recursive: true, force: true });
 }
+
+const modelRunFixtureRoot = createModelRunFixtureRepo();
+const spawnedProcesses: FakeModelProcess[] = [];
+
+try {
+  __resetModelRunManagerForTests();
+  __setModelRunSpawnForTests(() => {
+    const fakeProcess = new FakeModelProcess();
+    spawnedProcesses.push(fakeProcess);
+    return fakeProcess as never;
+  });
+
+  const runOptions = getModelRunOptions(modelRunFixtureRoot, undefined, true);
+  assert.equal(runOptions.executionEnabled, true, 'Expected execution flag to be forwarded by options payload');
+  assert.equal(runOptions.parameters.length, 30, 'Expected all 30 USER SET parameters in options payload');
+  assert.equal(runOptions.defaultBaseline, 'v1.0', 'Expected latest stable baseline to exclude in-progress snapshots');
+  assert.equal(runOptions.requestedBaseline, 'v1.0', 'Expected requested baseline default to latest stable snapshot');
+  assert.ok(
+    runOptions.snapshots.some((snapshot) => snapshot.version === 'v1.1' && snapshot.status === 'in_progress'),
+    'Expected in-progress snapshot status in options payload'
+  );
+
+  const optionsForInProgress = getModelRunOptions(modelRunFixtureRoot, 'v1.1', true);
+  assert.equal(optionsForInProgress.requestedBaseline, 'v1.1', 'Expected baseline override selection to be honored');
+
+  const warningResponse = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'warning-check',
+    overrides: { N_STEPS: 5001 },
+    confirmWarnings: false
+  });
+  assert.equal(warningResponse.accepted, false, 'Expected submit to request explicit warning confirmation');
+  assert.ok((warningResponse.warnings?.length ?? 0) > 0, 'Expected warning payload when confirmation is missing');
+  assert.equal(listModelRunJobs().length, 0, 'Expected warning-only submit not to enqueue a job');
+
+  const firstSubmit = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'first-run',
+    overrides: { N_STEPS: 5001 },
+    confirmWarnings: true
+  });
+  assert.equal(firstSubmit.accepted, true, 'Expected confirmed warning submit to enqueue run');
+  assert.ok(firstSubmit.job, 'Expected accepted submit to include job payload');
+  assert.equal(firstSubmit.job?.runId, 'first-run v1.0', 'Expected run title to determine output folder name');
+  assert.equal(spawnedProcesses.length, 1, 'Expected first accepted submit to start runner immediately');
+
+  const secondSubmit = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'second-run',
+    overrides: { SEED: 77 },
+    confirmWarnings: true
+  });
+  assert.equal(secondSubmit.accepted, true, 'Expected second submit to be accepted into queue');
+  const queuedJob = listModelRunJobs().find((job) => job.jobId === secondSubmit.job?.jobId);
+  assert.equal(queuedJob?.status, 'queued', 'Expected second job to queue while first run is active');
+
+  spawnedProcesses[0]?.emitStdout('sim line');
+  spawnedProcesses[0]?.emitStderr('warn line');
+  await waitForAsyncTick();
+  const firstLogs = getModelRunJobLogs(firstSubmit.job?.jobId ?? '', 0, 50);
+  assert.ok(firstLogs.lines.some((line) => line.includes('sim line')), 'Expected stdout log line in polling payload');
+  assert.ok(firstLogs.lines.some((line) => line.includes('warn line')), 'Expected stderr log line in polling payload');
+
+  cancelModelRunJob(modelRunFixtureRoot, secondSubmit.job?.jobId ?? '');
+  const canceledQueuedJob = listModelRunJobs().find((job) => job.jobId === secondSubmit.job?.jobId);
+  assert.equal(canceledQueuedJob?.status, 'canceled', 'Expected queued cancel to mark job as canceled');
+
+  spawnedProcesses[0]?.succeed();
+  await waitForAsyncTick();
+  const completedFirstJob = listModelRunJobs().find((job) => job.jobId === firstSubmit.job?.jobId);
+  assert.equal(completedFirstJob?.status, 'succeeded', 'Expected first job to complete successfully');
+  assert.ok(
+    completedFirstJob && fs.existsSync(path.join(modelRunFixtureRoot, completedFirstJob.outputPath)),
+    'Expected successful run output folder to persist'
+  );
+
+  const warningCoreIndicatorsOff = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'core-off-warning',
+    overrides: { recordCoreIndicators: false },
+    confirmWarnings: false
+  });
+  assert.equal(warningCoreIndicatorsOff.accepted, false, 'Expected submit to block until warnings are confirmed');
+  assert.ok(
+    warningCoreIndicatorsOff.warnings.some((warning) => warning.code === 'core_indicators_disabled'),
+    'Expected warning when recordCoreIndicators is disabled'
+  );
+
+  const preexistingRunFolder = path.join(modelRunFixtureRoot, 'Results', 'overwrite-case v1.0');
+  fs.mkdirSync(preexistingRunFolder, { recursive: true });
+  fs.writeFileSync(path.join(preexistingRunFolder, 'Output-run1.csv'), 'Model time;nRenting\n0;1\n', 'utf-8');
+
+  const overwriteWarning = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'overwrite-case',
+    overrides: { SEED: 5 },
+    confirmWarnings: false
+  });
+  assert.equal(overwriteWarning.accepted, false, 'Expected overwrite warning to require explicit confirmation');
+  assert.ok(
+    overwriteWarning.warnings.some((warning) => warning.code === 'output_folder_exists'),
+    'Expected overwrite warning when output folder already exists'
+  );
+
+  const overwriteSubmit = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'overwrite-case',
+    overrides: { SEED: 5 },
+    confirmWarnings: true
+  });
+  assert.equal(overwriteSubmit.accepted, true, 'Expected overwrite-confirmed submit to enqueue run');
+  assert.equal(spawnedProcesses.length, 2, 'Expected overwrite-confirmed run to start immediately');
+  assert.throws(
+    () =>
+      submitModelRun(modelRunFixtureRoot, {
+        baseline: 'v1.0',
+        title: 'overwrite-case',
+        overrides: { SEED: 6 },
+        confirmWarnings: true
+      }),
+    /already targeting output folder/,
+    'Expected active output-folder collision to be rejected'
+  );
+  assert.throws(
+    () => clearModelRunJob(overwriteSubmit.job?.jobId ?? ''),
+    /Only finished jobs can be cleared/,
+    'Expected running jobs to be non-clearable'
+  );
+  spawnedProcesses[1]?.succeed();
+  await waitForAsyncTick();
+  const overwriteCompleted = listModelRunJobs().find((job) => job.jobId === overwriteSubmit.job?.jobId);
+  assert.equal(overwriteCompleted?.status, 'succeeded', 'Expected overwrite-confirmed run to complete successfully');
+
+  const thirdSubmit = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'cancel-running',
+    overrides: { SEED: 9 },
+    confirmWarnings: true
+  });
+  assert.equal(thirdSubmit.accepted, true, 'Expected third submit accepted');
+  assert.equal(spawnedProcesses.length, 3, 'Expected third submit to start another process after previous completion');
+  cancelModelRunJob(modelRunFixtureRoot, thirdSubmit.job?.jobId ?? '');
+  await waitForAsyncTick();
+  const canceledRunningJob = listModelRunJobs().find((job) => job.jobId === thirdSubmit.job?.jobId);
+  assert.equal(canceledRunningJob?.status, 'canceled', 'Expected running cancel to transition to canceled');
+  assert.ok(
+    canceledRunningJob && !fs.existsSync(path.join(modelRunFixtureRoot, canceledRunningJob.outputPath)),
+    'Expected canceled running job output folder to be removed'
+  );
+
+  const lateCancelSubmit = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'late-cancel-race',
+    overrides: { SEED: 10 },
+    confirmWarnings: true
+  });
+  assert.equal(lateCancelSubmit.accepted, true, 'Expected late-cancel race submit to be accepted');
+  const lateCancelProcess = spawnedProcesses[spawnedProcesses.length - 1];
+  assert.ok(lateCancelProcess, 'Expected late-cancel race submit to spawn a process');
+  lateCancelProcess?.disableSigtermDelivery();
+  cancelModelRunJob(modelRunFixtureRoot, lateCancelSubmit.job?.jobId ?? '');
+  lateCancelProcess?.succeed();
+  await waitForAsyncTick();
+  const lateCancelCompleted = listModelRunJobs().find((job) => job.jobId === lateCancelSubmit.job?.jobId);
+  assert.equal(
+    lateCancelCompleted?.status,
+    'succeeded',
+    'Expected failed SIGTERM delivery to preserve successful completion status'
+  );
+  assert.ok(
+    lateCancelCompleted && fs.existsSync(path.join(modelRunFixtureRoot, lateCancelCompleted.outputPath)),
+    'Expected successful run output folder to be retained when cancel signal is not delivered'
+  );
+
+  const firstOutputPath = completedFirstJob?.outputPath;
+  clearModelRunJob(firstSubmit.job?.jobId ?? '');
+  assert.ok(
+    !listModelRunJobs().some((job) => job.jobId === firstSubmit.job?.jobId),
+    'Expected clear job action to remove finished job from queue history'
+  );
+  assert.ok(
+    firstOutputPath && fs.existsSync(path.join(modelRunFixtureRoot, firstOutputPath)),
+    'Expected clear job action not to delete successful run outputs'
+  );
+
+  __resetModelRunManagerForTests();
+  __setModelRunSpawnForTests(() => new FakeModelProcess() as never);
+  const untitledSubmit = submitModelRun(modelRunFixtureRoot, {
+    baseline: 'v1.0',
+    title: '   ',
+    overrides: { SEED: 88 },
+    confirmWarnings: true
+  });
+  assert.equal(untitledSubmit.accepted, true, 'Expected untitled submit to be accepted with fallback folder naming');
+  assert.match(
+    untitledSubmit.job?.runId ?? '',
+    /^run-\d{8}T\d{6}Z v1\.0$/,
+    'Expected untitled submit to use run-<timestamp> <baseline> output folder naming'
+  );
+
+  __resetModelRunManagerForTests();
+  __setModelRunSpawnForTests(() => new FakeModelProcess() as never);
+  for (let index = 0; index < 10; index += 1) {
+    const response = submitModelRun(modelRunFixtureRoot, {
+      baseline: 'v1.0',
+      title: `queue-fill-${index + 1}`,
+      overrides: { SEED: index + 1 },
+      confirmWarnings: true
+    });
+    assert.equal(response.accepted, true, 'Expected queue fill submissions to succeed before cap');
+  }
+  assert.throws(
+    () =>
+      submitModelRun(modelRunFixtureRoot, {
+        baseline: 'v1.0',
+        overrides: { SEED: 999 },
+        confirmWarnings: true
+      }),
+    /capacity reached/,
+    'Expected queue cap guardrail to reject submissions above limit'
+  );
+} finally {
+  __resetModelRunManagerForTests();
+  fs.rmSync(modelRunFixtureRoot, { recursive: true, force: true });
+}
+
+const writeAuthDisabled = createWriteAuthController(undefined, undefined);
+const disabledStatus = writeAuthDisabled.resolveAccess(undefined);
+assert.equal(disabledStatus.authEnabled, false, 'Expected auth to be disabled when credentials are unset');
+assert.equal(disabledStatus.canWrite, true, 'Expected local write access when auth is disabled');
+
+const misconfiguredAuthStatus = resolveDashboardWriteAccess(writeAuthDisabled, undefined, true);
+assert.equal(
+  misconfiguredAuthStatus.authEnabled,
+  true,
+  'Expected model-runs-enabled auth misconfiguration to report auth-enabled read-only mode'
+);
+assert.equal(
+  misconfiguredAuthStatus.canWrite,
+  false,
+  'Expected model-runs-enabled auth misconfiguration to block write access'
+);
+assert.equal(
+  misconfiguredAuthStatus.authMisconfigured,
+  true,
+  'Expected auth misconfiguration status to be surfaced for UI and API handling'
+);
+const misconfiguredLoginError = getWriteAuthConfigurationError(writeAuthDisabled, true);
+assert.ok(
+  misconfiguredLoginError?.includes('DASHBOARD_WRITE_USERNAME'),
+  'Expected auth misconfiguration to surface actionable login-blocking configuration error'
+);
+
+const writeAuthEnabled = createWriteAuthController('writer', 'secret');
+const enabledStatusWithoutToken = writeAuthEnabled.resolveAccess(undefined);
+assert.equal(enabledStatusWithoutToken.authEnabled, true, 'Expected auth to be enabled when credentials are configured');
+assert.equal(enabledStatusWithoutToken.canWrite, false, 'Expected write access to require login in auth-enabled mode');
+
+const badLogin = writeAuthEnabled.login('writer', 'incorrect');
+assert.equal(badLogin.ok, false, 'Expected login to fail for invalid credentials');
+
+const goodLogin = writeAuthEnabled.login('writer', 'secret');
+assert.equal(goodLogin.ok, true, 'Expected login to succeed for valid credentials');
+assert.ok(goodLogin.token, 'Expected successful login to issue a token');
+
+const enabledStatusWithToken = writeAuthEnabled.resolveAccess(`Bearer ${goodLogin.token}`);
+assert.equal(enabledStatusWithToken.canWrite, true, 'Expected bearer token to grant write access');
+writeAuthEnabled.logout(goodLogin.token ?? null);
+const afterLogoutStatus = writeAuthEnabled.resolveAccess(`Bearer ${goodLogin.token}`);
+assert.equal(afterLogoutStatus.canWrite, false, 'Expected logout to revoke write access token');
 
 const compareCardSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/components/CompareCard.tsx'), 'utf-8');
 assert.ok(
