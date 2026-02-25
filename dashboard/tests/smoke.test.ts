@@ -437,7 +437,7 @@ assert.ok(
   inProgressVersions.every((version) => versions.includes(version)),
   'In-progress versions should resolve to discovered snapshot folders'
 );
-assert.ok(inProgressVersions.includes('v3.8'), 'Expected v3.8 to be reported as an in-progress snapshot');
+assert.ok(!inProgressVersions.includes('v4.0'), 'Expected v4.0 to be reported as a stable snapshot');
 const latestVersion = versions[versions.length - 1];
 
 const notes = loadVersionNotes(repoRoot);
@@ -465,15 +465,15 @@ assert.ok(
   ),
   'Expected v1.0 parameter_changes to include DATA_INCOME_GIVEN_AGE dataset source'
 );
-const v38Note = notes.find((entry) => entry.version_id === 'v3.8');
-assert.ok(v38Note, 'Expected v3.8 note entry');
-assert.equal(v38Note?.validation.status, 'in_progress', 'v3.8 validation should remain in_progress');
-assert.equal(v38Note?.validation.income_diff_pct, null, 'v3.8 income diff should be null while in progress');
-assert.equal(v38Note?.validation.housing_wealth_diff_pct, null, 'v3.8 housing diff should be null while in progress');
-assert.equal(v38Note?.validation.financial_wealth_diff_pct, null, 'v3.8 financial diff should be null while in progress');
+const v38Note = notes.find((entry) => entry.version_id === 'v4.0');
+assert.ok(v38Note, 'Expected v4.0 note entry');
+assert.equal(v38Note?.validation.status, 'complete', 'v4.0 validation should be complete');
+assert.equal(v38Note?.validation.income_diff_pct, 7.87, 'v4.0 income diff should match released value');
+assert.equal(v38Note?.validation.housing_wealth_diff_pct, 14.37, 'v4.0 housing diff should match released value');
+assert.equal(v38Note?.validation.financial_wealth_diff_pct, 13.25, 'v4.0 financial diff should match released value');
 
-const rangeAtSameVersion = compareParameters(repoRoot, 'v3.8', 'v3.8', ['national_insurance_rates'], 'range');
-const throughRightAtSameVersion = compareParameters(repoRoot, 'v3.8', 'v3.8', ['national_insurance_rates'], 'through_right');
+const rangeAtSameVersion = compareParameters(repoRoot, 'v4.0', 'v4.0', ['national_insurance_rates'], 'range');
+const throughRightAtSameVersion = compareParameters(repoRoot, 'v4.0', 'v4.0', ['national_insurance_rates'], 'through_right');
 assert.equal(
   rangeAtSameVersion.items[0]?.changeOriginsInRange.length ?? 0,
   0,
@@ -488,9 +488,9 @@ assert.ok(
   'through_right provenance should include NI update origin v2.0'
 );
 
-const singleBuyQuad = compareParameters(repoRoot, 'v3.8', 'v3.8', ['buy_quad'], 'through_right').items[0];
-const buyQuadV38Origin = singleBuyQuad?.changeOriginsInRange.find((origin) => origin.versionId === 'v3.8');
-assert.ok(buyQuadV38Origin, 'Expected buy_quad provenance to include v3.8 origin in through_right scope');
+const singleBuyQuad = compareParameters(repoRoot, 'v4.0', 'v4.0', ['buy_quad'], 'through_right').items[0];
+const buyQuadV38Origin = singleBuyQuad?.changeOriginsInRange.find((origin) => origin.versionId === 'v4.0');
+assert.ok(buyQuadV38Origin, 'Expected buy_quad provenance to include v4.0 origin in through_right scope');
 assert.ok(singleBuyQuad && singleBuyQuad.visualPayload.type === 'buy_quad', 'Expected buy_quad payload to use buy_quad type');
 if (singleBuyQuad && singleBuyQuad.visualPayload.type === 'buy_quad') {
   const muRow = singleBuyQuad.visualPayload.parameters.find((row) => row.key === 'BUY_MU');
@@ -514,7 +514,7 @@ if (singleBuyQuad && singleBuyQuad.visualPayload.type === 'buy_quad') {
 }
 assert.ok(
   (buyQuadV38Origin?.methodVariations.length ?? 0) > 0,
-  'Expected buy_quad v3.8 provenance to include method variation notes'
+  'Expected buy_quad v4.0 provenance to include method variation notes'
 );
 assert.ok(
   buyQuadV38Origin?.methodVariations.some((variation) =>
@@ -526,7 +526,7 @@ assert.ok(
   buyQuadV38Origin?.parameterChanges.every(
     (change) => !change.configParameter.startsWith('BUY_') || change.datasetSource === null
   ),
-  'Expected v3.8 BUY_* parameter changes to have null dataset_source'
+  'Expected v4.0 BUY_* parameter changes to have null dataset_source'
 );
 
 const compare = compareParameters(repoRoot, 'v0', versions[versions.length - 1], [
@@ -754,12 +754,12 @@ if (ageDist && ageDist.visualPayload.type === 'binned_distribution') {
   assert.ok(!labels.includes('75-95'), 'Shared age grid should not include unsplit 75-95 band');
 
   const leftConfig = parseConfigFile(getConfigPath(repoRoot, 'v0'));
-  const rightConfig = parseConfigFile(getConfigPath(repoRoot, 'v3.8'));
+  const rightConfig = parseConfigFile(getConfigPath(repoRoot, 'v4.0'));
   const leftRows = readNumericCsvRows(
     resolveConfigDataFilePath(repoRoot, 'v0', leftConfig.get('DATA_AGE_DISTRIBUTION') ?? '')
   );
   const rightRows = readNumericCsvRows(
-    resolveConfigDataFilePath(repoRoot, 'v3.8', rightConfig.get('DATA_AGE_DISTRIBUTION') ?? '')
+    resolveConfigDataFilePath(repoRoot, 'v4.0', rightConfig.get('DATA_AGE_DISTRIBUTION') ?? '')
   );
 
   const rawLeftMass = sum(leftRows.map((row) => row[2]));
@@ -780,12 +780,12 @@ if (incomeAge && incomeAge.visualPayload.type === 'joint_distribution') {
   assert.ok(!xLabels.includes('75-95'), 'Expected no merged 75-95 x-bin in shared grid');
 
   const leftConfig = parseConfigFile(getConfigPath(repoRoot, 'v0'));
-  const rightConfig = parseConfigFile(getConfigPath(repoRoot, 'v3.8'));
+  const rightConfig = parseConfigFile(getConfigPath(repoRoot, 'v4.0'));
   const leftRows = readNumericCsvRows(
     resolveConfigDataFilePath(repoRoot, 'v0', leftConfig.get('DATA_INCOME_GIVEN_AGE') ?? '')
   );
   const rightRows = readNumericCsvRows(
-    resolveConfigDataFilePath(repoRoot, 'v3.8', rightConfig.get('DATA_INCOME_GIVEN_AGE') ?? '')
+    resolveConfigDataFilePath(repoRoot, 'v4.0', rightConfig.get('DATA_INCOME_GIVEN_AGE') ?? '')
   );
 
   const rawLeftMass = sum(leftRows.map((row) => row[4]));
@@ -813,7 +813,7 @@ if (wealthIncome && wealthIncome.visualPayload.type === 'joint_distribution') {
 const niRates = compare.items.find((item) => item.id === 'national_insurance_rates');
 assert.ok(niRates && niRates.visualPayload.type === 'binned_distribution', 'Expected NI rates card in compare payload');
 if (niRates && niRates.visualPayload.type === 'binned_distribution') {
-  assert.equal(niRates.unchanged, false, 'NI thresholds/rates should be changed between v0 and v3.8');
+  assert.equal(niRates.unchanged, false, 'NI thresholds/rates should be changed between v0 and v4.0');
   assert.ok(
     niRates.visualPayload.bins.some((bin) => Math.abs(bin.delta) > 1e-12),
     'At least one NI step-rate bracket should have non-zero delta'
@@ -827,8 +827,8 @@ if (niRates && niRates.visualPayload.type === 'binned_distribution') {
 const buyQuad = compare.items.find((item) => item.id === 'buy_quad');
 assert.ok(buyQuad, 'Expected buy_quad card');
 assert.ok(
-  buyQuad?.changeOriginsInRange.some((origin) => origin.versionId === 'v3.8' && origin.validationStatus === 'in_progress'),
-  'buy_quad provenance should include v3.8 as in_progress'
+  buyQuad?.changeOriginsInRange.some((origin) => origin.versionId === 'v4.0' && origin.validationStatus === 'complete'),
+  'buy_quad provenance should include v4.0 as complete'
 );
 assert.ok(buyQuad && buyQuad.visualPayload.type === 'buy_quad', 'Expected buy_quad card to return buy_quad payload');
 if (buyQuad && buyQuad.visualPayload.type === 'buy_quad') {
@@ -851,7 +851,7 @@ assert.ok(
   'Expected unchanged single-version card to include source dataset attribution'
 );
 
-const wasSingle = compareParameters(repoRoot, 'v3.8', 'v3.8', ['age_distribution'], 'through_right').items[0];
+const wasSingle = compareParameters(repoRoot, 'v4.0', 'v4.0', ['age_distribution'], 'through_right').items[0];
 assert.ok(wasSingle, 'Expected age_distribution card in single payload');
 const wasDataset = wasSingle?.sourceInfo.datasetsRight.find((dataset) => dataset.tag === 'was');
 assert.ok(wasDataset, 'Expected WAS dataset attribution for age_distribution');
@@ -859,7 +859,7 @@ assert.equal(wasDataset?.fullName, 'Wealth and Assets Survey', 'Expected WAS ful
 assert.equal(wasDataset?.year, '2022', 'Expected WAS Round 8 year to resolve to 2022');
 assert.equal(wasDataset?.edition, 'Round 8', 'Expected WAS edition to resolve to Round 8');
 
-const nmgCompare = compareParameters(repoRoot, 'v1.3', 'v3.8', ['rental_price_lognormal'], 'range').items[0];
+const nmgCompare = compareParameters(repoRoot, 'v1.3', 'v4.0', ['rental_price_lognormal'], 'range').items[0];
 assert.ok(nmgCompare, 'Expected rental_price_lognormal card in compare payload');
 const nmgLeft = nmgCompare?.sourceInfo.datasetsLeft.find((dataset) => dataset.tag === 'nmg');
 const nmgRight = nmgCompare?.sourceInfo.datasetsRight.find((dataset) => dataset.tag === 'nmg');
@@ -867,7 +867,7 @@ assert.ok(nmgLeft, 'Expected left-side NMG attribution');
 assert.ok(nmgRight, 'Expected right-side NMG attribution');
 assert.notEqual(nmgLeft?.year, nmgRight?.year, 'Expected NMG attribution year to vary by version side (left vs right)');
 assert.equal(nmgLeft?.year, '2016', 'Expected v1.3 NMG year to be 2016 for rental-price keys');
-assert.equal(nmgRight?.year, '2024', 'Expected v3.8 NMG year to be 2024 for rental-price keys');
+assert.equal(nmgRight?.year, '2024', 'Expected v4.0 NMG year to be 2024 for rental-price keys');
 
 const fixture = createResultsFixtureRepo();
 try {
@@ -1013,7 +1013,7 @@ try {
     /Unknown run: \.\./,
     'Expected traversal-style run ids to be rejected for run deletion'
   );
-  for (const protectedRunId of ['v0-output', 'v1.0-output', 'v2.0-output', 'v3.7-output']) {
+  for (const protectedRunId of ['v0-output', 'v1.0-output', 'v2.0-output', 'v3.0-output', 'v4.0-output']) {
     assert.throws(
       () => deleteResultsRun(fixture.root, protectedRunId),
       /protected/,

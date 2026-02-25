@@ -30,6 +30,20 @@ src/main/resources/experiments/outputs
 scripts/python/experiments/was/outputs/
 tmp/
 
+# Results tracking allowlist (keep only canonical baselines)
+Results/**
+!Results/
+!Results/v0-output/
+!Results/v0-output/**
+!Results/v1.0-output/
+!Results/v1.0-output/**
+!Results/v2.0-output/
+!Results/v2.0-output/**
+!Results/v3.0-output/
+!Results/v3.0-output/**
+!Results/v4.0-output/
+!Results/v4.0-output/**
+
 AGENTS.md
 AGENT*.md
 CLAUDE.md

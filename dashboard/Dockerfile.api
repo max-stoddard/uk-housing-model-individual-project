@@ -17,7 +17,8 @@ COPY input-data-versions ./input-data-versions
 COPY Results/v0-output ./Results/v0-output
 COPY Results/v1.0-output ./Results/v1.0-output
 COPY Results/v2.0-output ./Results/v2.0-output
-COPY Results/v3.7-output ./Results/v3.7-output
+COPY Results/v3.0-output ./Results/v3.0-output
+COPY Results/v4.0-output ./Results/v4.0-output
 
 WORKDIR /app/dashboard
 

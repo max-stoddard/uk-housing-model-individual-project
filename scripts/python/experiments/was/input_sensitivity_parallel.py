@@ -100,8 +100,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Concurrent stale-input sensitivity runner.")
     parser.add_argument(
         "--base-config",
-        default="input-data-versions/v3.7/config.properties",
-        help="Base config to perturb (default: input-data-versions/v3.7/config.properties).",
+        default="input-data-versions/v4.0/config.properties",
+        help="Base config to perturb (default: input-data-versions/v4.0/config.properties).",
     )
     parser.add_argument(
         "--results-root",
@@ -110,8 +110,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out-root",
-        default="tmp/input_sensitivity_v37",
-        help="Root directory for configs/logs/ledgers (default: tmp/input_sensitivity_v37).",
+        default="tmp/input_sensitivity_v40",
+        help="Root directory for configs/logs/ledgers (default: tmp/input_sensitivity_v40).",
     )
     parser.add_argument(
         "--dataset",
@@ -765,7 +765,7 @@ def write_summary_markdown(
     scenarios_per_min = len(success_rows) / max(total_elapsed / 60.0, 1e-9)
 
     lines: list[str] = []
-    lines.append("# Input Sensitivity Summary (v3.7)")
+    lines.append("# Input Sensitivity Summary (v4.0)")
     lines.append("")
     lines.append("## Baseline")
     lines.append("")
@@ -913,7 +913,7 @@ def main() -> None:
     configs_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
 
-    baseline_output_subdir = f"{results_root}/v3.7-output"
+    baseline_output_subdir = f"{results_root}/v4.0-output"
     ensure_baseline_output(base_config=base_config, repo_root=repo_root, output_subdir=baseline_output_subdir)
     baseline_diffs = run_baseline_validation(args.dataset, repo_root, baseline_output_subdir)
 

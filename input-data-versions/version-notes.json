@@ -3,7 +3,7 @@
   "schema_version": 3,
   "description": "Structured changelog for input-data versions, calibration provenance, and WAS validation diffs.",
   "fields": {
-    "version_id": "Display version id in notes (for example v0a, v2.1, v3.8).",
+    "version_id": "Display version id in notes (for example v0a, v2.1, v4.0).",
     "snapshot_folder": "Snapshot folder under input-data-versions/ used by switch-input-data.sh.",
     "validation_dataset": "WAS dataset key used for validation (w3 or r8).",
     "description": "Human description of what changed for this version.",
@@ -673,8 +673,8 @@
       ]
     },
     {
-      "version_id": "v3.8",
-      "snapshot_folder": "v3.8",
+      "version_id": "v4.0",
+      "snapshot_folder": "v4.0",
       "validation_dataset": "r8",
       "description": "Updated BUY_SCALE, BUY_EXPONENT, BUY_MU, BUY_SIGMA",
       "updated_data_sources": [
@@ -682,8 +682,8 @@
         "ppd"
       ],
       "calibration_files": [
-        "scripts/python/calibration/psd/psd_buy_budget_calibration.py",
-        "scripts/python/experiments/psd/psd_buy_budget_method_search.py"
+        "scripts/python/calibration/psd/psd_buy_budget_calibration_v2.py",
+        "scripts/python/experiments/psd/psd_buy_budget_quantile_method_search_v2.py"
       ],
       "config_parameters": [
         "BUY_SCALE",
@@ -710,11 +710,11 @@
         }
       ],
       "validation": {
-        "status": "in_progress",
-        "income_diff_pct": null,
-        "housing_wealth_diff_pct": null,
-        "financial_wealth_diff_pct": null,
-        "note": "Validation in progress; do not treat prior refreshed outputs as correct for this version yet."
+        "status": "complete",
+        "income_diff_pct": 7.87,
+        "housing_wealth_diff_pct": 14.37,
+        "financial_wealth_diff_pct": 13.25,
+        "note": "Stable v4.0 release from modern realism-constrained BUY* calibration with completed R8 validation."
       },
       "method_variations": [
         {
@@ -724,10 +724,10 @@
             "BUY_MU",
             "BUY_SIGMA"
           ],
-          "improvement_summary": "Pinned BUY* calibration to a robust reproduction-first method selected by normalized historical-target distance.",
-          "why_changed": "To improve methodological traceability and consistency by deploying a method selected from explicit search evidence.",
-          "method_chosen": "family=psd_log_ols_robust_mu|loan_to_income=comonotonic|income_to_price=comonotonic|loan_open_k=500|lti_open=10|lti_floor=2.5|income_open_k=100|property_open_k=10000|trim=0|within_bin_points=11|grid=4000|mu_hi_trim=0.0063",
-          "decision_logic": "Objective=target reproduction; Why=normalized reproduction-first ranking on PSD 2011 + PPD 2011 selected this robust method as closest to legacy BUY* targets (distance ~= 0.02926) before modern deployment; Tradeoff=modern outputs can shift materially when constrained to the historically selected method and are not blocked by a validation gate."
+          "improvement_summary": "Promoted BUY* to a modern realism-constrained quantile method with explicit hard gates and completed validation.",
+          "why_changed": "To prevent implausible desired-purchase behavior while keeping calibration anchored to PSD 2024 and PPD 2024/2025 evidence.",
+          "method_chosen": "constrained quantile fit with Pareto top-bin modeling and objective penalties (anchor+p95+sigma+curve), selecting BUY_SCALE=7.6238412132, BUY_EXPONENT=1.0028939531, BUY_MU=0, BUY_SIGMA=0.4326188972",
+          "decision_logic": "Objective=direct method justification; Why=realism-first constrained optimization with explicit guardrails and diagnostics blocks invalid promotions while remaining data-anchored; Tradeoff=legacy 2011 target closeness is comparison-only."
         }
       ]
     }

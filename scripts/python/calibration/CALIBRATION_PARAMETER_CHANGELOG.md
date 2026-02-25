@@ -34,7 +34,7 @@ Required entry field format:
 - Method-selection decision logic:
   - `Objective=<...>; Why=<...>; Tradeoff=<...>`
 
-## Current Reproducible Commands (Latest Baseline: `input-data-versions/v3.8`)
+## Current Reproducible Commands (Latest Baseline: `input-data-versions/v4.0`)
 
 ### `scripts/python/calibration/was/age_dist.py`
 - Outputs/keys produced:
@@ -539,3 +539,43 @@ python3 -m scripts.python.experiments.was.personal_allowance
   - `tmp/psd_buy_budget_v38/PsdBuyBudgetCalibration.csv`
   - `input-data-versions/version-notes.json`
 - Version(s) affected: `v3.8`
+
+### v4.0: BUY v2 Modern Realism Workflow
+- Script path: `scripts/python/calibration/psd/psd_buy_budget_calibration_v2.py`
+- Companion experiment path: `scripts/python/experiments/psd/psd_buy_budget_quantile_method_search_v2.py`
+- Shared helper path: `scripts/python/helpers/psd/buy_budget_quantile_v2.py`
+- Outputs/keys produced: `BUY_SCALE`, `BUY_EXPONENT`, `BUY_MU`, `BUY_SIGMA`
+- Exact run command:
+  - `scripts/psd/run_psd_buy_budget_method_search_v2.sh --output-dir tmp/psd_buy_budget_v2_1_search`
+  - `scripts/psd/run_psd_buy_budget_calibration_v2.sh --output-dir tmp/psd_buy_budget_v2_1_calibration`
+- Expected result snippet:
+  - `BUY_MU = 0`
+  - hard realism guardrails pass at incomes `25k,50k,100k,150k,200k`:
+    - `1 < median budget multiple < 10`
+    - `p95 budget multiple < 15`
+    - `BUY_EXPONENT <= 1.0`
+  - `BUY_SIGMA` warning emitted only when outside `[0.2, 0.6]`
+  - production promotion gate:
+    - `fit_degradation_vs_baseline <= 0.10`
+- Method chosen:
+  - constrained quantile fit with Pareto top-bin modeling, PSD anchor penalty, p95/sigma/curve penalties, and deterministic objective weight-grid search.
+- Runtime controls:
+  - variant evaluation supports `--workers` (default `16`) with live `[stage]`/`[progress]` logging.
+  - additive CLI controls include:
+    - `--hard-p95-cap`
+    - `--exponent-max`
+    - `--median-target-curve`
+    - `--tail-family`
+    - `--pareto-alpha-grid`
+    - `--objective-weight-grid-profile`
+    - `--fit-degradation-max` (calibration)
+- Method-selection decision logic:
+  - `Objective=direct method justification; Why=realism-first constrained optimization with explicit tail/exponent gates and baseline-degradation gate prevents implausible modern BUY* promotions while remaining data-anchored; Tradeoff=legacy 2011 closeness is comparison-only and no longer selection-driving.`
+- Rationale category:
+  - direct method justification
+- Evidence links:
+  - `scripts/python/experiments/psd/psd_buy_budget_quantile_method_search_v2.py`
+  - `scripts/python/calibration/psd/psd_buy_budget_calibration_v2.py`
+  - `AGENT_BUY_CALIBRATION_PLAN.md`
+- Version(s) affected:
+  - `v4.0`

@@ -65,7 +65,7 @@ interface RunDiagnostics {
 
 const RESULTS_FOLDER_NAME = 'Results';
 const OUTPUT_FILE_NAME = 'Output-run1.csv';
-const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.7-output']);
+const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.0-output', 'v4.0-output']);
 
 const CORE_INDICATORS: IndicatorDefinition[] = [
   {
