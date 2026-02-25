@@ -10,6 +10,9 @@
   --warn: #d9480f;
   --ring: rgba(11, 114, 133, 0.18);
   --shadow: 0 14px 34px rgba(17, 32, 24, 0.09);
+  --shimmer-base: #e9ecef;
+  --shimmer-highlight: rgba(255, 255, 255, 0.72);
+  --shimmer-duration: 1.5s;
 }
 
 * {
@@ -37,6 +40,68 @@ code {
   background: #edf1ed;
   padding: 0.1rem 0.4rem;
   border-radius: 0.35rem;
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  white-space: nowrap;
+}
+
+.loading-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 0.45rem;
+  background: var(--shimmer-base);
+  color: transparent !important;
+}
+
+.loading-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, var(--shimmer-highlight) 50%, transparent 100%);
+  animation: loading-shimmer var(--shimmer-duration) ease-in-out infinite;
+}
+
+@keyframes loading-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.loading-skeleton-line {
+  display: inline-block;
+  min-width: 5rem;
+  min-height: 1.05rem;
+}
+
+.loading-skeleton-pill {
+  display: inline-block;
+  min-width: 7rem;
+  min-height: 1.35rem;
+  border-radius: 999px;
+}
+
+.loading-skeleton-card {
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  border-radius: 0.95rem;
+  min-height: 4.5rem;
+}
+
+.loading-skeleton-chart {
+  min-height: 260px;
+  border-radius: 0.7rem;
 }
 
 .app-shell {
@@ -638,11 +703,7 @@ code {
 }
 
 .hero-preview-loading {
-  background: linear-gradient(90deg, #e9ecef 25%, #f1f3f5 50%, #e9ecef 75%);
-  background-size: 200% 100%;
-  animation: stat-shimmer 1.5s ease-in-out infinite;
-  border-radius: 0.7rem;
-  min-height: 260px;
+  border: 1px solid rgba(17, 32, 24, 0.08);
 }
 
 @keyframes previewFadeIn {
@@ -793,17 +854,9 @@ code {
 }
 
 .stat-loading {
-  background: linear-gradient(90deg, #e9ecef 25%, #f1f3f5 50%, #e9ecef 75%);
-  background-size: 200% 100%;
-  animation: stat-shimmer 1.5s ease-in-out infinite;
   border-radius: 0.35rem;
   color: transparent !important;
   min-width: 4rem;
-}
-
-@keyframes stat-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
 }
 
 .stat-delta.stat-loading {
@@ -1033,7 +1086,8 @@ code {
 
 .loading-banner,
 .waiting-banner,
-.error-banner {
+.error-banner,
+.info-banner {
   margin: 0;
   border-radius: 0.7rem;
   padding: 0.7rem 0.85rem;
@@ -1052,6 +1106,77 @@ code {
 .error-banner {
   color: #fff;
   background: #c92a2a;
+}
+
+.info-banner {
+  color: var(--muted);
+  background: #f1f3f5;
+  border: 1px solid rgba(73, 80, 87, 0.16);
+}
+
+.compare-title-skeleton {
+  width: min(22rem, 60%);
+}
+
+.compare-count-skeleton {
+  margin-left: 0.2rem;
+  width: 2.2rem;
+}
+
+.compare-refresh-pill {
+  margin-top: 0.6rem;
+}
+
+.cards-stack-skeleton {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.result-group-skeleton {
+  min-height: 4.8rem;
+}
+
+.run-list-skeleton {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.run-item-skeleton {
+  min-height: 5.8rem;
+  border-radius: 0.7rem;
+}
+
+.section-loading-row {
+  margin-top: 0.5rem;
+}
+
+.indicator-item-skeleton {
+  min-height: 3.15rem;
+  border-radius: 0.6rem;
+}
+
+.kpi-card-skeleton {
+  min-height: 4.5rem;
+  border-radius: 0.65rem;
+}
+
+.overlay-card-skeleton {
+  min-height: 19rem;
+  border-radius: 0.7rem;
+}
+
+.manifest-skeleton {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+}
+
+.manifest-skeleton-row {
+  min-height: 1.85rem;
+  border-radius: 0.45rem;
 }
 
 .cards-stack {

@@ -20,6 +20,7 @@ import {
   jointLayoutOverrides,
   scalarSingleOption
 } from '../lib/compareChartOptions';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
 
 const PREVIEW_PARAMETER_IDS = [
   'wealth_given_income_joint',
@@ -298,10 +299,12 @@ export function HomePage() {
             <span>Lines of Code Written</span>
           </p>
           <strong>
-            <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
+            <span className={`stat-value${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
               {gitStatsLoading ? '\u00A0' : formatCount(linesWritten)}
             </span>
-            <span className={`stat-delta${gitStatsLoading ? ' stat-loading' : linesWrittenWeekly < 0 ? ' negative' : ''}`}>
+            <span
+              className={`stat-delta${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-pill' : linesWrittenWeekly < 0 ? ' negative' : ''}`}
+            >
               {gitStatsLoading ? '\u00A0' : `${formatSignedCount(linesWrittenWeekly)} this week`}
             </span>
           </strong>
@@ -311,10 +314,12 @@ export function HomePage() {
             <span>Files Changed</span>
           </p>
           <strong>
-            <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
+            <span className={`stat-value${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
               {gitStatsLoading ? '\u00A0' : formatCount(filesChanged)}
             </span>
-            <span className={`stat-delta${gitStatsLoading ? ' stat-loading' : filesChangedWeekly < 0 ? ' negative' : ''}`}>
+            <span
+              className={`stat-delta${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-pill' : filesChangedWeekly < 0 ? ' negative' : ''}`}
+            >
               {gitStatsLoading ? '\u00A0' : `${formatSignedCount(filesChangedWeekly)} this week`}
             </span>
           </strong>
@@ -324,10 +329,12 @@ export function HomePage() {
             <span>Git Commits</span>
           </p>
           <strong>
-            <span className={`stat-value${gitStatsLoading ? ' stat-loading' : ''}`}>
+            <span className={`stat-value${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
               {gitStatsLoading ? '\u00A0' : formatCount(commitCount)}
             </span>
-            <span className={`stat-delta${gitStatsLoading ? ' stat-loading' : commitCountWeekly < 0 ? ' negative' : ''}`}>
+            <span
+              className={`stat-delta${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-pill' : commitCountWeekly < 0 ? ' negative' : ''}`}
+            >
               {gitStatsLoading ? '\u00A0' : `${formatSignedCount(commitCountWeekly)} this week`}
             </span>
           </strong>
@@ -366,7 +373,10 @@ export function HomePage() {
             </div>
           </div>
         ) : loadState !== 'error' ? (
-          <div className="hero-preview-loading" />
+          <LoadingSkeleton
+            className="hero-preview-loading loading-skeleton-chart"
+            ariaLabel="Loading calibration preview chart"
+          />
         ) : null}
         <Link to="/compare" className="primary-button">
           Open Calibration Versions
@@ -376,19 +386,19 @@ export function HomePage() {
       <div className="stats-grid fade-up-delay">
         <article>
           <p>Updates to Calibration Parameters</p>
-          <strong className={loadState !== 'ready' ? 'stat-loading' : ''}>
+          <strong className={loadState !== 'ready' ? 'stat-loading loading-skeleton loading-skeleton-line' : ''}>
             {loadState !== 'ready' ? '\u00A0' : formatCount(versionsCount)}
           </strong>
         </article>
         <article>
           <p>Calibration Parameters Visualised</p>
-          <strong className={loadState !== 'ready' ? 'stat-loading' : ''}>
+          <strong className={loadState !== 'ready' ? 'stat-loading loading-skeleton loading-skeleton-line' : ''}>
             {loadState !== 'ready' ? '\u00A0' : formatCount(cardsCount)}
           </strong>
         </article>
         <article>
           <p>Latest Calibration Parameter Update</p>
-          <strong className={`snapshot-value${loadState !== 'ready' ? ' stat-loading' : ''}`}>
+          <strong className={`snapshot-value${loadState !== 'ready' ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
             {loadState !== 'ready' ? '\u00A0' : (
               <>
                 <span>{latestVersion}</span>
