@@ -7,11 +7,13 @@ import type {
   ResultsFileManifestEntry,
   ResultsRunDetail,
   ResultsRunStatus,
-  ResultsRunSummary
+  ResultsRunSummary,
+  ResultsStorageSummary
 } from '../../shared/types';
 import type { EChartsOption } from 'echarts';
 import { EChart } from '../components/EChart';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../components/LoadingSkeleton';
+import { StorageUsageBar } from '../components/StorageUsageBar';
 import {
   API_RETRY_DELAY_MS,
   deleteResultsRun,
@@ -19,6 +21,7 @@ import {
   fetchResultsRunDetail,
   fetchResultsRunFiles,
   fetchResultsRuns,
+  fetchResultsStorageSummary,
   isRetryableApiError
 } from '../lib/api';
 
@@ -170,19 +173,21 @@ export function ModelResultsPage({ canWrite }: ModelResultsPageProps) {
   const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false);
   const [isLoadingCompare, setIsLoadingCompare] = useState<boolean>(false);
   const [isDeletingRunId, setIsDeletingRunId] = useState<string>('');
+  const [storageSummary, setStorageSummary] = useState<ResultsStorageSummary | null>(null);
 
   const loadRuns = useCallback(async () => {
     setLoadError('');
     setIsLoadingRuns(true);
 
     try {
-      const payload = await fetchResultsRuns();
-      setRuns(payload);
-      const firstRun = payload[0]?.runId ?? '';
-      setFocusedRunId((current) => (payload.some((run) => run.runId === current) ? current : firstRun));
+      const [runsPayload, storagePayload] = await Promise.all([fetchResultsRuns(), fetchResultsStorageSummary()]);
+      setRuns(runsPayload);
+      setStorageSummary(storagePayload);
+      const firstRun = runsPayload[0]?.runId ?? '';
+      setFocusedRunId((current) => (runsPayload.some((run) => run.runId === current) ? current : firstRun));
       setSelectedRunIds((current) => {
         if (current.length > 0) {
-          const filtered = current.filter((runId) => payload.some((run) => run.runId === runId));
+          const filtered = current.filter((runId) => runsPayload.some((run) => run.runId === runId));
           if (filtered.length > 0) {
             return filtered;
           }
@@ -191,6 +196,17 @@ export function ModelResultsPage({ canWrite }: ModelResultsPageProps) {
       });
     } finally {
       setIsLoadingRuns(false);
+    }
+  }, []);
+
+  const refreshStorageSummary = useCallback(async () => {
+    try {
+      const payload = await fetchResultsStorageSummary();
+      setStorageSummary(payload);
+    } catch (error) {
+      if (!isRetryableApiError(error)) {
+        setLoadError((error as Error).message);
+      }
     }
   }, []);
 
@@ -224,6 +240,16 @@ export function ModelResultsPage({ canWrite }: ModelResultsPageProps) {
       }
     };
   }, [loadRuns]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshStorageSummary();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [refreshStorageSummary]);
 
   useEffect(() => {
     const requestedRunId = searchParams.get('runId')?.trim();
@@ -412,6 +438,7 @@ export function ModelResultsPage({ canWrite }: ModelResultsPageProps) {
     <section className="results-layout">
       {loadError && <p className="error-banner">{loadError}</p>}
       {selectionError && <p className="waiting-banner">{selectionError}</p>}
+      {storageSummary && <StorageUsageBar usedBytes={storageSummary.usedBytes} capBytes={storageSummary.capBytes} />}
 
       <div className="results-grid">
         <aside className="results-panel">

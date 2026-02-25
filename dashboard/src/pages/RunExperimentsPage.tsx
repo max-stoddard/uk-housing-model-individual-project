@@ -5,8 +5,10 @@ import type {
   ModelRunOptionsPayload,
   ModelRunParameterDefinition,
   ModelRunSubmitRequest,
-  ModelRunWarning
+  ModelRunWarning,
+  ResultsStorageSummary
 } from '../../shared/types';
+import { StorageUsageBar } from '../components/StorageUsageBar';
 import {
   API_RETRY_DELAY_MS,
   cancelModelRunJob,
@@ -14,6 +16,7 @@ import {
   fetchModelRunJobs,
   fetchModelRunLogs,
   fetchModelRunOptions,
+  fetchResultsStorageSummary,
   isRetryableApiError,
   submitModelRun
 } from '../lib/api';
@@ -102,8 +105,16 @@ export function RunExperimentsPage() {
   const [pageError, setPageError] = useState<string>('');
   const [pendingRunId, setPendingRunId] = useState<string>('');
   const [pendingJobId, setPendingJobId] = useState<string>('');
+  const [storageSummary, setStorageSummary] = useState<ResultsStorageSummary | null>(null);
 
   const selectedJob = useMemo(() => jobs.find((job) => job.jobId === selectedJobId) ?? null, [jobs, selectedJobId]);
+  const storageUsagePercent = useMemo(() => {
+    if (!storageSummary || storageSummary.capBytes <= 0) {
+      return 0;
+    }
+    return (storageSummary.usedBytes / storageSummary.capBytes) * 100;
+  }, [storageSummary]);
+  const isStorageOverCap = storageUsagePercent >= 100;
 
   const groupedParameters = useMemo(() => {
     const grouped = new Map<string, ModelRunParameterDefinition[]>();
@@ -151,6 +162,17 @@ export function RunExperimentsPage() {
     }
   };
 
+  const refreshStorageSummary = async () => {
+    try {
+      const payload = await fetchResultsStorageSummary();
+      setStorageSummary(payload);
+    } catch (error) {
+      if (!isRetryableApiError(error)) {
+        setPageError((error as Error).message);
+      }
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     let retryTimer: number | undefined;
@@ -161,6 +183,10 @@ export function RunExperimentsPage() {
         return;
       }
       await refreshJobs();
+      if (cancelled) {
+        return;
+      }
+      await refreshStorageSummary();
     };
 
     void load().catch((error: unknown) => {
@@ -189,6 +215,16 @@ export function RunExperimentsPage() {
     const interval = window.setInterval(() => {
       void refreshJobs();
     }, 2000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshStorageSummary();
+    }, 5000);
 
     return () => {
       window.clearInterval(interval);
@@ -334,6 +370,7 @@ export function RunExperimentsPage() {
         setSelectedJobId(response.job.jobId);
       }
       await refreshJobs();
+      await refreshStorageSummary();
     } catch (error) {
       setPageError((error as Error).message);
     } finally {
@@ -347,6 +384,7 @@ export function RunExperimentsPage() {
     try {
       await cancelModelRunJob(jobId);
       await refreshJobs();
+      await refreshStorageSummary();
     } catch (error) {
       setPageError((error as Error).message);
     }
@@ -358,6 +396,7 @@ export function RunExperimentsPage() {
     try {
       await clearModelRunJob(jobId);
       await refreshJobs();
+      await refreshStorageSummary();
     } catch (error) {
       setPageError((error as Error).message);
     }
@@ -371,6 +410,10 @@ export function RunExperimentsPage() {
           Run completed. Redirecting to results...{' '}
           <Link to={`/model-results?runId=${encodeURIComponent(pendingRunId)}`}>View in Model Results</Link>
         </p>
+      )}
+      {storageSummary && <StorageUsageBar usedBytes={storageSummary.usedBytes} capBytes={storageSummary.capBytes} />}
+      {storageSummary && isStorageOverCap && (
+        <p className="error-banner">Results storage is over cap. Delete one or more runs before starting another run.</p>
       )}
 
       <article className="results-card">
