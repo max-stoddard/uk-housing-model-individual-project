@@ -611,6 +611,10 @@ code {
   gap: 0.75rem;
 }
 
+.run-exp-grid > * {
+  min-width: 0;
+}
+
 .run-form-head {
   margin-top: 0.65rem;
   display: grid;
@@ -762,6 +766,10 @@ code {
   min-height: 260px;
   max-height: 460px;
   overflow: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   border: 1px solid rgba(17, 32, 24, 0.1);
   border-radius: 0.7rem;
   background: #0f1720;
