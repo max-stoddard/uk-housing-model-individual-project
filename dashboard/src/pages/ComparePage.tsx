@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { CompareResponse, ParameterCardMeta, ParameterGroup } from '../../shared/types';
 import { API_RETRY_DELAY_MS, fetchCatalog, fetchCompare, fetchVersions, isRetryableApiError } from '../lib/api';
 import { CompareCard } from '../components/CompareCard';
@@ -66,6 +67,8 @@ function groupCompareItems(compareData: CompareResponse | null, filter: ChangeFi
 }
 
 export function ComparePage() {
+  const [searchParams] = useSearchParams();
+  const searchParamsKey = searchParams.toString();
   const [versions, setVersions] = useState<string[]>([]);
   const [inProgressVersions, setInProgressVersions] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<ParameterCardMeta[]>([]);
@@ -103,13 +106,22 @@ export function ComparePage() {
 
         const versionList = versionsPayload.versions;
         const defaultDisplayVersion = getDefaultDisplayVersion(versionList, versionsPayload.inProgressVersions);
+        const currentParams = new URLSearchParams(searchParamsKey);
+        const requestedModeRaw = currentParams.get('mode')?.trim() ?? '';
+        const requestedMode: ViewMode = requestedModeRaw === 'compare' ? 'compare' : 'single';
+        const requestedVersionRaw = currentParams.get('version')?.trim() ?? '';
+        const requestedVersion = versionList.includes(requestedVersionRaw) ? requestedVersionRaw : '';
+        const singleVersion = requestedVersion || defaultDisplayVersion;
+        const compareRightVersion = requestedVersion || defaultDisplayVersion;
+
         setVersions(versionList);
         setInProgressVersions(versionsPayload.inProgressVersions);
         setCatalog(catalogList);
         setSelectedIds(catalogList.map((item) => item.id));
-        setSelectedVersion(defaultDisplayVersion);
+        setMode(requestedMode);
+        setSelectedVersion(singleVersion);
         setLeft(versionList[0] ?? '');
-        setRight(defaultDisplayVersion);
+        setRight(compareRightVersion);
         setIsBootstrapReady(true);
         setIsBootstrapping(false);
       } catch (loadError) {
@@ -141,7 +153,7 @@ export function ComparePage() {
         window.clearTimeout(retryTimer);
       }
     };
-  }, []);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     if (mode === 'compare') {
