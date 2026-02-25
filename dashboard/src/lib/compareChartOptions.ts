@@ -155,7 +155,7 @@ export function scalarOption(
 ): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
-    legend: { top: 0 },
+    legend: { top: 0, data: [leftVersion, rightVersion] },
     grid: { left: 74, right: 34, top: 44, bottom: 98, containLabel: true },
     xAxis: {
       type: 'category',
@@ -198,7 +198,7 @@ export function scalarSingleOption(
 ): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
-    legend: { top: 0 },
+    legend: { top: 0, data: [version] },
     grid: { left: 74, right: 34, top: 44, bottom: 98, containLabel: true },
     xAxis: {
       type: 'category',
