@@ -36,6 +36,7 @@ Dashboard API environment variables:
 - `DASHBOARD_GIT_STATS_BASE_COMMIT` (optional): git base commit used by `/api/git-stats`.
 - `DASHBOARD_ENABLE_MODEL_RUNS` (optional): set to `true` to enable model-run APIs/UI.
 - `DASHBOARD_WRITE_USERNAME` + `DASHBOARD_WRITE_PASSWORD` (optional pair): enables write-login mode when both are set.
+- `DASHBOARD_MAVEN_BIN` (optional): Maven executable used by model runs (defaults to `mvn`).
 
 Write-access behavior:
 
@@ -81,6 +82,8 @@ Then open `/login` in the web app and sign in with that username/password.
 Health endpoint:
 
 - `GET /healthz`
+- `GET /api/runtime-deps` (runtime diagnostics):
+  - returns `java`, `maven`, `mavenBin`, and `versionInfo` for dependency checks.
 
 `/api/git-stats` behavior:
 
@@ -99,11 +102,21 @@ Expected parity check: `/api/git-stats` should match `./scripts/helpers/git-stat
 Repository root includes `render.yaml` with:
 
 - static web service: `uk-housing-market-abm`
-- API web service: `uk-housing-market-abm-api`
+- API web service: `uk-housing-market-abm-api` (Docker runtime with Java + Maven)
+
+Remote model runs require Java and Maven in the API runtime. The Blueprint now uses Docker for the API service to provide both dependencies.
+
+- Dockerfile: `dashboard/Dockerfile.api`
+- API runtime dependency diagnostics: `GET /api/runtime-deps`
+
+If you deploy API as plain `runtime: node` without Java/Maven, run submission will fail with `spawn mvn ENOENT`. In that case either:
+
+- migrate to Docker runtime (recommended), or
+- disable remote execution (`DASHBOARD_ENABLE_MODEL_RUNS=false`) and keep read-only usage.
 
 For remote write-login mode, configure these API environment variables in Render:
 
-- `DASHBOARD_ENABLE_MODEL_RUNS=true` (blueprint default is `false`)
+- `DASHBOARD_ENABLE_MODEL_RUNS=true` (blueprint default is `true`)
 - `DASHBOARD_WRITE_USERNAME` (secret)
 - `DASHBOARD_WRITE_PASSWORD` (secret)
 

@@ -1,0 +1,20 @@
+# Author: Max Stoddard
+FROM node:20-bookworm-slim
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openjdk-17-jdk maven ca-certificates git \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY dashboard/package.json dashboard/package-lock.json ./dashboard/
+RUN cd dashboard && npm ci --include=dev
+
+COPY dashboard ./dashboard
+COPY pom.xml ./pom.xml
+COPY src ./src
+COPY input-data-versions ./input-data-versions
+
+WORKDIR /app/dashboard
+
+CMD ["npm", "run", "start:server"]

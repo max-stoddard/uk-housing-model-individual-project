@@ -25,18 +25,20 @@ services:
         - dashboard/index.html
 
   - type: web
-    runtime: node
+    # Docker runtime is required for remote model runs because the API invokes Maven/Java.
+    runtime: docker
     name: uk-housing-market-abm-api
     plan: free
     branch: master
     autoDeployTrigger: checksPass
-    rootDir: dashboard
-    buildCommand: git fetch --unshallow || true && npm ci --include=dev
-    startCommand: npm run start:server
+    dockerfilePath: dashboard/Dockerfile.api
+    dockerContext: .
     healthCheckPath: /healthz
     envVars:
       - key: DASHBOARD_CORS_ORIGIN
         value: https://uk-housing-market-abm.onrender.com
+      - key: DASHBOARD_ENABLE_MODEL_RUNS
+        value: "true"
       - key: DASHBOARD_GIT_STATS_BASE_COMMIT
         value: 4e89f5e277cdba4b4ef0c08254e5731e19bd51c3
       - key: DASHBOARD_GITHUB_REPO
@@ -51,8 +53,12 @@ services:
         sync: false
     buildFilter:
       paths:
+        - dashboard/Dockerfile.api
         - dashboard/server/**
         - dashboard/shared/**
         - dashboard/package.json
         - dashboard/package-lock.json
+        - pom.xml
+        - src/**
         - input-data-versions/**
+        - render.yaml

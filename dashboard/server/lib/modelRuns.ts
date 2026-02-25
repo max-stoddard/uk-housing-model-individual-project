@@ -28,6 +28,7 @@ const LOG_DEFAULT_LIMIT = 200;
 const LOG_MAX_LIMIT = 1_000;
 const CANCEL_KILL_TIMEOUT_MS = 10_000;
 const RESULTS_CAP_BYTES = 5 * 1024 * 1024 * 1024;
+const DEFAULT_MAVEN_BIN = process.env.DASHBOARD_MAVEN_BIN?.trim() || 'mvn';
 
 type ParameterDefinitionSeed = {
   key: string;
@@ -281,10 +282,19 @@ const jobsById = new Map<string, ModelRunJobInternal>();
 const jobOrder: string[] = [];
 let runningJobId: string | null = null;
 
-let spawnModelRunProcess: SpawnModelRunFn = (repoRoot, configPath, outputPath) =>
-  spawn('mvn', ['exec:java', `-Dexec.args=-configFile ${configPath} -outputFolder ${outputPath} -dev`], {
+function spawnModelRunWithMavenBin(
+  mavenBin: string,
+  repoRoot: string,
+  configPath: string,
+  outputPath: string
+): ChildProcessWithoutNullStreams {
+  return spawn(mavenBin, ['exec:java', `-Dexec.args=-configFile ${configPath} -outputFolder ${outputPath} -dev`], {
     cwd: repoRoot
   });
+}
+
+let spawnModelRunProcess: SpawnModelRunFn = (repoRoot, configPath, outputPath) =>
+  spawnModelRunWithMavenBin(DEFAULT_MAVEN_BIN, repoRoot, configPath, outputPath);
 
 function isTerminal(status: ModelRunJobStatus): boolean {
   return TERMINAL_STATUSES.has(status);
@@ -778,6 +788,14 @@ function startNextQueuedJob(repoRoot: string): void {
   });
 
   child.on('error', (error: Error) => {
+    const spawnError = error as NodeJS.ErrnoException;
+    if (spawnError.code === 'ENOENT') {
+      appendLogLine(
+        queuedJob,
+        `[stderr] Model process error: Maven executable "${DEFAULT_MAVEN_BIN}" was not found. Configure DASHBOARD_MAVEN_BIN or run the API in an environment with Java+Maven (e.g. Docker runtime).`
+      );
+      return;
+    }
     appendLogLine(queuedJob, `[stderr] Model process error: ${error.message}`);
   });
 
@@ -1078,10 +1096,7 @@ export function submitModelRun(repoRoot: string, payload: ModelRunSubmitRequest)
 export function __setModelRunSpawnForTests(spawnFn: SpawnModelRunFn | null): void {
   spawnModelRunProcess =
     spawnFn ??
-    ((repoRoot, configPath, outputPath) =>
-      spawn('mvn', ['exec:java', `-Dexec.args=-configFile ${configPath} -outputFolder ${outputPath} -dev`], {
-        cwd: repoRoot
-      }));
+    ((repoRoot, configPath, outputPath) => spawnModelRunWithMavenBin(DEFAULT_MAVEN_BIN, repoRoot, configPath, outputPath));
 }
 
 export function __resetModelRunManagerForTests(): void {

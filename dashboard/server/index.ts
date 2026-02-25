@@ -20,6 +20,7 @@ import {
   listModelRunJobs,
   submitModelRun
 } from './lib/modelRuns';
+import { checkRuntimeDependencies } from './lib/runtimeDeps';
 import { createWriteAuthControllerFromEnv, getWriteAuthConfigurationError, resolveDashboardWriteAccess } from './lib/writeAuth';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +36,33 @@ const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
 const modelRunsEnabled = (process.env.DASHBOARD_ENABLE_MODEL_RUNS?.trim().toLowerCase() ?? '') === 'true';
 const writeAuth = createWriteAuthControllerFromEnv();
 const writeAuthConfigurationError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled);
+const runtimeDependencies = checkRuntimeDependencies();
+
+console.log(`[runtime-deps] java=${runtimeDependencies.java.available ? 'available' : 'missing'}`);
+if (runtimeDependencies.java.versionOutput) {
+  console.log(`[runtime-deps] java version: ${runtimeDependencies.java.versionOutput.split('\n')[0]}`);
+}
+if (runtimeDependencies.java.error) {
+  console.error(`[runtime-deps] java error: ${runtimeDependencies.java.error}`);
+}
+
+console.log(
+  `[runtime-deps] maven=${runtimeDependencies.maven.available ? 'available' : 'missing'} (bin=${runtimeDependencies.mavenBin})`
+);
+if (runtimeDependencies.maven.versionOutput) {
+  console.log(`[runtime-deps] maven version: ${runtimeDependencies.maven.versionOutput.split('\n')[0]}`);
+}
+if (runtimeDependencies.maven.error) {
+  console.error(`[runtime-deps] maven error: ${runtimeDependencies.maven.error}`);
+}
+
+if (modelRunsEnabled && (!runtimeDependencies.java.available || !runtimeDependencies.maven.available)) {
+  console.error(
+    '[dashboard-api] Model runs are enabled but Java/Maven runtime dependencies are unavailable. ' +
+      'Deploy API with Java+Maven (Docker runtime) or disable DASHBOARD_ENABLE_MODEL_RUNS.'
+  );
+  process.exit(1);
+}
 
 const ghToken = process.env.DASHBOARD_GITHUB_TOKEN?.trim() ?? '';
 const ghRepo = process.env.DASHBOARD_GITHUB_REPO?.trim() ?? '';
@@ -73,6 +101,21 @@ app.use((req, res, next) => {
 
 app.get('/healthz', (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get('/api/runtime-deps', (_req, res) => {
+  const deps = checkRuntimeDependencies();
+  res.json({
+    java: deps.java.available,
+    maven: deps.maven.available,
+    mavenBin: deps.mavenBin,
+    versionInfo: {
+      java: deps.java.versionOutput || null,
+      maven: deps.maven.versionOutput || null,
+      javaError: deps.java.error ?? null,
+      mavenError: deps.maven.error ?? null
+    }
+  });
 });
 
 function requireWriteAccess(req: express.Request, res: express.Response): boolean {
