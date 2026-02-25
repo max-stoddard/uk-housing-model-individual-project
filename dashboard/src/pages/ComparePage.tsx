@@ -509,8 +509,7 @@ export function ComparePage() {
             </div>
           )}
           <p>
-            Visualizing tracked model parameters and calibration provenance from
-            <code> input-data-versions/version-notes.json</code>
+            Visualizing tracked model parameters and calibration provenance from <code>input-data-versions/version-notes.json</code>
           </p>
 
           <div className="change-filter-row">
