@@ -14,6 +14,10 @@
 # ignore results folder
 /results
 /Results
+!/Results/
+/Results/*
+!/Results/v3-output/
+!/Results/v3-output/**
 
 # ignore some documents
 /docs/ChangeLog
