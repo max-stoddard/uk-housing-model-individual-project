@@ -1,0 +1,1100 @@
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import type {
+  ModelRunJob,
+  ModelRunJobClearResponse,
+  ModelRunJobLogsPayload,
+  ModelRunJobStatus,
+  ModelRunOptionsPayload,
+  ModelRunParameterDefinition,
+  ModelRunParameterGroup,
+  ModelRunParameterType,
+  ModelRunSnapshotOption,
+  ModelRunSubmitRequest,
+  ModelRunSubmitResponse,
+  ModelRunWarning
+} from '../../shared/types';
+import { getInProgressVersions, getVersions } from './service';
+
+const INPUT_DATA_VERSIONS_DIR = 'input-data-versions';
+const RESULTS_DIR = 'Results';
+const TMP_RUNS_DIR = path.join('tmp', 'dashboard-model-runs');
+const MANAGED_RUN_MARKER = '.dashboard-managed-run.json';
+const MAX_QUEUE_SIZE = 10;
+const MAX_LOG_LINES = 10_000;
+const LOG_DEFAULT_LIMIT = 200;
+const LOG_MAX_LIMIT = 1_000;
+const CANCEL_KILL_TIMEOUT_MS = 10_000;
+const RESULTS_CAP_BYTES = 5 * 1024 * 1024 * 1024;
+
+type ParameterDefinitionSeed = {
+  key: string;
+  title: string;
+  description: string;
+  group: ModelRunParameterGroup;
+  type: ModelRunParameterType;
+};
+
+const USER_SET_PARAMETER_DEFS: ParameterDefinitionSeed[] = [
+  {
+    key: 'SEED',
+    title: 'Seed',
+    description: 'Seed for the random number generator.',
+    group: 'General model control',
+    type: 'integer'
+  },
+  {
+    key: 'N_STEPS',
+    title: 'Simulation duration (steps)',
+    description: 'Simulation duration in model time steps.',
+    group: 'General model control',
+    type: 'integer'
+  },
+  {
+    key: 'N_SIMS',
+    title: 'Monte Carlo runs',
+    description: 'Number of simulations to run.',
+    group: 'General model control',
+    type: 'integer'
+  },
+  {
+    key: 'TARGET_POPULATION',
+    title: 'Target population',
+    description: 'Target number of households.',
+    group: 'General model control',
+    type: 'integer'
+  },
+  {
+    key: 'TIME_TO_START_RECORDING_TRANSACTIONS',
+    title: 'Transaction recording start time',
+    description: 'Time step to start recording transaction micro-data.',
+    group: 'General model control',
+    type: 'integer'
+  },
+  {
+    key: 'ROLLING_WINDOW_SIZE_FOR_CORE_INDICATORS',
+    title: 'Core indicator rolling window',
+    description: 'Window size in months for core indicator averages.',
+    group: 'General model control',
+    type: 'integer'
+  },
+  {
+    key: 'CUMULATIVE_WEIGHT_BEYOND_YEAR',
+    title: 'Cumulative weight beyond year',
+    description: 'Weight assigned to events older than 12 months.',
+    group: 'General model control',
+    type: 'number'
+  },
+  {
+    key: 'recordTransactions',
+    title: 'Record transactions',
+    description: 'Write data for each transaction.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordNBidUpFrequency',
+    title: 'Record bid-up frequency',
+    description: 'Write bid-up frequency data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordCoreIndicators',
+    title: 'Record core indicators',
+    description: 'Write core indicator time series.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordQualityBandPrice',
+    title: 'Record quality-band prices',
+    description: 'Write quality-band price time series.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordHouseholdID',
+    title: 'Record household ID',
+    description: 'Write household identifiers.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordEmploymentIncome',
+    title: 'Record employment income',
+    description: 'Write household gross employment income data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordRentalIncome',
+    title: 'Record rental income',
+    description: 'Write household gross rental income data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordBankBalance',
+    title: 'Record bank balance',
+    description: 'Write household bank balance data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordHousingWealth',
+    title: 'Record housing wealth',
+    description: 'Write household housing wealth data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordNHousesOwned',
+    title: 'Record number of houses owned',
+    description: 'Write household number-of-houses-owned data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordAge',
+    title: 'Record household age',
+    description: 'Write household representative age data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'recordSavingRate',
+    title: 'Record saving rate',
+    description: 'Write household saving-rate data.',
+    group: 'General model control',
+    type: 'boolean'
+  },
+  {
+    key: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+    title: 'Initial base rate',
+    description: 'Central bank initial base rate.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTV_HARD_MAX_FTB',
+    title: 'Hard max LTV FTB',
+    description: 'Hard maximum LTV ratio for first-time buyers.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTV_HARD_MAX_HM',
+    title: 'Hard max LTV HM',
+    description: 'Hard maximum LTV ratio for home movers.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTV_HARD_MAX_BTL',
+    title: 'Hard max LTV BTL',
+    description: 'Hard maximum LTV ratio for buy-to-let investors.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTI_SOFT_MAX_FTB',
+    title: 'Soft max LTI FTB',
+    description: 'Soft maximum LTI ratio for first-time buyers.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTI_SOFT_MAX_HM',
+    title: 'Soft max LTI HM',
+    description: 'Soft maximum LTI ratio for home movers.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTI_MAX_FRAC_OVER_SOFT_MAX_FTB',
+    title: 'Max fraction over soft max LTI FTB',
+    description: 'Maximum mortgage fraction over FTB soft LTI.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTI_MAX_FRAC_OVER_SOFT_MAX_HM',
+    title: 'Max fraction over soft max LTI HM',
+    description: 'Maximum mortgage fraction over HM soft LTI.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_LTI_MONTHS_TO_CHECK',
+    title: 'LTI months-to-check',
+    description: 'Months checked for moving average over soft LTI.',
+    group: 'Central Bank policy',
+    type: 'integer'
+  },
+  {
+    key: 'CENTRAL_BANK_AFFORDABILITY_HARD_MAX',
+    title: 'Hard max affordability',
+    description: 'Hard max share of income spent on mortgage repayments.',
+    group: 'Central Bank policy',
+    type: 'number'
+  },
+  {
+    key: 'CENTRAL_BANK_ICR_HARD_MIN',
+    title: 'Hard min ICR',
+    description: 'Hard minimum expected rental-income to interest coverage.',
+    group: 'Central Bank policy',
+    type: 'number'
+  }
+];
+
+const TERMINAL_STATUSES = new Set<ModelRunJobStatus>(['succeeded', 'failed', 'canceled']);
+
+type ParsedOverride = {
+  typed: number | boolean;
+  serialized: string;
+};
+
+interface ModelRunJobInternal {
+  job: ModelRunJob;
+  warnings: ModelRunWarning[];
+  logLines: string[];
+  logStart: number;
+  partialLine: string;
+  process?: ChildProcessWithoutNullStreams;
+  cancelRequested: boolean;
+  killTimer?: NodeJS.Timeout;
+  tempDirPath: string;
+  configAbsolutePath: string;
+  runAbsolutePath: string;
+}
+
+type SpawnModelRunFn = (
+  repoRoot: string,
+  configPath: string,
+  outputPath: string
+) => ChildProcessWithoutNullStreams;
+
+const jobsById = new Map<string, ModelRunJobInternal>();
+const jobOrder: string[] = [];
+let runningJobId: string | null = null;
+
+let spawnModelRunProcess: SpawnModelRunFn = (repoRoot, configPath, outputPath) =>
+  spawn('mvn', ['exec:java', `-Dexec.args=-configFile ${configPath} -outputFolder ${outputPath} -dev`], {
+    cwd: repoRoot
+  });
+
+function isTerminal(status: ModelRunJobStatus): boolean {
+  return TERMINAL_STATUSES.has(status);
+}
+
+function toRelative(repoRoot: string, absolutePath: string): string {
+  return path.relative(repoRoot, absolutePath).replace(/\\/g, '/');
+}
+
+function parseConfigAssignments(configPath: string): Map<string, string> {
+  const lines = fs.readFileSync(configPath, 'utf-8').split(/\r?\n/);
+  const values = new Map<string, string>();
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    const match = /^([A-Za-z0-9_]+)\s*=\s*(.+)$/.exec(trimmed);
+    if (!match) {
+      continue;
+    }
+
+    const rawValue = stripInlineComment(match[2]).trim();
+    values.set(match[1], unquote(rawValue));
+  }
+
+  return values;
+}
+
+function unquote(value: string): string {
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
+function stripInlineComment(value: string): string {
+  const index = value.indexOf(' #');
+  if (index >= 0) {
+    return value.slice(0, index);
+  }
+  return value;
+}
+
+function parseTypedConfigValue(raw: string, type: ModelRunParameterType, key: string): number | boolean {
+  if (type === 'boolean') {
+    if (raw === 'true') {
+      return true;
+    }
+    if (raw === 'false') {
+      return false;
+    }
+    throw new Error(`Config value for ${key} is not boolean: ${raw}`);
+  }
+
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Config value for ${key} is not numeric: ${raw}`);
+  }
+
+  if (type === 'integer' && !Number.isInteger(parsed)) {
+    throw new Error(`Config value for ${key} is not an integer: ${raw}`);
+  }
+
+  return parsed;
+}
+
+function normalizeOverrideValue(key: string, raw: unknown, type: ModelRunParameterType): ParsedOverride {
+  if (type === 'boolean') {
+    if (typeof raw === 'boolean') {
+      return { typed: raw, serialized: raw ? 'true' : 'false' };
+    }
+    if (raw === 'true' || raw === 'false') {
+      const boolValue = raw === 'true';
+      return { typed: boolValue, serialized: raw };
+    }
+    throw new Error(`Override ${key} must be boolean.`);
+  }
+
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
+    throw new Error(`Override ${key} must be numeric.`);
+  }
+
+  if (type === 'integer' && !Number.isInteger(raw)) {
+    throw new Error(`Override ${key} must be an integer.`);
+  }
+
+  return { typed: raw, serialized: String(raw) };
+}
+
+function buildSnapshotOptions(repoRoot: string): {
+  snapshots: ModelRunSnapshotOption[];
+  defaultBaseline: string;
+} {
+  const versions = getVersions(repoRoot);
+  if (versions.length === 0) {
+    throw new Error('No input-data-versions snapshots are available.');
+  }
+
+  const inProgressSet = new Set(getInProgressVersions(repoRoot));
+  const snapshots = versions
+    .map((version) => ({
+      version,
+      status: inProgressSet.has(version) ? 'in_progress' : 'stable'
+    } satisfies ModelRunSnapshotOption))
+    .reverse();
+
+  const latestStable = [...versions].reverse().find((version) => !inProgressSet.has(version));
+  const defaultBaseline = latestStable ?? versions[versions.length - 1];
+
+  return { snapshots, defaultBaseline };
+}
+
+function resolveBaseline(repoRoot: string, requestedBaseline: string | undefined): {
+  baseline: string;
+  snapshots: ModelRunSnapshotOption[];
+  defaultBaseline: string;
+} {
+  const { snapshots, defaultBaseline } = buildSnapshotOptions(repoRoot);
+  if (!requestedBaseline) {
+    return { baseline: defaultBaseline, snapshots, defaultBaseline };
+  }
+
+  const normalized = requestedBaseline.trim();
+  if (!snapshots.some((snapshot) => snapshot.version === normalized)) {
+    throw new Error(`Unknown baseline snapshot: ${requestedBaseline}`);
+  }
+
+  return { baseline: normalized, snapshots, defaultBaseline };
+}
+
+function getBaselineConfigPath(repoRoot: string, baseline: string): string {
+  return path.join(repoRoot, INPUT_DATA_VERSIONS_DIR, baseline, 'config.properties');
+}
+
+function getParameterDefinitionsForBaseline(repoRoot: string, baseline: string): ModelRunParameterDefinition[] {
+  const configPath = getBaselineConfigPath(repoRoot, baseline);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Missing config.properties for baseline ${baseline}`);
+  }
+
+  const configValues = parseConfigAssignments(configPath);
+
+  return USER_SET_PARAMETER_DEFS.map((definition) => {
+    const rawValue = configValues.get(definition.key);
+    if (rawValue === undefined) {
+      throw new Error(`Baseline ${baseline} is missing USER SET parameter ${definition.key}`);
+    }
+
+    return {
+      ...definition,
+      defaultValue: parseTypedConfigValue(rawValue, definition.type, definition.key)
+    };
+  });
+}
+
+function rewriteConfigForJob(
+  baselineConfigPath: string,
+  baselineDirPath: string,
+  outputConfigPath: string,
+  overrides: Map<string, string>
+): void {
+  const lines = fs.readFileSync(baselineConfigPath, 'utf-8').split(/\r?\n/);
+  const seenOverrides = new Set<string>();
+
+  const rewritten = lines.map((line) => {
+    const match = /^(\s*)([A-Za-z0-9_]+)(\s*=\s*)(.*)$/.exec(line);
+    if (!match) {
+      return line;
+    }
+
+    const leading = match[1];
+    const key = match[2];
+    const separator = match[3];
+    const rawValue = match[4];
+
+    if (overrides.has(key)) {
+      seenOverrides.add(key);
+      return `${leading}${key}${separator}${overrides.get(key) as string}`;
+    }
+
+    if (key.startsWith('DATA_')) {
+      const stripped = stripInlineComment(rawValue).trim();
+      const unquoted = unquote(stripped);
+      if (!unquoted) {
+        return line;
+      }
+      const fileName = path.basename(unquoted);
+      const candidate = path.join(baselineDirPath, fileName);
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return `${leading}${key}${separator}"${candidate.replace(/\\/g, '/')}"`;
+      }
+    }
+
+    return line;
+  });
+
+  for (const key of overrides.keys()) {
+    if (!seenOverrides.has(key)) {
+      throw new Error(`Could not apply override ${key} because it is missing from baseline config.`);
+    }
+  }
+
+  fs.mkdirSync(path.dirname(outputConfigPath), { recursive: true });
+  fs.writeFileSync(outputConfigPath, `${rewritten.join('\n')}\n`, 'utf-8');
+}
+
+function createWarnings(valuesByKey: Map<string, number | boolean>): ModelRunWarning[] {
+  const warnings: ModelRunWarning[] = [];
+
+  const nSteps = Number(valuesByKey.get('N_STEPS') ?? 0);
+  if (nSteps > 4_000) {
+    warnings.push({
+      code: 'high_n_steps',
+      message: `N_STEPS=${nSteps} can significantly increase runtime and output size.`,
+      severity: 'warning'
+    });
+  }
+
+  const targetPopulation = Number(valuesByKey.get('TARGET_POPULATION') ?? 0);
+  if (targetPopulation > 15_000) {
+    warnings.push({
+      code: 'high_target_population',
+      message: `TARGET_POPULATION=${targetPopulation} can increase runtime and memory usage.`,
+      severity: 'warning'
+    });
+  }
+
+  const nSims = Number(valuesByKey.get('N_SIMS') ?? 0);
+  if (nSims > 1) {
+    warnings.push({
+      code: 'multiple_simulations',
+      message: `N_SIMS=${nSims} runs multiple simulations and may take much longer.`,
+      severity: 'warning'
+    });
+  }
+
+  if (valuesByKey.get('recordTransactions') === true) {
+    warnings.push({
+      code: 'record_transactions_enabled',
+      message: 'recordTransactions=true can produce very large transaction output files.',
+      severity: 'warning'
+    });
+  }
+
+  const microFlags = [
+    'recordHouseholdID',
+    'recordEmploymentIncome',
+    'recordRentalIncome',
+    'recordBankBalance',
+    'recordHousingWealth',
+    'recordNHousesOwned',
+    'recordAge',
+    'recordSavingRate'
+  ];
+
+  const enabledMicroFlags = microFlags.filter((key) => valuesByKey.get(key) === true);
+  if (enabledMicroFlags.length >= 4) {
+    warnings.push({
+      code: 'heavy_microdata_recording',
+      message: `Microdata recording is enabled for ${enabledMicroFlags.length} fields and may create heavy output files.`,
+      severity: 'warning'
+    });
+  }
+
+  if (valuesByKey.get('recordCoreIndicators') === false) {
+    warnings.push({
+      code: 'core_indicators_disabled',
+      message: 'recordCoreIndicators=false means very little data will be visible in Model Results.',
+      severity: 'warning'
+    });
+  }
+
+  return warnings;
+}
+
+function ensureQueueCapacity(): void {
+  const activeCount = [...jobsById.values()].filter((job) => job.job.status === 'queued' || job.job.status === 'running').length;
+  if (activeCount >= MAX_QUEUE_SIZE) {
+    throw new Error(`Run queue capacity reached (${MAX_QUEUE_SIZE}).`);
+  }
+}
+
+function formatRunTimestamp(date: Date): string {
+  const yyyy = String(date.getUTCFullYear());
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const hh = String(date.getUTCHours()).padStart(2, '0');
+  const min = String(date.getUTCMinutes()).padStart(2, '0');
+  const sec = String(date.getUTCSeconds()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}T${hh}${min}${sec}Z`;
+}
+
+function sanitizeRunFolderFragment(value: string): string {
+  const withoutReserved = value.replace(/[<>:"/\\|?*]/g, ' ');
+  const withoutControlChars = [...withoutReserved]
+    .map((character) => (character.charCodeAt(0) < 32 ? ' ' : character))
+    .join('');
+  return withoutControlChars.replace(/\s+/g, ' ').replace(/\.+$/g, '').trim();
+}
+
+function buildRunId(date: Date, title: string | undefined, baseline: string): string {
+  const baselineFragment = sanitizeRunFolderFragment(baseline) || 'baseline';
+  if (title) {
+    const titleFragment = sanitizeRunFolderFragment(title);
+    if (titleFragment) {
+      return `${titleFragment} ${baselineFragment}`;
+    }
+  }
+  return `run-${formatRunTimestamp(date)} ${baselineFragment}`;
+}
+
+function hasActiveRunId(runId: string): boolean {
+  for (const job of jobsById.values()) {
+    if ((job.job.status === 'queued' || job.job.status === 'running') && job.job.runId === runId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function appendLogLine(job: ModelRunJobInternal, line: string): void {
+  job.logLines.push(line);
+  if (job.logLines.length > MAX_LOG_LINES) {
+    const overflow = job.logLines.length - MAX_LOG_LINES;
+    job.logLines.splice(0, overflow);
+    job.logStart += overflow;
+  }
+}
+
+function appendOutputChunk(job: ModelRunJobInternal, streamName: 'stdout' | 'stderr', chunk: Buffer): void {
+  job.partialLine += chunk.toString('utf-8').replace(/\r\n/g, '\n');
+
+  while (true) {
+    const lineBreak = job.partialLine.indexOf('\n');
+    if (lineBreak < 0) {
+      break;
+    }
+    const line = job.partialLine.slice(0, lineBreak);
+    job.partialLine = job.partialLine.slice(lineBreak + 1);
+    appendLogLine(job, `[${streamName}] ${line}`);
+  }
+}
+
+function flushPartialLine(job: ModelRunJobInternal): void {
+  if (!job.partialLine) {
+    return;
+  }
+  appendLogLine(job, `[stdout] ${job.partialLine}`);
+  job.partialLine = '';
+}
+
+function listProtectedRunIds(): Set<string> {
+  return new Set(
+    [...jobsById.values()]
+      .filter((job) => job.job.status === 'queued' || job.job.status === 'running')
+      .map((job) => job.job.runId)
+  );
+}
+
+function directorySizeBytes(directoryPath: string): number {
+  let total = 0;
+  const stack = [directoryPath];
+
+  while (stack.length > 0) {
+    const current = stack.pop() as string;
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const absolute = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(absolute);
+      } else if (entry.isFile()) {
+        total += fs.statSync(absolute).size;
+      }
+    }
+  }
+
+  return total;
+}
+
+function pruneManagedRuns(repoRoot: string): void {
+  const resultsRoot = path.join(repoRoot, RESULTS_DIR);
+  if (!fs.existsSync(resultsRoot)) {
+    return;
+  }
+
+  const protectedRunIds = listProtectedRunIds();
+
+  const candidates = fs
+    .readdirSync(resultsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const runPath = path.join(resultsRoot, entry.name);
+      const markerPath = path.join(runPath, MANAGED_RUN_MARKER);
+      if (!fs.existsSync(markerPath)) {
+        return null;
+      }
+
+      const stats = fs.statSync(runPath);
+      const sizeBytes = directorySizeBytes(runPath);
+      return {
+        runId: entry.name,
+        runPath,
+        sizeBytes,
+        modifiedMs: stats.mtimeMs
+      };
+    })
+    .filter((entry): entry is { runId: string; runPath: string; sizeBytes: number; modifiedMs: number } => entry !== null)
+    .sort((left, right) => left.modifiedMs - right.modifiedMs);
+
+  let totalSize = candidates.reduce((sum, item) => sum + item.sizeBytes, 0);
+  if (totalSize <= RESULTS_CAP_BYTES) {
+    return;
+  }
+
+  for (const item of candidates) {
+    if (totalSize <= RESULTS_CAP_BYTES) {
+      break;
+    }
+    if (protectedRunIds.has(item.runId)) {
+      continue;
+    }
+
+    fs.rmSync(item.runPath, { recursive: true, force: true });
+    totalSize -= item.sizeBytes;
+  }
+}
+
+function startNextQueuedJob(repoRoot: string): void {
+  if (runningJobId !== null) {
+    return;
+  }
+
+  const queuedJob = jobOrder
+    .map((jobId) => jobsById.get(jobId))
+    .find((job): job is ModelRunJobInternal => job !== undefined && job.job.status === 'queued');
+
+  if (!queuedJob) {
+    return;
+  }
+
+  queuedJob.job.status = 'running';
+  queuedJob.job.startedAt = new Date().toISOString();
+  runningJobId = queuedJob.job.jobId;
+
+  fs.mkdirSync(queuedJob.runAbsolutePath, { recursive: true });
+  fs.writeFileSync(
+    path.join(queuedJob.runAbsolutePath, MANAGED_RUN_MARKER),
+    JSON.stringify(
+      {
+        managedBy: 'dashboard',
+        jobId: queuedJob.job.jobId,
+        runId: queuedJob.job.runId,
+        baseline: queuedJob.job.baseline,
+        title: queuedJob.job.title ?? null,
+        createdAt: queuedJob.job.createdAt
+      },
+      null,
+      2
+    ),
+    'utf-8'
+  );
+
+  let child: ChildProcessWithoutNullStreams;
+  try {
+    child = spawnModelRunProcess(repoRoot, queuedJob.configAbsolutePath, queuedJob.runAbsolutePath);
+  } catch (error) {
+    queuedJob.job.status = 'failed';
+    queuedJob.job.endedAt = new Date().toISOString();
+    queuedJob.job.exitCode = null;
+    queuedJob.job.signal = null;
+    appendLogLine(queuedJob, `[stderr] Failed to spawn model process: ${(error as Error).message}`);
+    runningJobId = null;
+    fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
+    fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
+    pruneManagedRuns(repoRoot);
+    startNextQueuedJob(repoRoot);
+    return;
+  }
+
+  queuedJob.process = child;
+
+  child.stdout.on('data', (chunk: Buffer) => {
+    appendOutputChunk(queuedJob, 'stdout', chunk);
+  });
+
+  child.stderr.on('data', (chunk: Buffer) => {
+    appendOutputChunk(queuedJob, 'stderr', chunk);
+  });
+
+  child.on('error', (error: Error) => {
+    appendLogLine(queuedJob, `[stderr] Model process error: ${error.message}`);
+  });
+
+  child.on('close', (code, signal) => {
+    flushPartialLine(queuedJob);
+
+    if (queuedJob.killTimer) {
+      clearTimeout(queuedJob.killTimer);
+      queuedJob.killTimer = undefined;
+    }
+
+    queuedJob.job.endedAt = new Date().toISOString();
+    queuedJob.job.exitCode = code;
+    queuedJob.job.signal = signal;
+
+    if (queuedJob.cancelRequested) {
+      queuedJob.job.status = 'canceled';
+    } else if (code === 0) {
+      queuedJob.job.status = 'succeeded';
+    } else {
+      queuedJob.job.status = 'failed';
+    }
+
+    if (queuedJob.job.status === 'failed' || queuedJob.job.status === 'canceled') {
+      fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
+    }
+
+    fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
+    runningJobId = null;
+    pruneManagedRuns(repoRoot);
+    startNextQueuedJob(repoRoot);
+  });
+}
+
+function toPublicJob(job: ModelRunJobInternal): ModelRunJob {
+  return { ...job.job };
+}
+
+function coerceLogCursor(value: number | undefined): number {
+  if (!Number.isFinite(value as number)) {
+    return 0;
+  }
+  return Math.max(0, Math.trunc(value as number));
+}
+
+function coerceLogLimit(value: number | undefined): number {
+  if (!Number.isFinite(value as number)) {
+    return LOG_DEFAULT_LIMIT;
+  }
+  const limit = Math.trunc(value as number);
+  if (limit <= 0) {
+    return LOG_DEFAULT_LIMIT;
+  }
+  return Math.min(limit, LOG_MAX_LIMIT);
+}
+
+export function getModelRunOptions(
+  repoRoot: string,
+  requestedBaseline: string | undefined,
+  executionEnabled: boolean
+): ModelRunOptionsPayload {
+  const { baseline, snapshots, defaultBaseline } = resolveBaseline(repoRoot, requestedBaseline);
+
+  return {
+    executionEnabled,
+    snapshots,
+    defaultBaseline,
+    requestedBaseline: baseline,
+    parameters: getParameterDefinitionsForBaseline(repoRoot, baseline)
+  };
+}
+
+export function listModelRunJobs(): ModelRunJob[] {
+  return [...jobOrder]
+    .reverse()
+    .map((jobId) => jobsById.get(jobId))
+    .filter((job): job is ModelRunJobInternal => Boolean(job))
+    .map((job) => toPublicJob(job));
+}
+
+export function getModelRunJob(jobId: string): ModelRunJob {
+  const normalized = jobId.trim();
+  if (!normalized) {
+    throw new Error('jobId is required.');
+  }
+
+  const job = jobsById.get(normalized);
+  if (!job) {
+    throw new Error(`Unknown model run job: ${jobId}`);
+  }
+
+  return toPublicJob(job);
+}
+
+export function getModelRunJobLogs(jobId: string, cursor: number | undefined, limit: number | undefined): ModelRunJobLogsPayload {
+  const normalized = jobId.trim();
+  if (!normalized) {
+    throw new Error('jobId is required.');
+  }
+
+  const job = jobsById.get(normalized);
+  if (!job) {
+    throw new Error(`Unknown model run job: ${jobId}`);
+  }
+
+  const safeCursor = coerceLogCursor(cursor);
+  const safeLimit = coerceLogLimit(limit);
+
+  const startCursor = Math.max(safeCursor, job.logStart);
+  const offset = Math.max(0, startCursor - job.logStart);
+  const lines = job.logLines.slice(offset, offset + safeLimit);
+  const nextCursor = startCursor + lines.length;
+  const absoluteEnd = job.logStart + job.logLines.length;
+
+  return {
+    jobId: normalized,
+    cursor: startCursor,
+    nextCursor,
+    lines,
+    hasMore: nextCursor < absoluteEnd,
+    done: isTerminal(job.job.status) && nextCursor >= absoluteEnd,
+    truncated: safeCursor < job.logStart
+  };
+}
+
+export function cancelModelRunJob(repoRoot: string, jobId: string): ModelRunJob {
+  const normalized = jobId.trim();
+  if (!normalized) {
+    throw new Error('jobId is required.');
+  }
+
+  const job = jobsById.get(normalized);
+  if (!job) {
+    throw new Error(`Unknown model run job: ${jobId}`);
+  }
+
+  if (isTerminal(job.job.status)) {
+    return toPublicJob(job);
+  }
+
+  if (job.job.status === 'queued') {
+    job.job.status = 'canceled';
+    job.job.endedAt = new Date().toISOString();
+    fs.rmSync(job.tempDirPath, { recursive: true, force: true });
+    startNextQueuedJob(repoRoot);
+    return toPublicJob(job);
+  }
+
+  if (job.job.status === 'running' && job.process) {
+    if (!job.cancelRequested) {
+      const sigtermSent = job.process.kill('SIGTERM');
+      if (sigtermSent) {
+        job.cancelRequested = true;
+        job.killTimer = setTimeout(() => {
+          if (job.process && !isTerminal(job.job.status)) {
+            job.process.kill('SIGKILL');
+          }
+        }, CANCEL_KILL_TIMEOUT_MS);
+      } else {
+        appendLogLine(job, '[stderr] Cancel requested but SIGTERM could not be delivered; waiting for process close.');
+      }
+    }
+    return toPublicJob(job);
+  }
+
+  return toPublicJob(job);
+}
+
+export function clearModelRunJob(jobId: string): ModelRunJobClearResponse {
+  const normalized = jobId.trim();
+  if (!normalized) {
+    throw new Error('jobId is required.');
+  }
+
+  const job = jobsById.get(normalized);
+  if (!job) {
+    throw new Error(`Unknown model run job: ${jobId}`);
+  }
+
+  if (job.job.status === 'queued' || job.job.status === 'running') {
+    throw new Error('Only finished jobs can be cleared from the job queue.');
+  }
+
+  jobsById.delete(normalized);
+  const orderIndex = jobOrder.indexOf(normalized);
+  if (orderIndex >= 0) {
+    jobOrder.splice(orderIndex, 1);
+  }
+
+  return {
+    jobId: normalized,
+    cleared: true
+  };
+}
+
+export function submitModelRun(repoRoot: string, payload: ModelRunSubmitRequest): ModelRunSubmitResponse {
+  const baselineRaw = payload.baseline?.trim();
+  if (!baselineRaw) {
+    throw new Error('baseline is required.');
+  }
+
+  const { baseline } = resolveBaseline(repoRoot, baselineRaw);
+  const parameterDefinitions = getParameterDefinitionsForBaseline(repoRoot, baseline);
+  const parameterDefMap = new Map(parameterDefinitions.map((item) => [item.key, item]));
+
+  const overrides = payload.overrides ?? {};
+  const overrideEntries = Object.entries(overrides);
+  const normalizedOverrides = new Map<string, string>();
+
+  const valuesByKey = new Map(parameterDefinitions.map((definition) => [definition.key, definition.defaultValue]));
+
+  for (const [key, rawValue] of overrideEntries) {
+    const definition = parameterDefMap.get(key);
+    if (!definition) {
+      throw new Error(`Unsupported override key: ${key}`);
+    }
+
+    const parsedOverride = normalizeOverrideValue(key, rawValue, definition.type);
+    normalizedOverrides.set(key, parsedOverride.serialized);
+    valuesByKey.set(key, parsedOverride.typed);
+  }
+
+  const now = new Date();
+  const trimmedTitle = payload.title?.trim();
+  const title = trimmedTitle ? trimmedTitle.slice(0, 120) : undefined;
+  const runId = buildRunId(now, title, baseline);
+  if (hasActiveRunId(runId)) {
+    throw new Error(`A queued or running job is already targeting output folder "${runId}".`);
+  }
+
+  const runAbsolutePath = path.join(repoRoot, RESULTS_DIR, runId);
+  const warnings = createWarnings(valuesByKey);
+  if (fs.existsSync(runAbsolutePath)) {
+    warnings.push({
+      code: 'output_folder_exists',
+      message: `Output folder "${runId}" already exists and will be overwritten.`,
+      severity: 'warning'
+    });
+  }
+
+  if (warnings.length > 0 && payload.confirmWarnings !== true) {
+    return {
+      accepted: false,
+      warnings
+    };
+  }
+
+  ensureQueueCapacity();
+  pruneManagedRuns(repoRoot);
+
+  if (fs.existsSync(runAbsolutePath)) {
+    fs.rmSync(runAbsolutePath, { recursive: true, force: true });
+  }
+
+  const jobId = `job-${formatRunTimestamp(now)}-${randomUUID().slice(0, 8)}`;
+
+  const tempDirPath = path.join(repoRoot, TMP_RUNS_DIR, jobId);
+  const configAbsolutePath = path.join(tempDirPath, 'config.properties');
+  const baselineDirPath = path.join(repoRoot, INPUT_DATA_VERSIONS_DIR, baseline);
+  const baselineConfigPath = path.join(baselineDirPath, 'config.properties');
+
+  rewriteConfigForJob(baselineConfigPath, baselineDirPath, configAbsolutePath, normalizedOverrides);
+
+  const job: ModelRunJob = {
+    jobId,
+    runId,
+    title,
+    baseline,
+    status: 'queued',
+    createdAt: now.toISOString(),
+    outputPath: toRelative(repoRoot, runAbsolutePath),
+    configPath: toRelative(repoRoot, configAbsolutePath)
+  };
+
+  const internalJob: ModelRunJobInternal = {
+    job,
+    warnings,
+    logLines: [],
+    logStart: 0,
+    partialLine: '',
+    cancelRequested: false,
+    tempDirPath,
+    configAbsolutePath,
+    runAbsolutePath
+  };
+
+  jobsById.set(job.jobId, internalJob);
+  jobOrder.push(job.jobId);
+  startNextQueuedJob(repoRoot);
+
+  return {
+    accepted: true,
+    warnings,
+    job: toPublicJob(internalJob)
+  };
+}
+
+export function __setModelRunSpawnForTests(spawnFn: SpawnModelRunFn | null): void {
+  spawnModelRunProcess =
+    spawnFn ??
+    ((repoRoot, configPath, outputPath) =>
+      spawn('mvn', ['exec:java', `-Dexec.args=-configFile ${configPath} -outputFolder ${outputPath} -dev`], {
+        cwd: repoRoot
+      }));
+}
+
+export function __resetModelRunManagerForTests(): void {
+  for (const job of jobsById.values()) {
+    if (job.killTimer) {
+      clearTimeout(job.killTimer);
+    }
+    if (job.process && !isTerminal(job.job.status)) {
+      job.process.kill('SIGKILL');
+    }
+  }
+  jobsById.clear();
+  jobOrder.length = 0;
+  runningJobId = null;
+  __setModelRunSpawnForTests(null);
+}
