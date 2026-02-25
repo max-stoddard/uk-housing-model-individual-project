@@ -23,10 +23,15 @@ import {
 } from '../lib/api';
 
 const RUN_LIMIT = 5;
+const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.7-output']);
 
 type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;
 const SPIN_UP_CUTOFF_TICKS = 200;
+
+function isProtectedResultsRun(runId: string): boolean {
+  return PROTECTED_RESULTS_RUN_IDS.has(runId.trim());
+}
 
 function formatNumber(value: number | null, units: string): string {
   if (value === null) {
@@ -381,6 +386,10 @@ export function ModelResultsPage({ canWrite }: ModelResultsPageProps) {
     if (!canWrite) {
       return;
     }
+    if (isProtectedResultsRun(runId)) {
+      setLoadError(`Run "${runId}" is protected and cannot be deleted from Model Results.`);
+      return;
+    }
     const confirmed = window.confirm(`Delete run "${runId}"? This permanently removes its Results folder.`);
     if (!confirmed) {
       return;
@@ -425,45 +434,50 @@ export function ModelResultsPage({ canWrite }: ModelResultsPageProps) {
               ariaLabel="Loading runs"
             />
           ) : (
-            <ul className="run-list">
-              {runs.map((run) => (
-                <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
-                  <label className="run-select">
-                    <input
-                      type="checkbox"
-                      checked={selectedRunSet.has(run.runId)}
-                      onChange={() => toggleRunSelection(run.runId)}
-                    />
-                    <span>{run.runId}</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="run-focus-btn"
-                    onClick={() => setFocusedRunId(run.runId)}
-                  >
-                    Focus
-                  </button>
-                  <div className="run-meta">
-                    <span className={statusClass(run.status)}>{run.status}</span>
-                    <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
-                  </div>
-                  <p>
-                    Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
-                  </p>
-                  {canWrite && (
+              <ul className="run-list">
+                {runs.map((run) => (
+                  <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
+                    <label className="run-select">
+                      <input
+                        type="checkbox"
+                        checked={selectedRunSet.has(run.runId)}
+                        onChange={() => toggleRunSelection(run.runId)}
+                      />
+                      <span>{run.runId}</span>
+                    </label>
                     <button
                       type="button"
-                      className="danger-button"
-                      disabled={isDeletingRunId === run.runId}
-                      onClick={() => void deleteRun(run.runId)}
+                      className="run-focus-btn"
+                      onClick={() => setFocusedRunId(run.runId)}
                     >
-                      {isDeletingRunId === run.runId ? 'Deleting...' : 'Delete'}
+                      Focus
                     </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                    <div className="run-meta">
+                      <span className={statusClass(run.status)}>{run.status}</span>
+                      <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                    <p>
+                      Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
+                    </p>
+                    {canWrite && (
+                      <button
+                        type="button"
+                        className="danger-button"
+                        disabled={isDeletingRunId === run.runId || isProtectedResultsRun(run.runId)}
+                        onClick={() => void deleteRun(run.runId)}
+                        title={isProtectedResultsRun(run.runId) ? 'Protected run cannot be deleted.' : undefined}
+                      >
+                        {isProtectedResultsRun(run.runId)
+                          ? 'Protected'
+                          : isDeletingRunId === run.runId
+                            ? 'Deleting...'
+                            : 'Delete'}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
         </aside>
 
         <div className="results-main">

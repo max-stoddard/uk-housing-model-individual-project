@@ -65,6 +65,7 @@ interface RunDiagnostics {
 
 const RESULTS_FOLDER_NAME = 'Results';
 const OUTPUT_FILE_NAME = 'Output-run1.csv';
+const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.7-output']);
 
 const CORE_INDICATORS: IndicatorDefinition[] = [
   {
@@ -996,11 +997,16 @@ export function getResultsRunFiles(repoRoot: string, runId: string): ResultsFile
 
 export function deleteResultsRun(repoRoot: string, runId: string): { runId: string; deleted: boolean } {
   const resultsRoot = resolveResultsRoot(repoRoot);
-  const runPath = ensureRunExists(resultsRoot, runId);
+  const normalizedRunId = runId.trim();
+  if (PROTECTED_RESULTS_RUN_IDS.has(normalizedRunId)) {
+    throw new Error(`Run "${normalizedRunId}" is protected and cannot be deleted from Model Results.`);
+  }
+
+  const runPath = ensureRunExists(resultsRoot, normalizedRunId);
   fs.rmSync(runPath, { recursive: true, force: true });
   clearRunFromParserCaches(runPath);
   return {
-    runId: runId.trim(),
+    runId: normalizedRunId,
     deleted: true
   };
 }
