@@ -1,4 +1,12 @@
-import type { CompareResponse, ParameterCardMeta } from '../../shared/types';
+import type {
+  CompareResponse,
+  ParameterCardMeta,
+  ResultsComparePayload,
+  ResultsFileManifestEntry,
+  ResultsRunDetail,
+  ResultsRunSummary,
+  ResultsSeriesPayload
+} from '../../shared/types';
 
 interface VersionsResponse {
   versions: string[];
@@ -12,6 +20,15 @@ export interface VersionsPayload {
 
 interface CatalogResponse {
   items: ParameterCardMeta[];
+}
+
+interface ResultsRunsResponse {
+  runs: ResultsRunSummary[];
+}
+
+interface ResultsRunFilesResponse {
+  runId: string;
+  files: ResultsFileManifestEntry[];
 }
 
 interface GitStatsResponse {
@@ -119,4 +136,54 @@ export async function fetchCompare(
   });
 
   return requestJson<CompareResponse>(`${buildApiUrl('/api/compare')}?${params.toString()}`, 'Failed to fetch comparison');
+}
+
+export async function fetchResultsRuns(): Promise<ResultsRunSummary[]> {
+  const payload = await requestJson<ResultsRunsResponse>(buildApiUrl('/api/results/runs'), 'Failed to fetch results runs');
+  return payload.runs;
+}
+
+export async function fetchResultsRunDetail(runId: string): Promise<ResultsRunDetail> {
+  return requestJson<ResultsRunDetail>(buildApiUrl(`/api/results/runs/${encodeURIComponent(runId)}`), 'Failed to fetch run detail');
+}
+
+export async function fetchResultsRunFiles(runId: string): Promise<ResultsFileManifestEntry[]> {
+  const payload = await requestJson<ResultsRunFilesResponse>(
+    buildApiUrl(`/api/results/runs/${encodeURIComponent(runId)}/files`),
+    'Failed to fetch run files'
+  );
+  return payload.files;
+}
+
+export async function fetchResultsSeries(
+  runId: string,
+  indicatorId: string,
+  smoothWindow: 0 | 3 | 12
+): Promise<ResultsSeriesPayload> {
+  const params = new URLSearchParams({
+    indicator: indicatorId,
+    smoothWindow: String(smoothWindow)
+  });
+  return requestJson<ResultsSeriesPayload>(
+    `${buildApiUrl(`/api/results/runs/${encodeURIComponent(runId)}/series`)}?${params.toString()}`,
+    'Failed to fetch series'
+  );
+}
+
+export async function fetchResultsCompare(
+  runIds: string[],
+  indicatorIds: string[],
+  window: 'tail120' | 'full',
+  smoothWindow: 0 | 3 | 12
+): Promise<ResultsComparePayload> {
+  const params = new URLSearchParams({
+    runIds: runIds.join(','),
+    indicatorIds: indicatorIds.join(','),
+    window,
+    smoothWindow: String(smoothWindow)
+  });
+  return requestJson<ResultsComparePayload>(
+    `${buildApiUrl('/api/results/compare')}?${params.toString()}`,
+    'Failed to fetch results comparison'
+  );
 }

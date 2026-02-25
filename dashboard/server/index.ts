@@ -3,6 +3,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from './lib/service';
 import { buildZeroGitStats, getGitStats, type GitHubConfig } from './lib/gitStats';
+import {
+  getResultsCompare,
+  getResultsRunDetail,
+  getResultsRunFiles,
+  getResultsRuns,
+  getResultsSeries
+} from './lib/results';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -102,6 +109,73 @@ app.get('/api/compare', (req, res) => {
 
   try {
     const payload = compareParameters(repoRoot, left, right, ids, provenanceScope);
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/results/runs', (_req, res) => {
+  try {
+    const runs = getResultsRuns(repoRoot);
+    res.json({ runs });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/results/runs/:runId', (req, res) => {
+  try {
+    const detail = getResultsRunDetail(repoRoot, String(req.params.runId ?? ''));
+    res.json(detail);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/results/runs/:runId/files', (req, res) => {
+  try {
+    const files = getResultsRunFiles(repoRoot, String(req.params.runId ?? ''));
+    res.json({ runId: String(req.params.runId ?? ''), files });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/results/runs/:runId/series', (req, res) => {
+  const runId = String(req.params.runId ?? '');
+  const indicator = String(req.query.indicator ?? '');
+  if (!indicator) {
+    res.status(400).json({ error: 'indicator query parameter is required' });
+    return;
+  }
+
+  const rawSmoothWindow = Number.parseInt(String(req.query.smoothWindow ?? '0'), 10);
+  const smoothWindow = Number.isFinite(rawSmoothWindow) ? rawSmoothWindow : 0;
+
+  try {
+    const payload = getResultsSeries(repoRoot, runId, indicator, smoothWindow);
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/results/compare', (req, res) => {
+  const runIds = String(req.query.runIds ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const indicatorIds = String(req.query.indicatorIds ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const window = String(req.query.window ?? 'tail120');
+  const rawSmoothWindow = Number.parseInt(String(req.query.smoothWindow ?? '0'), 10);
+  const smoothWindow = Number.isFinite(rawSmoothWindow) ? rawSmoothWindow : 0;
+
+  try {
+    const payload = getResultsCompare(repoRoot, runIds, indicatorIds, window, smoothWindow);
     res.json(payload);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });

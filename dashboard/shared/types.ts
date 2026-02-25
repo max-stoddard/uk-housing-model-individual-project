@@ -194,3 +194,115 @@ export interface CompareResponse {
   right: VersionId;
   items: CompareResult[];
 }
+
+export type ResultsRunStatus = 'complete' | 'partial' | 'invalid';
+
+export type ResultsFileType =
+  | 'output'
+  | 'core_indicator'
+  | 'transaction'
+  | 'micro_snapshot'
+  | 'config'
+  | 'other';
+
+export type ResultsCoverageStatus = 'supported' | 'empty' | 'unsupported' | 'error';
+
+export type ResultsSeriesSource = 'core_indicator' | 'output';
+
+export interface ResultsIndicatorMeta {
+  id: string;
+  title: string;
+  units: string;
+  description: string;
+  source: ResultsSeriesSource;
+}
+
+export interface KpiMetricSummary {
+  indicatorId: string;
+  title: string;
+  units: string;
+  windowType: 'tail_120';
+  latest: number | null;
+  mean: number | null;
+  yoyDelta: number | null;
+  yoyPercent: number | null;
+}
+
+export interface ResultsCoverageSummary {
+  requiredCount: number;
+  supportedCount: number;
+  emptyCount: number;
+  errorCount: number;
+}
+
+export interface ResultsRunSummary {
+  runId: string;
+  path: string;
+  modifiedAt: string;
+  createdAt: string;
+  sizeBytes: number;
+  fileCount: number;
+  status: ResultsRunStatus;
+  configAvailable: boolean;
+  parseCoverage: ResultsCoverageSummary;
+}
+
+export interface ResultsIndicatorAvailability extends ResultsIndicatorMeta {
+  available: boolean;
+  coverageStatus: ResultsCoverageStatus;
+  note?: string;
+}
+
+export interface ResultsRunDetail {
+  runId: string;
+  path: string;
+  modifiedAt: string;
+  createdAt: string;
+  sizeBytes: number;
+  fileCount: number;
+  status: ResultsRunStatus;
+  configAvailable: boolean;
+  parseCoverage: ResultsCoverageSummary;
+  indicators: ResultsIndicatorAvailability[];
+  kpiSummary: KpiMetricSummary[];
+}
+
+export interface ResultsFileManifestEntry {
+  fileName: string;
+  filePath: string;
+  sizeBytes: number;
+  modifiedAt: string;
+  fileType: ResultsFileType;
+  coverageStatus: ResultsCoverageStatus;
+  note?: string;
+}
+
+export interface ResultsSeriesPoint {
+  modelTime: number;
+  value: number | null;
+}
+
+export interface ResultsSeriesPayload {
+  runId: string;
+  indicator: ResultsIndicatorMeta;
+  smoothWindow: 0 | 3 | 12;
+  points: ResultsSeriesPoint[];
+}
+
+export interface ResultsCompareSeries {
+  runId: string;
+  points: ResultsSeriesPoint[];
+}
+
+export interface ResultsCompareIndicator {
+  indicator: ResultsIndicatorMeta;
+  seriesByRun: ResultsCompareSeries[];
+}
+
+export interface ResultsComparePayload {
+  runIds: string[];
+  indicatorIds: string[];
+  smoothWindow: 0 | 3 | 12;
+  window: 'tail120' | 'full';
+  indicators: ResultsCompareIndicator[];
+}
