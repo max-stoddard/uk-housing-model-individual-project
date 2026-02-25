@@ -288,7 +288,11 @@ function spawnModelRunWithMavenBin(
   configPath: string,
   outputPath: string
 ): ChildProcessWithoutNullStreams {
-  return spawn(mavenBin, ['exec:java', `-Dexec.args=-configFile ${configPath} -outputFolder ${outputPath} -dev`], {
+  const escapedConfigPath = configPath.replace(/"/g, '\\"');
+  const escapedOutputPath = outputPath.replace(/"/g, '\\"');
+  const execArgs = `-configFile "${escapedConfigPath}" -outputFolder "${escapedOutputPath}" -dev`;
+
+  return spawn(mavenBin, ['compile', 'exec:java', `-Dexec.args=${execArgs}`], {
     cwd: repoRoot
   });
 }

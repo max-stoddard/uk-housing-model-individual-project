@@ -25,7 +25,6 @@ services:
         - dashboard/index.html
 
   - type: web
-    # Docker runtime is required for remote model runs because the API invokes Maven/Java.
     runtime: docker
     name: uk-housing-market-abm-api
     plan: free
