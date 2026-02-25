@@ -610,7 +610,7 @@ function resolveFileCoverage(
   }
 
   if (fileType === 'transaction' || fileType === 'micro_snapshot') {
-    return { status: 'unsupported', note: 'Manifest only in Phase 1.' };
+    return { status: 'unsupported', note: 'Manifest only (not charted).' };
   }
 
   return { status: 'unsupported' };
@@ -709,6 +709,19 @@ function buildManifest(repoRoot: string, runPath: string): ResultsFileManifestEn
 
   files.sort((left, right) => left.fileName.localeCompare(right.fileName));
   return files;
+}
+
+function clearRunFromParserCaches(runPath: string): void {
+  for (const cacheKey of parsedOutputCache.keys()) {
+    if (cacheKey.startsWith(`${runPath}${path.sep}`)) {
+      parsedOutputCache.delete(cacheKey);
+    }
+  }
+  for (const cacheKey of parsedCoreCache.keys()) {
+    if (cacheKey.startsWith(`${runPath}${path.sep}`)) {
+      parsedCoreCache.delete(cacheKey);
+    }
+  }
 }
 
 function computeRunStatusAndCoverage(runPath: string): {
@@ -979,6 +992,17 @@ export function getResultsRunDetail(repoRoot: string, runId: string): ResultsRun
 
 export function getResultsRunFiles(repoRoot: string, runId: string): ResultsFileManifestEntry[] {
   return buildRunDiagnostics(repoRoot, runId).manifest;
+}
+
+export function deleteResultsRun(repoRoot: string, runId: string): { runId: string; deleted: boolean } {
+  const resultsRoot = resolveResultsRoot(repoRoot);
+  const runPath = ensureRunExists(resultsRoot, runId);
+  fs.rmSync(runPath, { recursive: true, force: true });
+  clearRunFromParserCaches(runPath);
+  return {
+    runId: runId.trim(),
+    deleted: true
+  };
 }
 
 export function getResultsSeries(
