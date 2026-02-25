@@ -22,6 +22,7 @@ interface CompareCardProps {
 }
 
 const formatNumber = formatChartNumber;
+const BUY_QUAD_CURVE_LAYOUT_OVERRIDES = { gridLeft: 108, gridRight: 30, yAxisNameGap: 76 };
 
 function formatPercent(value: number | null): string {
   if (value === null || !Number.isFinite(value)) {
@@ -538,14 +539,14 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
           {item.visualPayload.type === 'buy_quad' && (
             <div className="card-section">
               <div className="kpi-inline">
-                <p>Expected lognormal multiplier (E[exp(N)]):</p>
+                <p>Median lognormal multiplier (exp(mu)):</p>
                 {mode === 'single' ? (
-                  <strong>{formatNumber(item.visualPayload.expectedMultiplier.right)}</strong>
+                  <strong>{formatNumber(item.visualPayload.medianMultiplier.right)}</strong>
                 ) : (
                   <strong>
-                    {formatNumber(item.visualPayload.expectedMultiplier.left)} vs{' '}
-                    {formatNumber(item.visualPayload.expectedMultiplier.right)} ({' '}
-                    {formatPercent(item.visualPayload.expectedMultiplier.delta.percent)})
+                    {formatNumber(item.visualPayload.medianMultiplier.left)} vs{' '}
+                    {formatNumber(item.visualPayload.medianMultiplier.right)} ({' '}
+                    {formatPercent(item.visualPayload.medianMultiplier.delta.percent)})
                   </strong>
                 )}
               </div>
@@ -557,7 +558,10 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.budgetRight,
                         axisSpec.buyBudget.xTitle,
                         axisSpec.buyBudget.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        BUY_QUAD_CURVE_LAYOUT_OVERRIDES
                       )
                     : curveOption(
                         leftVersionLabel,
@@ -566,7 +570,10 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.budgetRight,
                         axisSpec.buyBudget.xTitle,
                         axisSpec.buyBudget.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        BUY_QUAD_CURVE_LAYOUT_OVERRIDES
                       )
                 }
                 className="chart"
@@ -579,7 +586,17 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.multiplierRight,
                         axisSpec.buyMultiplier.xTitle,
                         axisSpec.buyMultiplier.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        BUY_QUAD_CURVE_LAYOUT_OVERRIDES,
+                        [
+                          {
+                            name: 'Median',
+                            x: item.visualPayload.medianMultiplier.right,
+                            color: '#495057'
+                          }
+                        ]
                       )
                     : curveOption(
                         leftVersionLabel,
@@ -588,7 +605,22 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.multiplierRight,
                         axisSpec.buyMultiplier.xTitle,
                         axisSpec.buyMultiplier.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        BUY_QUAD_CURVE_LAYOUT_OVERRIDES,
+                        [
+                          {
+                            x: item.visualPayload.medianMultiplier.left,
+                            name: `${leftVersionLabel} median`,
+                            color: '#0b7285'
+                          },
+                          {
+                            x: item.visualPayload.medianMultiplier.right,
+                            name: `${rightVersionLabel} median`,
+                            color: '#18958b'
+                          }
+                        ]
                       )
                 }
                 className="chart"

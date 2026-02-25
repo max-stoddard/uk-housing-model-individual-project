@@ -28,6 +28,7 @@ const PREVIEW_PARAMETER_IDS = [
   'downpayment_oo_lognormal',
   'btl_probability_bins'
 ];
+const BUY_QUAD_CURVE_LAYOUT_OVERRIDES = { gridLeft: 108, gridRight: 30, yAxisNameGap: 76 };
 
 type HomeLoadState = 'loading' | 'waiting' | 'ready' | 'error';
 
@@ -84,7 +85,10 @@ function buildPreviewOption(item: CompareResult): EChartsOption {
         item.visualPayload.budgetRight,
         axisSpec.buyBudget.xTitle,
         axisSpec.buyBudget.yTitle,
-        (value) => formatChartNumber(value)
+        (value) => formatChartNumber(value),
+        undefined,
+        undefined,
+        BUY_QUAD_CURVE_LAYOUT_OVERRIDES
       );
 
     default:

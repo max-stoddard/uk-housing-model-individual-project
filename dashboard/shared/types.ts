@@ -167,6 +167,11 @@ export type VisualPayload =
       budgetRight: CurvePoint[];
       multiplierLeft: CurvePoint[];
       multiplierRight: CurvePoint[];
+      medianMultiplier: {
+        left: number;
+        right: number;
+        delta: DeltaStat;
+      };
       expectedMultiplier: {
         left: number;
         right: number;

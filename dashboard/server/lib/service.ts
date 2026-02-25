@@ -1021,6 +1021,8 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const multiplierLeft = multiplierXs.map((x) => ({ x, y: lognormalPdf(x, mu.left, sigma.left) }));
       const multiplierRight = multiplierXs.map((x) => ({ x, y: lognormalPdf(x, mu.right, sigma.right) }));
 
+      const medianLeft = Math.exp(mu.left);
+      const medianRight = Math.exp(mu.right);
       const expectedLeft = Math.exp(mu.left + 0.5 * sigma.left ** 2);
       const expectedRight = Math.exp(mu.right + 0.5 * sigma.right ** 2);
 
@@ -1042,6 +1044,11 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
           budgetRight,
           multiplierLeft,
           multiplierRight,
+          medianMultiplier: {
+            left: medianLeft,
+            right: medianRight,
+            delta: deltaStat(medianLeft, medianRight)
+          },
           expectedMultiplier: {
             left: expectedLeft,
             right: expectedRight,

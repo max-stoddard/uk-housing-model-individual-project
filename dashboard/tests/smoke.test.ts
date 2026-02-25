@@ -491,6 +491,27 @@ assert.ok(
 const singleBuyQuad = compareParameters(repoRoot, 'v3.8', 'v3.8', ['buy_quad'], 'through_right').items[0];
 const buyQuadV38Origin = singleBuyQuad?.changeOriginsInRange.find((origin) => origin.versionId === 'v3.8');
 assert.ok(buyQuadV38Origin, 'Expected buy_quad provenance to include v3.8 origin in through_right scope');
+assert.ok(singleBuyQuad && singleBuyQuad.visualPayload.type === 'buy_quad', 'Expected buy_quad payload to use buy_quad type');
+if (singleBuyQuad && singleBuyQuad.visualPayload.type === 'buy_quad') {
+  const muRow = singleBuyQuad.visualPayload.parameters.find((row) => row.key === 'BUY_MU');
+  assert.ok(muRow, 'Expected BUY_MU row in buy_quad parameters');
+  assert.ok(
+    Number.isFinite(singleBuyQuad.visualPayload.medianMultiplier.left) &&
+      singleBuyQuad.visualPayload.medianMultiplier.left > 0,
+    'Expected buy_quad medianMultiplier.left to be a positive finite number'
+  );
+  assert.ok(
+    Number.isFinite(singleBuyQuad.visualPayload.medianMultiplier.right) &&
+      singleBuyQuad.visualPayload.medianMultiplier.right > 0,
+    'Expected buy_quad medianMultiplier.right to be a positive finite number'
+  );
+  assertClose(
+    singleBuyQuad.visualPayload.medianMultiplier.right,
+    Math.exp(Number(muRow?.right ?? Number.NaN)),
+    1e-12,
+    'Expected buy_quad medianMultiplier.right to match exp(BUY_MU)'
+  );
+}
 assert.ok(
   (buyQuadV38Origin?.methodVariations.length ?? 0) > 0,
   'Expected buy_quad v3.8 provenance to include method variation notes'
@@ -809,6 +830,17 @@ assert.ok(
   buyQuad?.changeOriginsInRange.some((origin) => origin.versionId === 'v3.8' && origin.validationStatus === 'in_progress'),
   'buy_quad provenance should include v3.8 as in_progress'
 );
+assert.ok(buyQuad && buyQuad.visualPayload.type === 'buy_quad', 'Expected buy_quad card to return buy_quad payload');
+if (buyQuad && buyQuad.visualPayload.type === 'buy_quad') {
+  assert.ok(
+    Number.isFinite(buyQuad.visualPayload.medianMultiplier.left) && buyQuad.visualPayload.medianMultiplier.left > 0,
+    'Expected compare buy_quad medianMultiplier.left to be positive and finite'
+  );
+  assert.ok(
+    Number.isFinite(buyQuad.visualPayload.medianMultiplier.right) && buyQuad.visualPayload.medianMultiplier.right > 0,
+    'Expected compare buy_quad medianMultiplier.right to be positive and finite'
+  );
+}
 
 const unchangedSingleSource = compareParameters(repoRoot, latestVersion, latestVersion, ['uk_housing_stock_totals'], 'through_right')
   .items[0];

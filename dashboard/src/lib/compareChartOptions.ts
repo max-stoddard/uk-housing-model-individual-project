@@ -54,6 +54,98 @@ function formatAxisTick(value: number): string {
   return formatScientific(value, 1);
 }
 
+export interface CurveLayoutOverrides {
+  gridLeft?: number;
+  gridRight?: number;
+  yAxisNameGap?: number;
+}
+
+interface CurveVerticalMarker {
+  x: number;
+  label?: string;
+  color?: string;
+}
+
+interface CurveLegendMarker {
+  x: number;
+  name: string;
+  color?: string;
+}
+
+function resolveCurveYExtent(seriesGroups: CurvePoint[][]): [number, number] {
+  const yValues: number[] = [];
+  for (const series of seriesGroups) {
+    for (const point of series) {
+      if (Number.isFinite(point.y)) {
+        yValues.push(point.y);
+      }
+    }
+  }
+
+  if (yValues.length === 0) {
+    return [0, 1];
+  }
+
+  let yMin = Math.min(...yValues);
+  let yMax = Math.max(...yValues);
+  if (Math.abs(yMax - yMin) < 1e-12) {
+    const padding = Math.max(Math.abs(yMin) * 0.05, 1e-6);
+    yMin -= padding;
+    yMax += padding;
+  }
+
+  return [yMin, yMax];
+}
+
+function buildVerticalMarker(marker: CurveVerticalMarker | undefined, fallbackColor = '#495057') {
+  if (!marker || !Number.isFinite(marker.x)) {
+    return undefined;
+  }
+  const color = marker.color ?? fallbackColor;
+  return {
+    symbol: 'none',
+    silent: true,
+    lineStyle: { type: 'dashed' as const, width: 1.5, color },
+    label: {
+      formatter: marker.label ?? `x=${formatChartNumber(marker.x)}`,
+      position: 'insideEndTop' as const,
+      color
+    },
+    data: [{ xAxis: marker.x }]
+  };
+}
+
+function buildLegendMarkerSeries(
+  legendMarkers: CurveLegendMarker[] | undefined,
+  yMin: number,
+  yMax: number
+): Array<Record<string, unknown>> {
+  if (!legendMarkers || legendMarkers.length === 0) {
+    return [];
+  }
+
+  return legendMarkers
+    .filter((marker) => Number.isFinite(marker.x))
+    .map((marker) => ({
+      name: marker.name,
+      type: 'line',
+      silent: true,
+      clip: true,
+      showSymbol: false,
+      tooltip: { show: false },
+      emphasis: { disabled: true },
+      data: [
+        [marker.x, yMin],
+        [marker.x, yMax]
+      ],
+      lineStyle: {
+        type: 'dashed' as const,
+        width: 1.5,
+        color: marker.color ?? '#495057'
+      }
+    }));
+}
+
 export function scalarOption(
   values: ScalarDatum[],
   leftVersion: string,
@@ -276,22 +368,19 @@ export function curveOption(
   yLabel: string,
   valueFormatter?: (value: number) => string,
   verticalMarkerX?: number,
-  verticalMarkerLabel?: string
+  verticalMarkerLabel?: string,
+  layoutOverrides?: CurveLayoutOverrides,
+  legendMarkers?: CurveLegendMarker[]
 ): EChartsOption {
-  const marker =
-    verticalMarkerX !== undefined && Number.isFinite(verticalMarkerX)
-      ? {
-          symbol: 'none',
-          silent: true,
-          lineStyle: { type: 'dashed' as const, width: 1.5, color: '#495057' },
-          label: {
-            formatter: verticalMarkerLabel ?? `x=${formatChartNumber(verticalMarkerX)}`,
-            position: 'insideEndTop' as const,
-            color: '#495057'
-          },
-          data: [{ xAxis: verticalMarkerX }]
-        }
-      : undefined;
+  const resolvedGridLeft = layoutOverrides?.gridLeft ?? 82;
+  const resolvedGridRight = layoutOverrides?.gridRight ?? 36;
+  const resolvedYAxisNameGap = layoutOverrides?.yAxisNameGap ?? 58;
+
+  const marker = buildVerticalMarker(
+    verticalMarkerX !== undefined ? { x: verticalMarkerX, label: verticalMarkerLabel } : undefined
+  );
+  const [yMin, yMax] = resolveCurveYExtent([leftSeries, rightSeries]);
+  const legendMarkerSeries = buildLegendMarkerSeries(legendMarkers, yMin, yMax);
 
   return {
     tooltip: {
@@ -308,7 +397,7 @@ export function curveOption(
       }
     },
     legend: { top: 0 },
-    grid: { left: 82, right: 36, top: 44, bottom: 82, containLabel: true },
+    grid: { left: resolvedGridLeft, right: resolvedGridRight, top: 44, bottom: 82, containLabel: true },
     xAxis: {
       type: 'value',
       name: xLabel,
@@ -320,7 +409,7 @@ export function curveOption(
       type: 'value',
       name: yLabel,
       nameLocation: 'middle',
-      nameGap: 58,
+      nameGap: resolvedYAxisNameGap,
       nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' },
       axisLabel: {
         formatter: (rawValue: number) => formatAxisTick(Number(rawValue))
@@ -331,6 +420,7 @@ export function curveOption(
         name: leftVersion,
         type: 'line',
         showSymbol: false,
+        clip: true,
         smooth: true,
         data: leftSeries.map((point) => [point.x, point.y]),
         lineStyle: { color: '#0b7285', width: 2 }
@@ -339,11 +429,13 @@ export function curveOption(
         name: rightVersion,
         type: 'line',
         showSymbol: false,
+        clip: true,
         smooth: true,
         data: rightSeries.map((point) => [point.x, point.y]),
         lineStyle: { color: '#18958b', width: 2 },
         ...(marker ? { markLine: marker } : {})
-      }
+      },
+      ...legendMarkerSeries
     ]
   };
 }
@@ -355,8 +447,14 @@ export function curveSingleOption(
   yLabel: string,
   valueFormatter?: (value: number) => string,
   verticalMarkerX?: number,
-  verticalMarkerLabel?: string
+  verticalMarkerLabel?: string,
+  layoutOverrides?: CurveLayoutOverrides,
+  legendMarkers?: CurveLegendMarker[]
 ): EChartsOption {
+  const resolvedGridLeft = layoutOverrides?.gridLeft ?? 82;
+  const resolvedGridRight = layoutOverrides?.gridRight ?? 36;
+  const resolvedYAxisNameGap = layoutOverrides?.yAxisNameGap ?? 58;
+
   const marker =
     verticalMarkerX !== undefined && Number.isFinite(verticalMarkerX)
       ? {
@@ -371,6 +469,8 @@ export function curveSingleOption(
           data: [{ xAxis: verticalMarkerX }]
         }
       : undefined;
+  const [yMin, yMax] = resolveCurveYExtent([series]);
+  const legendMarkerSeries = buildLegendMarkerSeries(legendMarkers, yMin, yMax);
 
   return {
     tooltip: {
@@ -385,7 +485,7 @@ export function curveSingleOption(
       }
     },
     legend: { top: 0 },
-    grid: { left: 82, right: 36, top: 44, bottom: 82, containLabel: true },
+    grid: { left: resolvedGridLeft, right: resolvedGridRight, top: 44, bottom: 82, containLabel: true },
     xAxis: {
       type: 'value',
       name: xLabel,
@@ -397,7 +497,7 @@ export function curveSingleOption(
       type: 'value',
       name: yLabel,
       nameLocation: 'middle',
-      nameGap: 58,
+      nameGap: resolvedYAxisNameGap,
       nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' },
       axisLabel: {
         formatter: (rawValue: number) => formatAxisTick(Number(rawValue))
@@ -408,11 +508,13 @@ export function curveSingleOption(
         name: version,
         type: 'line',
         showSymbol: false,
+        clip: true,
         smooth: true,
         data: series.map((point) => [point.x, point.y]),
         lineStyle: { color: '#0b7285', width: 2 },
         ...(marker ? { markLine: marker } : {})
-      }
+      },
+      ...legendMarkerSeries
     ]
   };
 }

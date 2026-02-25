@@ -1698,10 +1698,12 @@ code {
 
 .chart {
   width: 100%;
+  min-width: 0;
   height: 360px;
   border-radius: 0.85rem;
   background: #fff;
   border: 1px solid rgba(17, 32, 24, 0.08);
+  overflow: hidden;
 }
 
 .chart-heatmap {
