@@ -60,4 +60,5 @@ services:
         - pom.xml
         - src/**
         - input-data-versions/**
+        - Results/**
         - render.yaml
