@@ -1,0 +1,11 @@
+# Author: Max Stoddard
+Results/**
+!Results/
+!Results/v0-output/
+!Results/v0-output/**
+!Results/v1.0-output/
+!Results/v1.0-output/**
+!Results/v2.0-output/
+!Results/v2.0-output/**
+!Results/v3.7-output/
+!Results/v3.7-output/**

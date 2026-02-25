@@ -38,6 +38,8 @@ services:
         value: https://uk-housing-market-abm.onrender.com
       - key: DASHBOARD_ENABLE_MODEL_RUNS
         value: "true"
+      - key: DASHBOARD_RESULTS_CAP_MB
+        value: "400"
       - key: DASHBOARD_GIT_STATS_BASE_COMMIT
         value: 4e89f5e277cdba4b4ef0c08254e5731e19bd51c3
       - key: DASHBOARD_GITHUB_REPO
@@ -60,5 +62,9 @@ services:
         - pom.xml
         - src/**
         - input-data-versions/**
-        - Results/**
+        - Results/v0-output/**
+        - Results/v1.0-output/**
+        - Results/v2.0-output/**
+        - Results/v3.7-output/**
+        - .dockerignore
         - render.yaml

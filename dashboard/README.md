@@ -37,6 +37,7 @@ Dashboard API environment variables:
 - `DASHBOARD_ENABLE_MODEL_RUNS` (optional): set to `true` to enable model-run APIs/UI.
 - `DASHBOARD_WRITE_USERNAME` + `DASHBOARD_WRITE_PASSWORD` (optional pair): enables write-login mode when both are set.
 - `DASHBOARD_MAVEN_BIN` (optional): Maven executable used by model runs (defaults to `mvn`).
+- `DASHBOARD_RESULTS_CAP_MB` (optional): total `Results/` storage cap in MB for dashboard-managed runs (defaults to `400`). New run submissions are blocked when usage is at/above cap after managed-run pruning.
 
 Write-access behavior:
 
