@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from '../server/lib/service.js';
+import {
+  getResultsCompare,
+  getResultsRunDetail,
+  getResultsRunFiles,
+  getResultsRuns,
+  getResultsSeries
+} from '../server/lib/results.js';
 import { getConfigPath, parseConfigFile, readNumericCsvRows, resolveConfigDataFilePath } from '../server/lib/io.js';
 import { loadVersionNotes } from '../server/lib/versionNotes.js';
 import { assertAxisSpecComplete, getAxisSpec } from '../src/lib/chartAxes.js';
@@ -80,6 +88,170 @@ const newlyAddedIds = [
   'bank_lti_limits',
   'bank_affordability_icr_limits'
 ] as const;
+
+const RESULTS_ROW_COUNT = 2001;
+
+const RESULTS_CORE_FILE_NAMES = [
+  'coreIndicator-ooLTV.csv',
+  'coreIndicator-ooLTI.csv',
+  'coreIndicator-btlLTV.csv',
+  'coreIndicator-creditGrowth.csv',
+  'coreIndicator-debtToIncome.csv',
+  'coreIndicator-ooDebtToIncome.csv',
+  'coreIndicator-mortgageApprovals.csv',
+  'coreIndicator-housingTransactions.csv',
+  'coreIndicator-advancesToFTB.csv',
+  'coreIndicator-advancesToBTL.csv',
+  'coreIndicator-advancesToHM.csv',
+  'coreIndicator-housePriceGrowth.csv',
+  'coreIndicator-priceToIncome.csv',
+  'coreIndicator-rentalYield.csv',
+  'coreIndicator-interestRateSpread.csv'
+] as const;
+
+const RESULTS_OUTPUT_COLUMNS = [
+  'Model time',
+  'nHomeless',
+  'nRenting',
+  'nOwnerOccupier',
+  'nActiveBTL',
+  'Sale HPI',
+  'Sale AvSalePrice',
+  'Sale AvMonthsOnMarket',
+  'Rental HPI',
+  'Rental AvSalePrice',
+  'Rental AvMonthsOnMarket',
+  'creditStock',
+  'interestRate'
+] as const;
+
+interface ResultsFixtureRunIds {
+  complete: string;
+  emptyOutput: string;
+  sparseCore: string;
+  noConfig: string;
+}
+
+interface ResultsFixtureContext {
+  root: string;
+  runIds: ResultsFixtureRunIds;
+}
+
+interface ResultsFixtureRunOptions {
+  runId: string;
+  outputMode: 'full' | 'empty';
+  includeConfig: boolean;
+  includeTransactionFile: boolean;
+  emptyCoreFiles?: Set<string>;
+  modifiedAtMs: number;
+}
+
+function buildOutputCsv(rowCount: number): string {
+  const lines = [RESULTS_OUTPUT_COLUMNS.join(';')];
+  for (let modelTime = 0; modelTime < rowCount; modelTime += 1) {
+    lines.push(
+      [
+        String(modelTime),
+        String(90 + (modelTime % 13)),
+        String(800 + modelTime),
+        String(700 + (modelTime % 17)),
+        String(120 + (modelTime % 7)),
+        String(100 + (modelTime % 37)),
+        String(220000 + modelTime * 25),
+        (2 + (modelTime % 12) / 10).toFixed(2),
+        String(95 + (modelTime % 31)),
+        (1250 + modelTime * 0.45).toFixed(2),
+        (1 + (modelTime % 8) / 10).toFixed(2),
+        String(1_000_000 + modelTime * 1200),
+        (0.01 + (modelTime % 24) / 10_000).toFixed(4)
+      ].join(';')
+    );
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function buildCoreCsv(seed: number, rowCount: number): string {
+  const values: string[] = [];
+  for (let index = 0; index < rowCount; index += 1) {
+    values.push(String(seed + (index % 9) + index * 0.01));
+  }
+  return `${values.join(';')}\n`;
+}
+
+function writeResultsFixtureRun(resultsRoot: string, options: ResultsFixtureRunOptions): void {
+  const runPath = path.join(resultsRoot, options.runId);
+  fs.mkdirSync(runPath, { recursive: true });
+
+  if (options.outputMode === 'full') {
+    fs.writeFileSync(path.join(runPath, 'Output-run1.csv'), buildOutputCsv(RESULTS_ROW_COUNT), 'utf-8');
+  } else {
+    fs.writeFileSync(path.join(runPath, 'Output-run1.csv'), '', 'utf-8');
+  }
+
+  for (let index = 0; index < RESULTS_CORE_FILE_NAMES.length; index += 1) {
+    const fileName = RESULTS_CORE_FILE_NAMES[index];
+    const content =
+      options.emptyCoreFiles?.has(fileName) === true ? '' : buildCoreCsv((index + 1) * 100, RESULTS_ROW_COUNT);
+    fs.writeFileSync(path.join(runPath, fileName), content, 'utf-8');
+  }
+
+  if (options.includeConfig) {
+    fs.writeFileSync(path.join(runPath, 'config.properties'), 'SEED=42\n', 'utf-8');
+  }
+
+  if (options.includeTransactionFile) {
+    fs.writeFileSync(path.join(runPath, 'RentalTransactions-run1.csv'), 'modelTime;price\n0;1000\n', 'utf-8');
+  }
+
+  const modifiedAt = new Date(options.modifiedAtMs);
+  fs.utimesSync(runPath, modifiedAt, modifiedAt);
+}
+
+function createResultsFixtureRepo(): ResultsFixtureContext {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dashboard-results-smoke-'));
+  const resultsRoot = path.join(root, 'Results');
+  fs.mkdirSync(resultsRoot, { recursive: true });
+
+  const runIds: ResultsFixtureRunIds = {
+    complete: 'fixture-complete-output',
+    emptyOutput: 'fixture-empty-output',
+    sparseCore: 'fixture-sparse-core-output',
+    noConfig: 'fixture-no-config-output'
+  };
+
+  const baseTime = Date.now();
+  writeResultsFixtureRun(resultsRoot, {
+    runId: runIds.complete,
+    outputMode: 'full',
+    includeConfig: true,
+    includeTransactionFile: true,
+    modifiedAtMs: baseTime + 4000
+  });
+  writeResultsFixtureRun(resultsRoot, {
+    runId: runIds.noConfig,
+    outputMode: 'full',
+    includeConfig: false,
+    includeTransactionFile: false,
+    modifiedAtMs: baseTime + 3000
+  });
+  writeResultsFixtureRun(resultsRoot, {
+    runId: runIds.emptyOutput,
+    outputMode: 'empty',
+    includeConfig: true,
+    includeTransactionFile: false,
+    modifiedAtMs: baseTime + 2000
+  });
+  writeResultsFixtureRun(resultsRoot, {
+    runId: runIds.sparseCore,
+    outputMode: 'full',
+    includeConfig: true,
+    includeTransactionFile: false,
+    emptyCoreFiles: new Set(['coreIndicator-mortgageApprovals.csv']),
+    modifiedAtMs: baseTime + 1000
+  });
+
+  return { root, runIds };
+}
 
 const catalog = getParameterCatalog();
 assert.deepEqual(
@@ -521,6 +693,125 @@ assert.ok(nmgRight, 'Expected right-side NMG attribution');
 assert.notEqual(nmgLeft?.year, nmgRight?.year, 'Expected NMG attribution year to vary by version side (left vs right)');
 assert.equal(nmgLeft?.year, '2016', 'Expected v1.3 NMG year to be 2016 for rental-price keys');
 assert.equal(nmgRight?.year, '2024', 'Expected v3.8 NMG year to be 2024 for rental-price keys');
+
+const fixture = createResultsFixtureRepo();
+try {
+  const resultsRuns = getResultsRuns(fixture.root);
+  assert.equal(resultsRuns.length, 4, 'Expected only synthetic fixture runs to be discovered');
+  for (let index = 1; index < resultsRuns.length; index += 1) {
+    const prev = Date.parse(resultsRuns[index - 1]?.modifiedAt ?? '');
+    const current = Date.parse(resultsRuns[index]?.modifiedAt ?? '');
+    assert.ok(prev >= current, 'Expected runs to be sorted by modifiedAt descending');
+  }
+
+  const fullRun = resultsRuns.find((run) => run.runId === fixture.runIds.complete);
+  assert.ok(fullRun, 'Expected complete fixture run in discovery results');
+  assert.equal(fullRun?.status, 'complete', 'Expected complete fixture run to be classified as complete');
+
+  const emptyRun = resultsRuns.find((run) => run.runId === fixture.runIds.emptyOutput);
+  assert.ok(emptyRun, 'Expected empty-output fixture run in discovery results');
+  assert.equal(emptyRun?.status, 'partial', 'Expected empty-output fixture run to be classified as partial');
+
+  const sparseRun = resultsRuns.find((run) => run.runId === fixture.runIds.sparseCore);
+  assert.ok(sparseRun, 'Expected sparse-core fixture run in discovery results');
+  assert.equal(sparseRun?.status, 'partial', 'Expected sparse-core fixture run to be classified as partial');
+
+  const runDetail = getResultsRunDetail(fixture.root, fixture.runIds.complete);
+  assert.equal(runDetail.kpiSummary.length, 15, 'Expected 15 core KPI summary metrics');
+  assert.equal(runDetail.indicators.length, 27, 'Expected 27 total indicator definitions (15 core + 12 output)');
+  assert.ok(runDetail.configAvailable, 'Expected complete fixture run to report config.properties availability');
+  assert.ok(
+    runDetail.indicators.some((indicator) => indicator.id === 'output_interestRate' && indicator.available),
+    'Expected output interest rate indicator to be available on complete fixture run'
+  );
+
+  const scenarioDetail = getResultsRunDetail(fixture.root, fixture.runIds.noConfig);
+  assert.equal(
+    scenarioDetail.configAvailable,
+    false,
+    'Expected no-config fixture run to report configAvailable=false'
+  );
+
+  const manifestFull = getResultsRunFiles(fixture.root, fixture.runIds.complete);
+  assert.ok(
+    manifestFull.some(
+      (file) => file.fileName === 'Output-run1.csv' && file.coverageStatus === 'supported'
+    ),
+    'Expected Output-run1.csv to be marked supported in manifest'
+  );
+  assert.ok(
+    manifestFull.some(
+      (file) =>
+        file.fileName === 'RentalTransactions-run1.csv' &&
+        file.coverageStatus === 'unsupported' &&
+        file.note?.includes('Manifest only in Phase 1')
+    ),
+    'Expected heavy transaction files to be manifest-only in Phase 1'
+  );
+
+  const manifestEmpty = getResultsRunFiles(fixture.root, fixture.runIds.emptyOutput);
+  assert.ok(
+    manifestEmpty.some((file) => file.fileName === 'Output-run1.csv' && file.coverageStatus === 'empty'),
+    'Expected empty Output-run1.csv to be marked empty in manifest'
+  );
+
+  const missingMicroManifest = getResultsRunFiles(fixture.root, fixture.runIds.noConfig);
+  assert.ok(
+    !missingMicroManifest.some((file) => file.fileName === 'BankBalance-run1.csv'),
+    'Expected manifest to tolerate runs missing optional micro snapshot files'
+  );
+
+  const rawSeries = getResultsSeries(fixture.root, fixture.runIds.complete, 'core_mortgageApprovals', 0);
+  const smoothedSeries = getResultsSeries(fixture.root, fixture.runIds.complete, 'core_mortgageApprovals', 12);
+  assert.equal(rawSeries.points.length, 2001, 'Expected full run to expose 2001 model-time points');
+  assert.equal(smoothedSeries.points.length, rawSeries.points.length, 'Smoothing should preserve point count');
+  assert.ok(
+    smoothedSeries.points.some((point, index) => point.value !== rawSeries.points[index]?.value),
+    'Expected smoothing to modify at least one time point'
+  );
+
+  const overlayCompare = getResultsCompare(
+    fixture.root,
+    [fixture.runIds.complete, fixture.runIds.sparseCore],
+    ['core_mortgageApprovals'],
+    'tail120',
+    0
+  );
+  assert.equal(overlayCompare.indicators.length, 1, 'Expected single-indicator compare payload');
+  const leftSeries = overlayCompare.indicators[0]?.seriesByRun.find((series) => series.runId === fixture.runIds.complete);
+  const rightSeries = overlayCompare.indicators[0]?.seriesByRun.find((series) => series.runId === fixture.runIds.sparseCore);
+  assert.ok(leftSeries && rightSeries, 'Expected aligned compare series for both selected runs');
+  assert.equal(
+    leftSeries?.points.length,
+    rightSeries?.points.length,
+    'Expected compare payload to align series on shared modelTime axis'
+  );
+  assert.ok(
+    rightSeries?.points.every((point) => point.value === null),
+    'Expected sparse core run to render as gap-only aligned series'
+  );
+
+  assert.throws(
+    () =>
+      getResultsCompare(
+        fixture.root,
+        ['r1', 'r2', 'r3', 'r4', 'r5', 'r6'],
+        ['core_mortgageApprovals'],
+        'tail120',
+        0
+      ),
+    /maximum of 5 runIds/,
+    'Expected compare endpoint guardrail for >5 runs'
+  );
+
+  assert.throws(
+    () => getResultsRunDetail(fixture.root, '..'),
+    /Unknown run: \.\./,
+    'Expected traversal-style run ids to be rejected'
+  );
+} finally {
+  fs.rmSync(fixture.root, { recursive: true, force: true });
+}
 
 const compareCardSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/components/CompareCard.tsx'), 'utf-8');
 assert.ok(
