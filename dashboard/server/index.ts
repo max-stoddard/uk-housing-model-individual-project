@@ -4,12 +4,23 @@ import { fileURLToPath } from 'node:url';
 import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from './lib/service';
 import { buildZeroGitStats, getGitStats, type GitHubConfig } from './lib/gitStats';
 import {
+  deleteResultsRun,
   getResultsCompare,
   getResultsRunDetail,
   getResultsRunFiles,
   getResultsRuns,
   getResultsSeries
 } from './lib/results';
+import {
+  cancelModelRunJob,
+  clearModelRunJob,
+  getModelRunJob,
+  getModelRunJobLogs,
+  getModelRunOptions,
+  listModelRunJobs,
+  submitModelRun
+} from './lib/modelRuns';
+import { createWriteAuthControllerFromEnv, getWriteAuthConfigurationError, resolveDashboardWriteAccess } from './lib/writeAuth';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +32,9 @@ const host = '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
 const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
+const modelRunsEnabled = (process.env.DASHBOARD_ENABLE_MODEL_RUNS?.trim().toLowerCase() ?? '') === 'true';
+const writeAuth = createWriteAuthControllerFromEnv();
+const writeAuthConfigurationError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled);
 
 const ghToken = process.env.DASHBOARD_GITHUB_TOKEN?.trim() ?? '';
 const ghRepo = process.env.DASHBOARD_GITHUB_REPO?.trim() ?? '';
@@ -44,8 +58,8 @@ app.use((req, res, next) => {
   const requestOrigin = req.get('origin');
   if (requestOrigin && requestOrigin === corsOrigin) {
     res.setHeader('Access-Control-Allow-Origin', corsOrigin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     res.setHeader('Vary', 'Origin');
   }
 
@@ -58,6 +72,53 @@ app.use((req, res, next) => {
 });
 
 app.get('/healthz', (_req, res) => {
+  res.json({ ok: true });
+});
+
+function requireWriteAccess(req: express.Request, res: express.Response): boolean {
+  const access = resolveDashboardWriteAccess(writeAuth, req.get('authorization'), modelRunsEnabled);
+  if (access.canWrite) {
+    return true;
+  }
+  if (access.authMisconfigured) {
+    res.status(503).json({
+      error: writeAuthConfigurationError ?? 'Write access is unavailable due to server configuration.'
+    });
+    return false;
+  }
+  res.status(403).json({ error: 'Write access requires login.' });
+  return false;
+}
+
+app.get('/api/auth/status', (req, res) => {
+  const access = resolveDashboardWriteAccess(writeAuth, req.get('authorization'), modelRunsEnabled);
+  res.json({
+    authEnabled: access.authEnabled,
+    canWrite: access.canWrite,
+    authMisconfigured: access.authMisconfigured,
+    modelRunsEnabled
+  });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  if (writeAuthConfigurationError) {
+    res.status(503).json({ error: writeAuthConfigurationError });
+    return;
+  }
+
+  const username = typeof req.body?.username === 'string' ? req.body.username : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const result = writeAuth.login(username, password);
+  if (!result.ok) {
+    res.status(401).json({ error: 'Invalid username or password.' });
+    return;
+  }
+  res.json(result);
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const access = resolveDashboardWriteAccess(writeAuth, req.get('authorization'), modelRunsEnabled);
+  writeAuth.logout(access.token);
   res.json({ ok: true });
 });
 
@@ -142,6 +203,19 @@ app.get('/api/results/runs/:runId/files', (req, res) => {
   }
 });
 
+app.delete('/api/results/runs/:runId', (req, res) => {
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    const payload = deleteResultsRun(repoRoot, String(req.params.runId ?? ''));
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
 app.get('/api/results/runs/:runId/series', (req, res) => {
   const runId = String(req.params.runId ?? '');
   const indicator = String(req.query.indicator ?? '');
@@ -176,6 +250,112 @@ app.get('/api/results/compare', (req, res) => {
 
   try {
     const payload = getResultsCompare(repoRoot, runIds, indicatorIds, window, smoothWindow);
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/model-runs/options', (req, res) => {
+  try {
+    const baseline = String(req.query.baseline ?? '').trim() || undefined;
+    const payload = getModelRunOptions(repoRoot, baseline, modelRunsEnabled);
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.post('/api/model-runs', (req, res) => {
+  if (!modelRunsEnabled) {
+    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    return;
+  }
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    const payload = submitModelRun(repoRoot, req.body);
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/model-runs/jobs', (_req, res) => {
+  if (!modelRunsEnabled) {
+    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    return;
+  }
+
+  try {
+    res.json({ jobs: listModelRunJobs() });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/model-runs/jobs/:jobId', (req, res) => {
+  if (!modelRunsEnabled) {
+    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    return;
+  }
+
+  try {
+    res.json(getModelRunJob(String(req.params.jobId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
+  if (!modelRunsEnabled) {
+    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    return;
+  }
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    res.json(cancelModelRunJob(repoRoot, String(req.params.jobId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
+  if (!modelRunsEnabled) {
+    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    return;
+  }
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    res.json(clearModelRunJob(String(req.params.jobId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/model-runs/jobs/:jobId/logs', (req, res) => {
+  if (!modelRunsEnabled) {
+    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    return;
+  }
+
+  const cursorRaw = Number.parseInt(String(req.query.cursor ?? '0'), 10);
+  const limitRaw = Number.parseInt(String(req.query.limit ?? '200'), 10);
+
+  try {
+    const payload = getModelRunJobLogs(
+      String(req.params.jobId ?? ''),
+      Number.isFinite(cursorRaw) ? cursorRaw : undefined,
+      Number.isFinite(limitRaw) ? limitRaw : undefined
+    );
     res.json(payload);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });

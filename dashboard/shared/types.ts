@@ -306,3 +306,110 @@ export interface ResultsComparePayload {
   window: 'post200' | 'tail120' | 'full';
   indicators: ResultsCompareIndicator[];
 }
+
+export interface AuthStatusPayload {
+  authEnabled: boolean;
+  canWrite: boolean;
+  authMisconfigured: boolean;
+  modelRunsEnabled: boolean;
+}
+
+export interface AuthLoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface AuthLoginResponse {
+  ok: boolean;
+  token?: string;
+  canWrite: boolean;
+}
+
+export interface AuthLogoutResponse {
+  ok: boolean;
+}
+
+export type ModelRunSnapshotStatus = 'stable' | 'in_progress';
+export type ModelRunParameterType = 'integer' | 'number' | 'boolean';
+export type ModelRunParameterGroup = 'General model control' | 'Central Bank policy';
+export type ModelRunJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
+
+export interface ModelRunSnapshotOption {
+  version: string;
+  status: ModelRunSnapshotStatus;
+}
+
+export interface ModelRunParameterDefinition {
+  key: string;
+  title: string;
+  description: string;
+  group: ModelRunParameterGroup;
+  type: ModelRunParameterType;
+  defaultValue: number | boolean;
+}
+
+export interface ModelRunWarning {
+  code: string;
+  message: string;
+  severity: 'warning';
+}
+
+export interface ModelRunJob {
+  jobId: string;
+  runId: string;
+  title?: string;
+  baseline: string;
+  status: ModelRunJobStatus;
+  createdAt: string;
+  startedAt?: string;
+  endedAt?: string;
+  outputPath: string;
+  configPath: string;
+  exitCode?: number | null;
+  signal?: string | null;
+}
+
+export interface ModelRunOptionsPayload {
+  executionEnabled: boolean;
+  snapshots: ModelRunSnapshotOption[];
+  defaultBaseline: string;
+  requestedBaseline: string;
+  parameters: ModelRunParameterDefinition[];
+}
+
+export interface ModelRunSubmitRequest {
+  baseline: string;
+  title?: string;
+  overrides: Record<string, number | boolean>;
+  confirmWarnings?: boolean;
+}
+
+export interface ModelRunSubmitResponse {
+  accepted: boolean;
+  warnings: ModelRunWarning[];
+  job?: ModelRunJob;
+}
+
+export interface ModelRunJobsPayload {
+  jobs: ModelRunJob[];
+}
+
+export interface ModelRunJobClearResponse {
+  jobId: string;
+  cleared: boolean;
+}
+
+export interface ModelRunJobLogsPayload {
+  jobId: string;
+  cursor: number;
+  nextCursor: number;
+  lines: string[];
+  hasMore: boolean;
+  done: boolean;
+  truncated: boolean;
+}
+
+export interface ResultsRunDeleteResponse {
+  runId: string;
+  deleted: boolean;
+}
