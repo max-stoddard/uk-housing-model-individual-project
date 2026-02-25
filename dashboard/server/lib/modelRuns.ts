@@ -12,6 +12,7 @@ import type {
   ModelRunParameterGroup,
   ModelRunParameterType,
   ModelRunSnapshotOption,
+  ResultsStorageSummary,
   ModelRunSubmitRequest,
   ModelRunSubmitResponse,
   ModelRunWarning
@@ -27,7 +28,7 @@ const MAX_LOG_LINES = 10_000;
 const LOG_DEFAULT_LIMIT = 200;
 const LOG_MAX_LIMIT = 1_000;
 const CANCEL_KILL_TIMEOUT_MS = 10_000;
-const RESULTS_CAP_BYTES = 5 * 1024 * 1024 * 1024;
+const DEFAULT_RESULTS_CAP_MB = 400;
 const DEFAULT_MAVEN_BIN = process.env.DASHBOARD_MAVEN_BIN?.trim() || 'mvn';
 
 type ParameterDefinitionSeed = {
@@ -653,12 +654,18 @@ function flushPartialLine(job: ModelRunJobInternal): void {
   job.partialLine = '';
 }
 
-function listProtectedRunIds(): Set<string> {
-  return new Set(
-    [...jobsById.values()]
-      .filter((job) => job.job.status === 'queued' || job.job.status === 'running')
-      .map((job) => job.job.runId)
-  );
+function resolveResultsCapBytes(): number {
+  const rawCapMb = process.env.DASHBOARD_RESULTS_CAP_MB?.trim();
+  if (!rawCapMb) {
+    return DEFAULT_RESULTS_CAP_MB * 1024 * 1024;
+  }
+
+  const parsedCapMb = Number.parseFloat(rawCapMb);
+  if (!Number.isFinite(parsedCapMb) || parsedCapMb <= 0) {
+    return DEFAULT_RESULTS_CAP_MB * 1024 * 1024;
+  }
+
+  return Math.floor(parsedCapMb * 1024 * 1024);
 }
 
 function directorySizeBytes(directoryPath: string): number {
@@ -681,51 +688,33 @@ function directorySizeBytes(directoryPath: string): number {
   return total;
 }
 
-function pruneManagedRuns(repoRoot: string): void {
+function getResultsStorageUsageBytes(repoRoot: string): number {
   const resultsRoot = path.join(repoRoot, RESULTS_DIR);
   if (!fs.existsSync(resultsRoot)) {
-    return;
+    return 0;
   }
 
-  const protectedRunIds = listProtectedRunIds();
-
-  const candidates = fs
+  return fs
     .readdirSync(resultsRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const runPath = path.join(resultsRoot, entry.name);
-      const markerPath = path.join(runPath, MANAGED_RUN_MARKER);
-      if (!fs.existsSync(markerPath)) {
-        return null;
-      }
+    .reduce((sum, entry) => sum + directorySizeBytes(path.join(resultsRoot, entry.name)), 0);
+}
 
-      const stats = fs.statSync(runPath);
-      const sizeBytes = directorySizeBytes(runPath);
-      return {
-        runId: entry.name,
-        runPath,
-        sizeBytes,
-        modifiedMs: stats.mtimeMs
-      };
-    })
-    .filter((entry): entry is { runId: string; runPath: string; sizeBytes: number; modifiedMs: number } => entry !== null)
-    .sort((left, right) => left.modifiedMs - right.modifiedMs);
+export function getResultsStorageSummary(repoRoot: string): ResultsStorageSummary {
+  return {
+    usedBytes: getResultsStorageUsageBytes(repoRoot),
+    capBytes: resolveResultsCapBytes()
+  };
+}
 
-  let totalSize = candidates.reduce((sum, item) => sum + item.sizeBytes, 0);
-  if (totalSize <= RESULTS_CAP_BYTES) {
-    return;
-  }
-
-  for (const item of candidates) {
-    if (totalSize <= RESULTS_CAP_BYTES) {
-      break;
-    }
-    if (protectedRunIds.has(item.runId)) {
-      continue;
-    }
-
-    fs.rmSync(item.runPath, { recursive: true, force: true });
-    totalSize -= item.sizeBytes;
+function assertResultsStorageHeadroom(repoRoot: string): void {
+  const summary = getResultsStorageSummary(repoRoot);
+  if (summary.usedBytes >= summary.capBytes) {
+    const usageMb = (summary.usedBytes / (1024 * 1024)).toFixed(1);
+    const capMb = (summary.capBytes / (1024 * 1024)).toFixed(1);
+    throw new Error(
+      `Results storage cap reached (${usageMb} MB used / ${capMb} MB cap). Delete existing runs before starting another run.`
+    );
   }
 }
 
@@ -739,6 +728,20 @@ function startNextQueuedJob(repoRoot: string): void {
     .find((job): job is ModelRunJobInternal => job !== undefined && job.job.status === 'queued');
 
   if (!queuedJob) {
+    return;
+  }
+
+  try {
+    assertResultsStorageHeadroom(repoRoot);
+  } catch (error) {
+    queuedJob.job.status = 'failed';
+    queuedJob.job.endedAt = new Date().toISOString();
+    queuedJob.job.exitCode = null;
+    queuedJob.job.signal = null;
+    appendLogLine(queuedJob, `[stderr] ${(error as Error).message}`);
+    fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
+    fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
+    startNextQueuedJob(repoRoot);
     return;
   }
 
@@ -776,7 +779,6 @@ function startNextQueuedJob(repoRoot: string): void {
     runningJobId = null;
     fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
     fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
-    pruneManagedRuns(repoRoot);
     startNextQueuedJob(repoRoot);
     return;
   }
@@ -829,7 +831,6 @@ function startNextQueuedJob(repoRoot: string): void {
 
     fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
     runningJobId = null;
-    pruneManagedRuns(repoRoot);
     startNextQueuedJob(repoRoot);
   });
 }
@@ -1048,11 +1049,13 @@ export function submitModelRun(repoRoot: string, payload: ModelRunSubmitRequest)
   }
 
   ensureQueueCapacity();
-  pruneManagedRuns(repoRoot);
+  assertResultsStorageHeadroom(repoRoot);
 
   if (fs.existsSync(runAbsolutePath)) {
     fs.rmSync(runAbsolutePath, { recursive: true, force: true });
   }
+
+  assertResultsStorageHeadroom(repoRoot);
 
   const jobId = `job-${formatRunTimestamp(now)}-${randomUUID().slice(0, 8)}`;
 

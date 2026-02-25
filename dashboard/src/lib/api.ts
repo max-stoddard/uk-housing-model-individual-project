@@ -17,6 +17,7 @@ import type {
   ResultsRunDeleteResponse,
   ResultsRunDetail,
   ResultsRunSummary,
+  ResultsStorageSummary,
   ResultsSeriesPayload
 } from '../../shared/types';
 
@@ -209,6 +210,10 @@ export async function fetchCompare(
 export async function fetchResultsRuns(): Promise<ResultsRunSummary[]> {
   const payload = await requestJson<ResultsRunsResponse>(buildApiUrl('/api/results/runs'), 'Failed to fetch results runs');
   return payload.runs;
+}
+
+export async function fetchResultsStorageSummary(): Promise<ResultsStorageSummary> {
+  return requestJson<ResultsStorageSummary>(buildApiUrl('/api/results/storage'), 'Failed to fetch results storage summary');
 }
 
 export async function fetchResultsRunDetail(runId: string): Promise<ResultsRunDetail> {

@@ -17,6 +17,7 @@ import {
   getModelRunJob,
   getModelRunJobLogs,
   getModelRunOptions,
+  getResultsStorageSummary,
   listModelRunJobs,
   submitModelRun
 } from './lib/modelRuns';
@@ -232,6 +233,14 @@ app.get('/api/results/runs', (_req, res) => {
   try {
     const runs = getResultsRuns(repoRoot);
     res.json({ runs });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/results/storage', (_req, res) => {
+  try {
+    res.json(getResultsStorageSummary(repoRoot));
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

@@ -21,6 +21,7 @@ import {
   clearModelRunJob,
   getModelRunJobLogs,
   getModelRunOptions,
+  getResultsStorageSummary,
   listModelRunJobs,
   submitModelRun
 } from '../server/lib/modelRuns.js';
@@ -51,6 +52,11 @@ function waitForAsyncTick(ms = 0): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function writeSizedFile(filePath: string, sizeBytes: number): void {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, Buffer.alloc(sizeBytes, 0));
 }
 
 class FakeModelProcess extends EventEmitter {
@@ -975,6 +981,13 @@ try {
     /Unknown run: \.\./,
     'Expected traversal-style run ids to be rejected for run deletion'
   );
+  for (const protectedRunId of ['v0-output', 'v1.0-output', 'v2.0-output', 'v3.7-output']) {
+    assert.throws(
+      () => deleteResultsRun(fixture.root, protectedRunId),
+      /protected/,
+      `Expected baseline run ${protectedRunId} to be protected from deletion`
+    );
+  }
 } finally {
   fs.rmSync(fixture.root, { recursive: true, force: true });
 }
@@ -1002,6 +1015,69 @@ try {
 
   const optionsForInProgress = getModelRunOptions(modelRunFixtureRoot, 'v1.1', true);
   assert.equal(optionsForInProgress.requestedBaseline, 'v1.1', 'Expected baseline override selection to be honored');
+
+  const originalResultsCapMb = process.env.DASHBOARD_RESULTS_CAP_MB;
+  try {
+    process.env.DASHBOARD_RESULTS_CAP_MB = '2';
+
+    const protectedRunPath = path.join(modelRunFixtureRoot, 'Results', 'v0-output');
+    fs.mkdirSync(protectedRunPath, { recursive: true });
+    writeSizedFile(path.join(protectedRunPath, 'protected.bin'), 1024 * 1024);
+
+    const storageBefore = getResultsStorageSummary(modelRunFixtureRoot);
+    assert.equal(storageBefore.capBytes, 2 * 1024 * 1024, 'Expected storage summary to reflect DASHBOARD_RESULTS_CAP_MB');
+    assert.ok(storageBefore.usedBytes >= 1024 * 1024, 'Expected storage summary used bytes to include baseline fixture files');
+
+    const overCapSubmit = submitModelRun(modelRunFixtureRoot, {
+      baseline: 'v1.0',
+      title: 'cap-overflow-visible',
+      overrides: { SEED: 12 },
+      confirmWarnings: true
+    });
+    assert.equal(overCapSubmit.accepted, true, 'Expected run submission to be accepted while still under cap');
+    assert.equal(spawnedProcesses.length, 1, 'Expected accepted run to start immediately');
+
+    const overCapOutputPath = path.join(modelRunFixtureRoot, overCapSubmit.job?.outputPath ?? '');
+    writeSizedFile(path.join(overCapOutputPath, 'overflow.bin'), 1200 * 1024);
+
+    spawnedProcesses[spawnedProcesses.length - 1]?.succeed();
+    await waitForAsyncTick();
+    const completedOverCapJob = listModelRunJobs().find((job) => job.jobId === overCapSubmit.job?.jobId);
+    assert.equal(completedOverCapJob?.status, 'succeeded', 'Expected run to finish successfully when crossing cap');
+    assert.ok(fs.existsSync(overCapOutputPath), 'Expected over-cap completed run output folder to remain visible');
+
+    const storageAfter = getResultsStorageSummary(modelRunFixtureRoot);
+    assert.ok(storageAfter.usedBytes > storageAfter.capBytes, 'Expected storage usage to exceed cap after completed run');
+    assert.throws(
+      () =>
+        submitModelRun(modelRunFixtureRoot, {
+          baseline: 'v1.0',
+          title: 'blocked-after-over-cap',
+          overrides: { SEED: 13 },
+          confirmWarnings: true
+        }),
+      /Results storage cap reached/,
+      'Expected submission to fail when Results storage is at or above configured cap'
+    );
+    assert.ok(
+      fs.existsSync(overCapOutputPath),
+      'Expected strict cap mode to keep completed over-cap run output visible'
+    );
+    clearModelRunJob(overCapSubmit.job?.jobId ?? '');
+  } finally {
+    if (originalResultsCapMb === undefined) {
+      delete process.env.DASHBOARD_RESULTS_CAP_MB;
+    } else {
+      process.env.DASHBOARD_RESULTS_CAP_MB = originalResultsCapMb;
+    }
+  }
+  __resetModelRunManagerForTests();
+  spawnedProcesses.length = 0;
+  __setModelRunSpawnForTests(() => {
+    const fakeProcess = new FakeModelProcess();
+    spawnedProcesses.push(fakeProcess);
+    return fakeProcess as never;
+  });
 
   const warningResponse = submitModelRun(modelRunFixtureRoot, {
     baseline: 'v1.0',

@@ -307,6 +307,11 @@ export interface ResultsComparePayload {
   indicators: ResultsCompareIndicator[];
 }
 
+export interface ResultsStorageSummary {
+  usedBytes: number;
+  capBytes: number;
+}
+
 export interface AuthStatusPayload {
   authEnabled: boolean;
   canWrite: boolean;
