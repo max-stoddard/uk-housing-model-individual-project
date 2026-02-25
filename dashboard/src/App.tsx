@@ -35,7 +35,7 @@ export function App() {
             Home
           </NavLink>
           <NavLink to="/compare">Calibration Versions</NavLink>
-          {showDevFeatures && <NavLink to="/run-model">Run Model</NavLink>}
+          <NavLink to="/run-model">Run Model</NavLink>
           {showDevFeatures && <NavLink to="/experiments">Experiments</NavLink>}
         </nav>
       </header>
@@ -44,10 +44,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/compare" element={<ComparePage />} />
-          <Route
-            path="/run-model"
-            element={showDevFeatures ? <RunModelPage /> : <Navigate to="/" replace />}
-          />
+          <Route path="/run-model" element={<RunModelPage />} />
           <Route
             path="/experiments"
             element={showDevFeatures ? <ExperimentsPage /> : <Navigate to="/" replace />}
