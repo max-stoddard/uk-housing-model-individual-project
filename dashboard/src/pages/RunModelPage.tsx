@@ -10,6 +10,7 @@ import type {
 } from '../../shared/types';
 import type { EChartsOption } from 'echarts';
 import { EChart } from '../components/EChart';
+import { LoadingSkeleton, LoadingSkeletonGroup } from '../components/LoadingSkeleton';
 import {
   API_RETRY_DELAY_MS,
   fetchResultsCompare,
@@ -307,6 +308,17 @@ export function RunModelPage() {
   const availableIndicators = useMemo(() => detail?.indicators ?? [], [detail]);
   const sortedKpis = useMemo(() => sortKpis(detail?.kpiSummary ?? []), [detail]);
   const selectedRunSet = useMemo(() => new Set(selectedRunIds), [selectedRunIds]);
+  const overlayIndicators = comparePayload?.indicators ?? [];
+  const showRunsSkeleton = isLoadingRuns && runs.length === 0;
+  const showRunsRefreshing = isLoadingRuns && runs.length > 0;
+  const showIndicatorsSkeleton = isLoadingDetail && availableIndicators.length === 0;
+  const showIndicatorsRefreshing = isLoadingDetail && availableIndicators.length > 0;
+  const showKpiSkeleton = isLoadingDetail && sortedKpis.length === 0;
+  const showKpiRefreshing = isLoadingDetail && sortedKpis.length > 0;
+  const showOverlaySkeleton = isLoadingCompare && overlayIndicators.length === 0;
+  const showOverlayRefreshing = isLoadingCompare && overlayIndicators.length > 0;
+  const showManifestSkeleton = isLoadingDetail && manifest.length === 0;
+  const showManifestRefreshing = isLoadingDetail && manifest.length > 0;
 
   const toggleRunSelection = (runId: string) => {
     setSelectionError('');
@@ -352,35 +364,50 @@ export function RunModelPage() {
             <h2>Runs</h2>
             <p>Newest first</p>
           </div>
-          {isLoadingRuns && <p className="loading-banner">Loading runs...</p>}
-          <ul className="run-list">
-            {runs.map((run) => (
-              <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
-                <label className="run-select">
-                  <input
-                    type="checkbox"
-                    checked={selectedRunSet.has(run.runId)}
-                    onChange={() => toggleRunSelection(run.runId)}
-                  />
-                  <span>{run.runId}</span>
-                </label>
-                <button
-                  type="button"
-                  className="run-focus-btn"
-                  onClick={() => setFocusedRunId(run.runId)}
-                >
-                  Focus
-                </button>
-                <div className="run-meta">
-                  <span className={statusClass(run.status)}>{run.status}</span>
-                  <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
-                </div>
-                <p>
-                  Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
-                </p>
-              </li>
-            ))}
-          </ul>
+          {showRunsRefreshing && (
+            <LoadingSkeleton
+              as="span"
+              className="loading-skeleton-pill section-loading-row"
+              ariaLabel="Refreshing runs"
+            />
+          )}
+          {showRunsSkeleton ? (
+            <LoadingSkeletonGroup
+              className="run-list-skeleton"
+              count={4}
+              itemClassName="loading-skeleton-card run-item-skeleton"
+              ariaLabel="Loading runs"
+            />
+          ) : (
+            <ul className="run-list">
+              {runs.map((run) => (
+                <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
+                  <label className="run-select">
+                    <input
+                      type="checkbox"
+                      checked={selectedRunSet.has(run.runId)}
+                      onChange={() => toggleRunSelection(run.runId)}
+                    />
+                    <span>{run.runId}</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="run-focus-btn"
+                    onClick={() => setFocusedRunId(run.runId)}
+                  >
+                    Focus
+                  </button>
+                  <div className="run-meta">
+                    <span className={statusClass(run.status)}>{run.status}</span>
+                    <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+                  </div>
+                  <p>
+                    Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </aside>
 
         <div className="results-main">
@@ -425,84 +452,145 @@ export function RunModelPage() {
           <article className="results-card">
             <h3>Indicators</h3>
             <p>Select indicators for overlay charts.</p>
-            <div className="indicator-grid">
-              {availableIndicators.map((indicator) => (
-                <label
-                  key={indicator.id}
-                  className={`indicator-item ${indicator.available ? '' : 'disabled'}`}
-                >
-                  <input
-                    type="checkbox"
-                    disabled={!indicator.available}
-                    checked={selectedIndicatorIds.includes(indicator.id)}
-                    onChange={() => toggleIndicatorSelection(indicator.id)}
-                  />
-                  <span>{indicator.title}</span>
-                  <small>
-                    {indicator.units} · {indicator.source}
-                  </small>
-                </label>
-              ))}
-            </div>
+            {showIndicatorsRefreshing && (
+              <LoadingSkeleton
+                as="span"
+                className="loading-skeleton-pill section-loading-row"
+                ariaLabel="Refreshing indicators"
+              />
+            )}
+            {showIndicatorsSkeleton ? (
+              <LoadingSkeletonGroup
+                className="indicator-grid"
+                count={6}
+                itemClassName="loading-skeleton-card indicator-item-skeleton"
+                ariaLabel="Loading indicators"
+              />
+            ) : (
+              <div className="indicator-grid">
+                {availableIndicators.map((indicator) => (
+                  <label
+                    key={indicator.id}
+                    className={`indicator-item ${indicator.available ? '' : 'disabled'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={!indicator.available}
+                      checked={selectedIndicatorIds.includes(indicator.id)}
+                      onChange={() => toggleIndicatorSelection(indicator.id)}
+                    />
+                    <span>{indicator.title}</span>
+                    <small>
+                      {indicator.units} · {indicator.source}
+                    </small>
+                  </label>
+                ))}
+              </div>
+            )}
           </article>
 
           <article className="results-card">
             <h3>KPI Summary (tail_120)</h3>
-            {isLoadingDetail && <p className="loading-banner">Loading KPI summary...</p>}
-            <div className="kpi-grid">
-              {sortedKpis.map((kpi) => (
-                <div key={kpi.indicatorId} className="kpi-card">
-                  <p className="kpi-title">{kpi.title}</p>
-                  <p className="kpi-value">Latest: {formatNumber(kpi.latest, kpi.units)}</p>
-                  <p>Mean: {formatNumber(kpi.mean, kpi.units)}</p>
-                  <p>YoY Δ: {formatSigned(kpi.yoyDelta)}</p>
-                </div>
-              ))}
-            </div>
+            {showKpiRefreshing && (
+              <LoadingSkeleton
+                as="span"
+                className="loading-skeleton-pill section-loading-row"
+                ariaLabel="Refreshing KPI summary"
+              />
+            )}
+            {showKpiSkeleton ? (
+              <LoadingSkeletonGroup
+                className="kpi-grid"
+                count={4}
+                itemClassName="loading-skeleton-card kpi-card-skeleton"
+                ariaLabel="Loading KPI summary"
+              />
+            ) : (
+              <div className="kpi-grid">
+                {sortedKpis.map((kpi) => (
+                  <div key={kpi.indicatorId} className="kpi-card">
+                    <p className="kpi-title">{kpi.title}</p>
+                    <p className="kpi-value">Latest: {formatNumber(kpi.latest, kpi.units)}</p>
+                    <p>Mean: {formatNumber(kpi.mean, kpi.units)}</p>
+                    <p>YoY Δ: {formatSigned(kpi.yoyDelta)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </article>
 
           <article className="results-card">
             <h3>Indicator Overlays</h3>
-            {isLoadingCompare && <p className="loading-banner">Loading overlays...</p>}
-            <div className="overlay-grid">
-              {comparePayload?.indicators.map((indicatorPayload) => (
-                <div key={indicatorPayload.indicator.id} className="overlay-card">
-                  <h4>{indicatorPayload.indicator.title}</h4>
-                  <EChart option={buildOverlayOption(indicatorPayload)} className="chart" />
-                </div>
-              ))}
-            </div>
+            {showOverlayRefreshing && (
+              <LoadingSkeleton
+                as="span"
+                className="loading-skeleton-pill section-loading-row"
+                ariaLabel="Refreshing indicator overlays"
+              />
+            )}
+            {showOverlaySkeleton ? (
+              <LoadingSkeletonGroup
+                className="overlay-grid"
+                count={2}
+                itemClassName="loading-skeleton-card overlay-card-skeleton"
+                ariaLabel="Loading indicator overlays"
+              />
+            ) : (
+              <div className="overlay-grid">
+                {overlayIndicators.map((indicatorPayload) => (
+                  <div key={indicatorPayload.indicator.id} className="overlay-card">
+                    <h4>{indicatorPayload.indicator.title}</h4>
+                    <EChart option={buildOverlayOption(indicatorPayload)} className="chart" />
+                  </div>
+                ))}
+              </div>
+            )}
           </article>
 
           <article className="results-card">
             <h3>File Manifest ({focusedRunId || 'No run selected'})</h3>
-            {isLoadingDetail && <p className="loading-banner">Loading manifest...</p>}
-            <div className="manifest-table-wrap">
-              <table className="manifest-table">
-                <thead>
-                  <tr>
-                    <th>File</th>
-                    <th>Type</th>
-                    <th>Size</th>
-                    <th>Coverage</th>
-                    <th>Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {manifest.map((file) => (
-                    <tr key={file.filePath}>
-                      <td>{file.fileName}</td>
-                      <td>{file.fileType}</td>
-                      <td>{(file.sizeBytes / 1024 / 1024).toFixed(2)} MB</td>
-                      <td>
-                        <span className={coverageClass(file.coverageStatus)}>{file.coverageStatus}</span>
-                      </td>
-                      <td>{file.note ?? '—'}</td>
+            {showManifestRefreshing && (
+              <LoadingSkeleton
+                as="span"
+                className="loading-skeleton-pill section-loading-row"
+                ariaLabel="Refreshing file manifest"
+              />
+            )}
+            {showManifestSkeleton ? (
+              <LoadingSkeletonGroup
+                className="manifest-skeleton"
+                count={6}
+                itemClassName="manifest-skeleton-row"
+                ariaLabel="Loading file manifest"
+              />
+            ) : (
+              <div className="manifest-table-wrap">
+                <table className="manifest-table">
+                  <thead>
+                    <tr>
+                      <th>File</th>
+                      <th>Type</th>
+                      <th>Size</th>
+                      <th>Coverage</th>
+                      <th>Note</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {manifest.map((file) => (
+                      <tr key={file.filePath}>
+                        <td>{file.fileName}</td>
+                        <td>{file.fileType}</td>
+                        <td>{(file.sizeBytes / 1024 / 1024).toFixed(2)} MB</td>
+                        <td>
+                          <span className={coverageClass(file.coverageStatus)}>{file.coverageStatus}</span>
+                        </td>
+                        <td>{file.note ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </article>
         </div>
       </div>

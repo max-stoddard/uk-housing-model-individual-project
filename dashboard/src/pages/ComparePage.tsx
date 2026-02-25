@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CompareResponse, ParameterCardMeta, ParameterGroup } from '../../shared/types';
 import { API_RETRY_DELAY_MS, fetchCatalog, fetchCompare, fetchVersions, isRetryableApiError } from '../lib/api';
 import { CompareCard } from '../components/CompareCard';
+import { LoadingSkeleton, LoadingSkeletonGroup } from '../components/LoadingSkeleton';
 
 const GROUP_ORDER: ParameterGroup[] = [
   'Household Demographics & Wealth',
@@ -334,7 +335,18 @@ export function ComparePage() {
       ).length
     : 0;
 
-  const titleText = mode === 'single' ? `Model parameters at ${selectedVersion || 'n/a'}` : `${left} vs ${right}`;
+  const titleText =
+    mode === 'single'
+      ? selectedVersion
+        ? `Model parameters at ${selectedVersion}`
+        : ''
+      : left && right
+        ? `${left} vs ${right}`
+        : '';
+  const isTitleLoading = isBootstrapping || titleText.length === 0;
+  const hasComparedItems = (compareData?.items.length ?? 0) > 0;
+  const isLoadingWithoutData = isBootstrapping || (isLoading && !hasComparedItems);
+  const isRefreshingComparedItems = isLoading && hasComparedItems;
   const inProgressSet = useMemo(() => new Set(inProgressVersions), [inProgressVersions]);
   const isInProgressVersion = (version: string) => inProgressSet.has(version);
   const withInProgressLabel = (version: string) =>
@@ -464,7 +476,13 @@ export function ComparePage() {
         </section>
 
         <header className="results-head">
-          <h2>{titleText}</h2>
+          <h2>
+            {isTitleLoading ? (
+              <LoadingSkeleton as="span" className="loading-skeleton-line compare-title-skeleton" ariaLabel="Loading selected versions" />
+            ) : (
+              titleText
+            )}
+          </h2>
           {(mode === 'single' ? isInProgressVersion(selectedVersion) : isInProgressVersion(left) || isInProgressVersion(right)) && (
             <div className="results-version-tags">
               {mode === 'single' && isInProgressVersion(selectedVersion) && (
@@ -506,65 +524,81 @@ export function ComparePage() {
             >
               No change
             </button>
-            <strong>{shownCount}</strong>
+            <strong>
+              {isLoadingWithoutData ? (
+                <LoadingSkeleton as="span" className="loading-skeleton-line compare-count-skeleton" ariaLabel="Loading filtered count" />
+              ) : (
+                shownCount
+              )}
+            </strong>
           </div>
+          {isRefreshingComparedItems && (
+            <LoadingSkeleton as="span" className="loading-skeleton-pill compare-refresh-pill" ariaLabel="Refreshing parameter comparison" />
+          )}
         </header>
 
         {error && <p className="error-banner">{error}</p>}
-        {isBootstrapping && <p className="loading-banner">Loading compare workspace...</p>}
-        {!isBootstrapping && isLoading && <p className="loading-banner">Loading parameters...</p>}
         {isWaitingForApi && (
           <p className="waiting-banner">Waiting for API to become available. Retrying every 2 seconds...</p>
         )}
 
-        {!isBootstrapping && !isLoading && compareData?.items.length === 0 && (
-          <p className="loading-banner">No parameters selected.</p>
+        {!isBootstrapping && !isLoading && (selectedIds.length === 0 || compareData?.items.length === 0) && (
+          <p className="info-banner">No parameters selected.</p>
         )}
 
-        <div className="cards-stack">
-          {GROUP_ORDER.filter((group) => (groupedResults.get(group)?.length ?? 0) > 0).map((groupName) => {
-            const items = groupedResults.get(groupName) ?? [];
-            const counts = sectionCounts.get(groupName) ?? { updated: 0, unchanged: 0 };
-            const open = sectionOpen[groupName] ?? false;
+        {isLoadingWithoutData ? (
+          <LoadingSkeletonGroup
+            className="cards-stack-skeleton"
+            count={4}
+            itemClassName="loading-skeleton-card result-group-skeleton"
+            ariaLabel="Loading parameter groups"
+          />
+        ) : (
+          <div className="cards-stack">
+            {GROUP_ORDER.filter((group) => (groupedResults.get(group)?.length ?? 0) > 0).map((groupName) => {
+              const items = groupedResults.get(groupName) ?? [];
+              const counts = sectionCounts.get(groupName) ?? { updated: 0, unchanged: 0 };
+              const open = sectionOpen[groupName] ?? false;
 
-            return (
-              <section className="result-group" key={groupName}>
-                <button
-                  type="button"
-                  className="result-group-header"
-                  onClick={() =>
-                    setSectionOpen((current) => ({
-                      ...current,
-                      [groupName]: !open
-                    }))
-                  }
-                >
-                  <span className="result-group-title">
-                    {open ? '▾' : '▸'} {groupName}
-                  </span>
-                  <span className="result-group-counts">
-                    <span className="unchanged">No change: {counts.unchanged}</span>
-                    <span className="updated">Updated: {counts.updated}</span>
-                  </span>
-                </button>
+              return (
+                <section className="result-group" key={groupName}>
+                  <button
+                    type="button"
+                    className="result-group-header"
+                    onClick={() =>
+                      setSectionOpen((current) => ({
+                        ...current,
+                        [groupName]: !open
+                      }))
+                    }
+                  >
+                    <span className="result-group-title">
+                      {open ? '▾' : '▸'} {groupName}
+                    </span>
+                    <span className="result-group-counts">
+                      <span className="unchanged">No change: {counts.unchanged}</span>
+                      <span className="updated">Updated: {counts.updated}</span>
+                    </span>
+                  </button>
 
-                {open && (
-                  <div className="result-group-body">
-                    {items.map((item, index) => (
-                      <CompareCard
-                        key={item.id}
-                        item={item}
-                        mode={mode}
-                        inProgressVersions={inProgressVersions}
-                        defaultExpanded={groupName === defaultOpenGroup && index === 0}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            );
-          })}
-        </div>
+                  {open && (
+                    <div className="result-group-body">
+                      {items.map((item, index) => (
+                        <CompareCard
+                          key={item.id}
+                          item={item}
+                          mode={mode}
+                          inProgressVersions={inProgressVersions}
+                          defaultExpanded={groupName === defaultOpenGroup && index === 0}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
