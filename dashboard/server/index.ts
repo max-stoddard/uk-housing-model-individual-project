@@ -33,10 +33,16 @@ const host = '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
 const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
-const modelRunsEnabled = (process.env.DASHBOARD_ENABLE_MODEL_RUNS?.trim().toLowerCase() ?? '') === 'true';
+const modelRunsConfigured = (process.env.DASHBOARD_ENABLE_MODEL_RUNS?.trim().toLowerCase() ?? '') === 'true';
+const runtimeDependencies = checkRuntimeDependencies();
+const runtimeDepsAvailable = runtimeDependencies.java.available && runtimeDependencies.maven.available;
+const modelRunsEnabled = modelRunsConfigured && runtimeDepsAvailable;
+const modelRunsDisabledReason =
+  modelRunsConfigured && !runtimeDepsAvailable
+    ? 'Model execution is unavailable because Java/Maven are missing in this API runtime. Deploy API with Docker runtime (Java+Maven) or install dependencies.'
+    : 'Model execution is disabled in this environment.';
 const writeAuth = createWriteAuthControllerFromEnv();
 const writeAuthConfigurationError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled);
-const runtimeDependencies = checkRuntimeDependencies();
 
 console.log(`[runtime-deps] java=${runtimeDependencies.java.available ? 'available' : 'missing'}`);
 if (runtimeDependencies.java.versionOutput) {
@@ -56,12 +62,11 @@ if (runtimeDependencies.maven.error) {
   console.error(`[runtime-deps] maven error: ${runtimeDependencies.maven.error}`);
 }
 
-if (modelRunsEnabled && (!runtimeDependencies.java.available || !runtimeDependencies.maven.available)) {
+if (modelRunsConfigured && !runtimeDepsAvailable) {
   console.error(
-    '[dashboard-api] Model runs are enabled but Java/Maven runtime dependencies are unavailable. ' +
-      'Deploy API with Java+Maven (Docker runtime) or disable DASHBOARD_ENABLE_MODEL_RUNS.'
+    '[dashboard-api] Model runs requested, but Java/Maven runtime dependencies are unavailable. ' +
+      'API will remain online in read-only mode for model runs until dependencies are present.'
   );
-  process.exit(1);
 }
 
 const ghToken = process.env.DASHBOARD_GITHUB_TOKEN?.trim() ?? '';
@@ -109,6 +114,8 @@ app.get('/api/runtime-deps', (_req, res) => {
     java: deps.java.available,
     maven: deps.maven.available,
     mavenBin: deps.mavenBin,
+    modelRunsConfigured,
+    modelRunsEnabled: modelRunsConfigured && deps.java.available && deps.maven.available,
     versionInfo: {
       java: deps.java.versionOutput || null,
       maven: deps.maven.versionOutput || null,
@@ -139,7 +146,9 @@ app.get('/api/auth/status', (req, res) => {
     authEnabled: access.authEnabled,
     canWrite: access.canWrite,
     authMisconfigured: access.authMisconfigured,
-    modelRunsEnabled
+    modelRunsEnabled,
+    modelRunsConfigured,
+    modelRunsDisabledReason: modelRunsEnabled ? null : modelRunsDisabledReason
   });
 });
 
@@ -311,7 +320,7 @@ app.get('/api/model-runs/options', (req, res) => {
 
 app.post('/api/model-runs', (req, res) => {
   if (!modelRunsEnabled) {
-    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    res.status(403).json({ error: modelRunsDisabledReason });
     return;
   }
   if (!requireWriteAccess(req, res)) {
@@ -328,7 +337,7 @@ app.post('/api/model-runs', (req, res) => {
 
 app.get('/api/model-runs/jobs', (_req, res) => {
   if (!modelRunsEnabled) {
-    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    res.status(403).json({ error: modelRunsDisabledReason });
     return;
   }
 
@@ -341,7 +350,7 @@ app.get('/api/model-runs/jobs', (_req, res) => {
 
 app.get('/api/model-runs/jobs/:jobId', (req, res) => {
   if (!modelRunsEnabled) {
-    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    res.status(403).json({ error: modelRunsDisabledReason });
     return;
   }
 
@@ -354,7 +363,7 @@ app.get('/api/model-runs/jobs/:jobId', (req, res) => {
 
 app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
   if (!modelRunsEnabled) {
-    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    res.status(403).json({ error: modelRunsDisabledReason });
     return;
   }
   if (!requireWriteAccess(req, res)) {
@@ -370,7 +379,7 @@ app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
 
 app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
   if (!modelRunsEnabled) {
-    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    res.status(403).json({ error: modelRunsDisabledReason });
     return;
   }
   if (!requireWriteAccess(req, res)) {
@@ -386,7 +395,7 @@ app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
 
 app.get('/api/model-runs/jobs/:jobId/logs', (req, res) => {
   if (!modelRunsEnabled) {
-    res.status(403).json({ error: 'Model execution is disabled in this environment.' });
+    res.status(403).json({ error: modelRunsDisabledReason });
     return;
   }
 

@@ -114,6 +114,12 @@ If you deploy API as plain `runtime: node` without Java/Maven, run submission wi
 - migrate to Docker runtime (recommended), or
 - disable remote execution (`DASHBOARD_ENABLE_MODEL_RUNS=false`) and keep read-only usage.
 
+Current server behavior when `DASHBOARD_ENABLE_MODEL_RUNS=true` but Java/Maven are missing:
+
+- API does **not** crash on startup
+- `/api/runtime-deps` reports missing dependencies
+- model-run endpoints return disabled errors until dependencies are available
+
 For remote write-login mode, configure these API environment variables in Render:
 
 - `DASHBOARD_ENABLE_MODEL_RUNS=true` (blueprint default is `true`)
