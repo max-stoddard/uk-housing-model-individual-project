@@ -5,6 +5,10 @@ set -euo pipefail
 #   Run production BUY* calibration from PSD 2024 + PPD 2025.
 # Purpose:
 #   Emit model-ready BUY_SCALE/BUY_EXPONENT/BUY_MU/BUY_SIGMA using the selected default method.
+#
+# Legacy note:
+#   This wrapper invokes the v3.8 reproduction-first BUY* method and is retained
+#   for historical reproducibility only. Do not use for production updates.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"

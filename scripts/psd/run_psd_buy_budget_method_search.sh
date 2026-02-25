@@ -5,6 +5,10 @@ set -euo pipefail
 #   Run PSD/PPD 2011 BUY* method search.
 # Purpose:
 #   Compare candidate methods for BUY_SCALE/BUY_EXPONENT/BUY_MU/BUY_SIGMA reproduction.
+#
+# Legacy note:
+#   This wrapper invokes the legacy 2011 reproduction-first BUY* search and is
+#   retained for provenance only.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"

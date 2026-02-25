@@ -5,6 +5,10 @@ set -euo pipefail
 #   Run sharded BUY* method-search in parallel and merge shard outputs.
 # Purpose:
 #   Speed up large 2011 reproduction searches while preserving deterministic ranking.
+#
+# Legacy note:
+#   This wrapper is for legacy 2011 reproduction-first BUY* evidence and is not
+#   a production modern-calibration workflow.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
