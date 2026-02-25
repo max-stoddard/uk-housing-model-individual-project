@@ -3,6 +3,11 @@
 """
 Calibrate BUY* parameters from modern PSD + PPD datasets.
 
+LEGACY NOTE:
+  - This script reflects the v3.8 reproduction-first method selection pipeline.
+  - It is retained for provenance and historical reproducibility only.
+  - Do not use this script for production BUY* updates; use v2 calibration instead.
+
 Latest experiment findings (run on February 14, 2026):
   - Method default selected via 2011 reproduction-first search:
     psd_log_ols_robust_mu with comonotonic couplings and

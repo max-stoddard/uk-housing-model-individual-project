@@ -3,6 +3,11 @@
 """
 Search PSD/PPD method variants to reproduce BUY* parameters from 2011 targets.
 
+LEGACY NOTE:
+  - This experiment is a legacy 2011 reproduction-first search.
+  - It is retained for provenance and historical reproducibility only.
+  - It is not a valid production selector for modern BUY* calibration.
+
 Latest experiment findings (run on February 14, 2026):
   - Command:
     - python3 -m scripts.python.experiments.psd.psd_buy_budget_method_search
