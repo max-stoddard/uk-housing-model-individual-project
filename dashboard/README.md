@@ -34,6 +34,49 @@ Dashboard API environment variables:
 - `DASHBOARD_API_PORT` (local fallback): HTTP port when `PORT` is not set.
 - `DASHBOARD_CORS_ORIGIN` (optional): allowed browser origin for cross-origin requests (for split frontend/API deploys).
 - `DASHBOARD_GIT_STATS_BASE_COMMIT` (optional): git base commit used by `/api/git-stats`.
+- `DASHBOARD_ENABLE_MODEL_RUNS` (optional): set to `true` to enable model-run APIs/UI.
+- `DASHBOARD_WRITE_USERNAME` + `DASHBOARD_WRITE_PASSWORD` (optional pair): enables write-login mode when both are set.
+
+Write-access behavior:
+
+- If `DASHBOARD_WRITE_USERNAME` and `DASHBOARD_WRITE_PASSWORD` are both unset:
+  - auth is disabled,
+  - local development can use write features without login.
+- If both are set:
+  - dashboard write actions require login (single global username/password),
+  - read-only pages remain available without login.
+- If model runs are enabled (`DASHBOARD_ENABLE_MODEL_RUNS=true`) but credentials are unset:
+  - API enters fail-closed mode for write actions (`503`),
+  - login is intentionally disabled until credentials are configured,
+  - read-only pages remain available.
+
+Write actions requiring login in auth-enabled mode:
+
+- queue model runs
+- cancel model runs
+- clear finished jobs from queue history
+- delete runs from Model Results
+
+### Local Auth Setup
+
+Default local workflow (no login):
+
+```bash
+cd dashboard
+npm run dev
+```
+
+Optional local auth testing (login required):
+
+```bash
+cd dashboard
+export DASHBOARD_ENABLE_MODEL_RUNS=true
+export DASHBOARD_WRITE_USERNAME=admin
+export DASHBOARD_WRITE_PASSWORD=change-me
+npm run dev
+```
+
+Then open `/login` in the web app and sign in with that username/password.
 
 Health endpoint:
 
@@ -57,6 +100,12 @@ Repository root includes `render.yaml` with:
 
 - static web service: `uk-housing-market-abm`
 - API web service: `uk-housing-market-abm-api`
+
+For remote write-login mode, configure these API environment variables in Render:
+
+- `DASHBOARD_ENABLE_MODEL_RUNS=true` (blueprint default is `false`)
+- `DASHBOARD_WRITE_USERNAME` (secret)
+- `DASHBOARD_WRITE_PASSWORD` (secret)
 
 Deploys are configured from `master` and gated by passing GitHub checks.
 

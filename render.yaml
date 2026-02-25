@@ -37,6 +37,8 @@ services:
     envVars:
       - key: DASHBOARD_CORS_ORIGIN
         value: https://uk-housing-market-abm.onrender.com
+      - key: DASHBOARD_ENABLE_MODEL_RUNS
+        value: "false"
       - key: DASHBOARD_GIT_STATS_BASE_COMMIT
         value: 4e89f5e277cdba4b4ef0c08254e5731e19bd51c3
       - key: DASHBOARD_GITHUB_REPO
@@ -44,6 +46,10 @@ services:
       - key: DASHBOARD_GITHUB_BRANCH
         value: master
       - key: DASHBOARD_GITHUB_TOKEN
+        sync: false
+      - key: DASHBOARD_WRITE_USERNAME
+        sync: false
+      - key: DASHBOARD_WRITE_PASSWORD
         sync: false
     buildFilter:
       paths:
