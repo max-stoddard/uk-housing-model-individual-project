@@ -303,6 +303,6 @@ export interface ResultsComparePayload {
   runIds: string[];
   indicatorIds: string[];
   smoothWindow: 0 | 3 | 12;
-  window: 'tail120' | 'full';
+  window: 'post200' | 'tail120' | 'full';
   indicators: ResultsCompareIndicator[];
 }

@@ -791,6 +791,22 @@ try {
     'Expected sparse core run to render as gap-only aligned series'
   );
 
+  const postSpinUpCompare = getResultsCompare(
+    fixture.root,
+    [fixture.runIds.complete, fixture.runIds.sparseCore],
+    ['core_mortgageApprovals'],
+    'post200',
+    0
+  );
+  const postSpinUpSeries = postSpinUpCompare.indicators[0]?.seriesByRun.find(
+    (series) => series.runId === fixture.runIds.complete
+  );
+  assert.ok(postSpinUpSeries, 'Expected post200 compare series for complete run');
+  assert.ok(
+    postSpinUpSeries?.points.every((point) => point.modelTime >= 200),
+    'Expected post200 compare window to exclude pre-spin-up ticks'
+  );
+
   assert.throws(
     () =>
       getResultsCompare(

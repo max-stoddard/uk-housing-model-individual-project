@@ -173,7 +173,7 @@ export async function fetchResultsSeries(
 export async function fetchResultsCompare(
   runIds: string[],
   indicatorIds: string[],
-  window: 'tail120' | 'full',
+  window: 'post200' | 'tail120' | 'full',
   smoothWindow: 0 | 3 | 12
 ): Promise<ResultsComparePayload> {
   const params = new URLSearchParams({

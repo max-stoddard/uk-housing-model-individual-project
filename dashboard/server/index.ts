@@ -170,7 +170,7 @@ app.get('/api/results/compare', (req, res) => {
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
-  const window = String(req.query.window ?? 'tail120');
+  const window = String(req.query.window ?? 'post200');
   const rawSmoothWindow = Number.parseInt(String(req.query.smoothWindow ?? '0'), 10);
   const smoothWindow = Number.isFinite(rawSmoothWindow) ? rawSmoothWindow : 0;
 

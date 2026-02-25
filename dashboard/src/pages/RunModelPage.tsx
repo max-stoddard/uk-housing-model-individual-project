@@ -21,8 +21,9 @@ import {
 
 const RUN_LIMIT = 5;
 
-type CompareWindow = 'tail120' | 'full';
+type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;
+const SPIN_UP_CUTOFF_TICKS = 200;
 
 function formatNumber(value: number | null, units: string): string {
   if (value === null) {
@@ -130,6 +131,16 @@ function sortKpis(kpis: KpiMetricSummary[]): KpiMetricSummary[] {
   return [...kpis].sort((left, right) => left.title.localeCompare(right.title));
 }
 
+function compareWindowLabel(window: CompareWindow): string {
+  if (window === 'tail120') {
+    return 'Tail 120 months';
+  }
+  if (window === 'full') {
+    return 'Full history';
+  }
+  return `Post spin-up (t >= ${SPIN_UP_CUTOFF_TICKS})`;
+}
+
 export function RunModelPage() {
   const [runs, setRuns] = useState<ResultsRunSummary[]>([]);
   const [focusedRunId, setFocusedRunId] = useState<string>('');
@@ -138,7 +149,7 @@ export function RunModelPage() {
   const [manifest, setManifest] = useState<ResultsFileManifestEntry[]>([]);
   const [selectedIndicatorIds, setSelectedIndicatorIds] = useState<string[]>([]);
   const [comparePayload, setComparePayload] = useState<ResultsComparePayload | null>(null);
-  const [compareWindow, setCompareWindow] = useState<CompareWindow>('tail120');
+  const [compareWindow, setCompareWindow] = useState<CompareWindow>('post200');
   const [smoothWindow, setSmoothWindow] = useState<SmoothWindow>(0);
   const [loadError, setLoadError] = useState<string>('');
   const [selectionError, setSelectionError] = useState<string>('');
@@ -382,7 +393,7 @@ export function RunModelPage() {
               Selected runs: <strong>{selectedRunIds.join(', ') || 'none'}</strong>
             </p>
             <p>
-              Window: <strong>{compareWindow === 'tail120' ? 'Tail 120 months' : 'Full history'}</strong> | Smoothing:{' '}
+              Window: <strong>{compareWindowLabel(compareWindow)}</strong> | Smoothing:{' '}
               <strong>{smoothWindow === 0 ? 'Off' : `${smoothWindow}-month moving average`}</strong>
             </p>
             <div className="results-controls">
@@ -392,6 +403,7 @@ export function RunModelPage() {
                   value={compareWindow}
                   onChange={(event) => setCompareWindow(event.target.value as CompareWindow)}
                 >
+                  <option value="post200">post200</option>
                   <option value="tail120">tail120</option>
                   <option value="full">full</option>
                 </select>

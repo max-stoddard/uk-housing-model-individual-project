@@ -17,8 +17,9 @@ import type {
   ResultsSeriesSource
 } from '../../shared/types';
 
-type CompareWindow = 'tail120' | 'full';
+type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;
+const SPIN_UP_CUTOFF_TICKS = 200;
 
 interface IndicatorDefinition {
   id: string;
@@ -372,7 +373,13 @@ function normalizeSmoothWindow(rawWindow: number | undefined): SmoothWindow {
 }
 
 function normalizeWindow(rawWindow: string | undefined): CompareWindow {
-  return rawWindow === 'full' ? 'full' : 'tail120';
+  if (rawWindow === 'full') {
+    return 'full';
+  }
+  if (rawWindow === 'tail120') {
+    return 'tail120';
+  }
+  return 'post200';
 }
 
 function parseCoreIndicatorFile(filePath: string): ParsedCoreIndicatorFile {
@@ -869,6 +876,9 @@ function computeKpi(points: ResultsSeriesPoint[], indicator: IndicatorDefinition
 function applyCompareWindow(points: ResultsSeriesPoint[], window: CompareWindow): ResultsSeriesPoint[] {
   if (window === 'full') {
     return points;
+  }
+  if (window === 'post200') {
+    return points.filter((point) => point.modelTime >= SPIN_UP_CUTOFF_TICKS);
   }
   return points.slice(Math.max(0, points.length - 120));
 }
