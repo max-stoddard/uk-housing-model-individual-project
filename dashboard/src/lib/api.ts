@@ -18,7 +18,8 @@ import type {
   ResultsRunDetail,
   ResultsRunSummary,
   ResultsStorageSummary,
-  ResultsSeriesPayload
+  ResultsSeriesPayload,
+  ValidationTrendPayload
 } from '../../shared/types';
 
 interface VersionsResponse {
@@ -180,6 +181,10 @@ export async function fetchVersions(): Promise<VersionsPayload> {
     versions: payload.versions,
     inProgressVersions: payload.inProgressVersions ?? []
   };
+}
+
+export async function fetchValidationTrend(): Promise<ValidationTrendPayload> {
+  return requestJson<ValidationTrendPayload>(buildApiUrl('/api/validation-trend'), 'Failed to fetch validation trend');
 }
 
 export async function fetchCatalog(): Promise<ParameterCardMeta[]> {

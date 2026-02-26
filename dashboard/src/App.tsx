@@ -11,6 +11,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { ModelResultsPage } from './pages/ModelResultsPage';
 import { RunExperimentsPage } from './pages/RunExperimentsPage';
+import { ValidationPage } from './pages/ValidationPage';
 
 const AUTH_TOKEN_STORAGE_KEY = 'dashboard.writeAuthToken';
 
@@ -112,6 +113,7 @@ export function App() {
               Home
             </NavLink>
             <NavLink to="/compare">Calibration Versions</NavLink>
+            <NavLink to="/validation">Validation</NavLink>
             <NavLink to={runExperimentsLink}>Run Experiments</NavLink>
             <NavLink to="/model-results">Model Results</NavLink>
             {authStatus.authEnabled && !authStatus.canWrite && !authStatus.authMisconfigured && (
@@ -157,6 +159,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/compare" element={<ComparePage />} />
+            <Route path="/validation" element={<ValidationPage />} />
             <Route path="/model-results" element={<ModelResultsPage canWrite={authStatus.canWrite} />} />
             <Route
               path="/run-experiments"

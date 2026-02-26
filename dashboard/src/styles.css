@@ -659,6 +659,24 @@ code {
   gap: 0.8rem;
 }
 
+.validation-layout {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.validation-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+
+.validation-chart {
+  height: 420px;
+}
+
 .login-layout {
   max-width: 560px;
   margin: 0 auto;
