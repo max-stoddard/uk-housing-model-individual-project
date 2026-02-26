@@ -34,16 +34,48 @@ const host = '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? process.env.DASHBOARD_API_PORT ?? '8787', 10);
 const gitStatsBaseCommit = process.env.DASHBOARD_GIT_STATS_BASE_COMMIT ?? '4e89f5e277cdba4b4ef0c08254e5731e19bd51c3';
 const corsOrigin = process.env.DASHBOARD_CORS_ORIGIN?.trim() ?? '';
-const modelRunsConfigured = (process.env.DASHBOARD_ENABLE_MODEL_RUNS?.trim().toLowerCase() ?? '') === 'true';
+const modelRunsConfiguredFromEnv = (process.env.DASHBOARD_ENABLE_MODEL_RUNS?.trim().toLowerCase() ?? '') === 'true';
 const runtimeDependencies = checkRuntimeDependencies();
 const runtimeDepsAvailable = runtimeDependencies.java.available && runtimeDependencies.maven.available;
-const modelRunsEnabled = modelRunsConfigured && runtimeDepsAvailable;
-const modelRunsDisabledReason =
-  modelRunsConfigured && !runtimeDepsAvailable
-    ? 'Model execution is unavailable because Java/Maven are missing in this API runtime. Deploy API with Docker runtime (Java+Maven) or install dependencies.'
-    : 'Model execution is disabled in this environment.';
 const writeAuth = createWriteAuthControllerFromEnv();
-const writeAuthConfigurationError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled);
+const isDevRuntime = (process.env.NODE_ENV?.trim().toLowerCase() ?? '') !== 'production';
+const MODEL_RUNS_DISABLED_REASON_CONFIG =
+  'Model execution is disabled in this environment.';
+const MODEL_RUNS_DISABLED_REASON_RUNTIME =
+  'Model execution is unavailable because Java/Maven are missing in this API runtime. Deploy API with Docker runtime (Java+Maven) or install dependencies.';
+
+interface RuntimePolicy {
+  devBypassActive: boolean;
+  modelRunsConfigured: boolean;
+  modelRunsEnabled: boolean;
+  modelRunsDisabledReason: string | null;
+  writeAuthConfigurationError: string | null;
+}
+
+function isPreviewStrictRequest(req: express.Request): boolean {
+  const viewMode = req.get('X-Dashboard-View-Mode')?.trim().toLowerCase() ?? '';
+  return viewMode === 'non_dev_preview';
+}
+
+function resolveRuntimePolicy(req: express.Request): RuntimePolicy {
+  const devBypassActive = isDevRuntime && !isPreviewStrictRequest(req);
+  const modelRunsConfigured = devBypassActive ? true : modelRunsConfiguredFromEnv;
+  const modelRunsEnabled = modelRunsConfigured && runtimeDepsAvailable;
+  const modelRunsDisabledReason = modelRunsEnabled
+    ? null
+    : modelRunsConfigured
+      ? MODEL_RUNS_DISABLED_REASON_RUNTIME
+      : MODEL_RUNS_DISABLED_REASON_CONFIG;
+  const writeAuthConfigurationError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled, devBypassActive);
+
+  return {
+    devBypassActive,
+    modelRunsConfigured,
+    modelRunsEnabled,
+    modelRunsDisabledReason,
+    writeAuthConfigurationError
+  };
+}
 
 console.log(`[runtime-deps] java=${runtimeDependencies.java.available ? 'available' : 'missing'}`);
 if (runtimeDependencies.java.versionOutput) {
@@ -63,7 +95,7 @@ if (runtimeDependencies.maven.error) {
   console.error(`[runtime-deps] maven error: ${runtimeDependencies.maven.error}`);
 }
 
-if (modelRunsConfigured && !runtimeDepsAvailable) {
+if (modelRunsConfiguredFromEnv && !runtimeDepsAvailable) {
   console.error(
     '[dashboard-api] Model runs requested, but Java/Maven runtime dependencies are unavailable. ' +
       'API will remain online in read-only mode for model runs until dependencies are present.'
@@ -93,7 +125,7 @@ app.use((req, res, next) => {
   if (requestOrigin && requestOrigin === corsOrigin) {
     res.setHeader('Access-Control-Allow-Origin', corsOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Dashboard-View-Mode');
     res.setHeader('Vary', 'Origin');
   }
 
@@ -115,8 +147,8 @@ app.get('/api/runtime-deps', (_req, res) => {
     java: deps.java.available,
     maven: deps.maven.available,
     mavenBin: deps.mavenBin,
-    modelRunsConfigured,
-    modelRunsEnabled: modelRunsConfigured && deps.java.available && deps.maven.available,
+    modelRunsConfigured: modelRunsConfiguredFromEnv,
+    modelRunsEnabled: modelRunsConfiguredFromEnv && deps.java.available && deps.maven.available,
     versionInfo: {
       java: deps.java.versionOutput || null,
       maven: deps.maven.versionOutput || null,
@@ -127,13 +159,19 @@ app.get('/api/runtime-deps', (_req, res) => {
 });
 
 function requireWriteAccess(req: express.Request, res: express.Response): boolean {
-  const access = resolveDashboardWriteAccess(writeAuth, req.get('authorization'), modelRunsEnabled);
+  const policy = resolveRuntimePolicy(req);
+  const access = resolveDashboardWriteAccess(
+    writeAuth,
+    req.get('authorization'),
+    policy.modelRunsEnabled,
+    policy.devBypassActive
+  );
   if (access.canWrite) {
     return true;
   }
   if (access.authMisconfigured) {
     res.status(503).json({
-      error: writeAuthConfigurationError ?? 'Write access is unavailable due to server configuration.'
+      error: policy.writeAuthConfigurationError ?? 'Write access is unavailable due to server configuration.'
     });
     return false;
   }
@@ -142,20 +180,27 @@ function requireWriteAccess(req: express.Request, res: express.Response): boolea
 }
 
 app.get('/api/auth/status', (req, res) => {
-  const access = resolveDashboardWriteAccess(writeAuth, req.get('authorization'), modelRunsEnabled);
+  const policy = resolveRuntimePolicy(req);
+  const access = resolveDashboardWriteAccess(
+    writeAuth,
+    req.get('authorization'),
+    policy.modelRunsEnabled,
+    policy.devBypassActive
+  );
   res.json({
     authEnabled: access.authEnabled,
     canWrite: access.canWrite,
     authMisconfigured: access.authMisconfigured,
-    modelRunsEnabled,
-    modelRunsConfigured,
-    modelRunsDisabledReason: modelRunsEnabled ? null : modelRunsDisabledReason
+    modelRunsEnabled: policy.modelRunsEnabled,
+    modelRunsConfigured: policy.modelRunsConfigured,
+    modelRunsDisabledReason: policy.modelRunsDisabledReason
   });
 });
 
 app.post('/api/auth/login', (req, res) => {
-  if (writeAuthConfigurationError) {
-    res.status(503).json({ error: writeAuthConfigurationError });
+  const policy = resolveRuntimePolicy(req);
+  if (policy.writeAuthConfigurationError) {
+    res.status(503).json({ error: policy.writeAuthConfigurationError });
     return;
   }
 
@@ -170,7 +215,13 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
-  const access = resolveDashboardWriteAccess(writeAuth, req.get('authorization'), modelRunsEnabled);
+  const policy = resolveRuntimePolicy(req);
+  const access = resolveDashboardWriteAccess(
+    writeAuth,
+    req.get('authorization'),
+    policy.modelRunsEnabled,
+    policy.devBypassActive
+  );
   writeAuth.logout(access.token);
   res.json({ ok: true });
 });
@@ -327,8 +378,9 @@ app.get('/api/results/compare', (req, res) => {
 
 app.get('/api/model-runs/options', (req, res) => {
   try {
+    const policy = resolveRuntimePolicy(req);
     const baseline = String(req.query.baseline ?? '').trim() || undefined;
-    const payload = getModelRunOptions(repoRoot, baseline, modelRunsEnabled);
+    const payload = getModelRunOptions(repoRoot, baseline, policy.modelRunsEnabled);
     res.json(payload);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -336,8 +388,9 @@ app.get('/api/model-runs/options', (req, res) => {
 });
 
 app.post('/api/model-runs', (req, res) => {
-  if (!modelRunsEnabled) {
-    res.status(403).json({ error: modelRunsDisabledReason });
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
     return;
   }
   if (!requireWriteAccess(req, res)) {
@@ -345,16 +398,19 @@ app.post('/api/model-runs', (req, res) => {
   }
 
   try {
-    const payload = submitModelRun(repoRoot, req.body);
+    const payload = submitModelRun(repoRoot, req.body, {
+      ignoreStorageCap: policy.devBypassActive
+    });
     res.json(payload);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }
 });
 
-app.get('/api/model-runs/jobs', (_req, res) => {
-  if (!modelRunsEnabled) {
-    res.status(403).json({ error: modelRunsDisabledReason });
+app.get('/api/model-runs/jobs', (req, res) => {
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
     return;
   }
 
@@ -366,8 +422,9 @@ app.get('/api/model-runs/jobs', (_req, res) => {
 });
 
 app.get('/api/model-runs/jobs/:jobId', (req, res) => {
-  if (!modelRunsEnabled) {
-    res.status(403).json({ error: modelRunsDisabledReason });
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
     return;
   }
 
@@ -379,8 +436,9 @@ app.get('/api/model-runs/jobs/:jobId', (req, res) => {
 });
 
 app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
-  if (!modelRunsEnabled) {
-    res.status(403).json({ error: modelRunsDisabledReason });
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
     return;
   }
   if (!requireWriteAccess(req, res)) {
@@ -395,8 +453,9 @@ app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
 });
 
 app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
-  if (!modelRunsEnabled) {
-    res.status(403).json({ error: modelRunsDisabledReason });
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
     return;
   }
   if (!requireWriteAccess(req, res)) {
@@ -411,8 +470,9 @@ app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
 });
 
 app.get('/api/model-runs/jobs/:jobId/logs', (req, res) => {
-  if (!modelRunsEnabled) {
-    res.status(403).json({ error: modelRunsDisabledReason });
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
     return;
   }
 

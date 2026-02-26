@@ -271,6 +271,11 @@ interface ModelRunJobInternal {
   tempDirPath: string;
   configAbsolutePath: string;
   runAbsolutePath: string;
+  ignoreStorageCap: boolean;
+}
+
+interface SubmitModelRunOptions {
+  ignoreStorageCap?: boolean;
 }
 
 type SpawnModelRunFn = (
@@ -731,18 +736,20 @@ function startNextQueuedJob(repoRoot: string): void {
     return;
   }
 
-  try {
-    assertResultsStorageHeadroom(repoRoot);
-  } catch (error) {
-    queuedJob.job.status = 'failed';
-    queuedJob.job.endedAt = new Date().toISOString();
-    queuedJob.job.exitCode = null;
-    queuedJob.job.signal = null;
-    appendLogLine(queuedJob, `[stderr] ${(error as Error).message}`);
-    fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
-    fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
-    startNextQueuedJob(repoRoot);
-    return;
+  if (!queuedJob.ignoreStorageCap) {
+    try {
+      assertResultsStorageHeadroom(repoRoot);
+    } catch (error) {
+      queuedJob.job.status = 'failed';
+      queuedJob.job.endedAt = new Date().toISOString();
+      queuedJob.job.exitCode = null;
+      queuedJob.job.signal = null;
+      appendLogLine(queuedJob, `[stderr] ${(error as Error).message}`);
+      fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
+      fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
+      startNextQueuedJob(repoRoot);
+      return;
+    }
   }
 
   queuedJob.job.status = 'running';
@@ -996,7 +1003,12 @@ export function clearModelRunJob(jobId: string): ModelRunJobClearResponse {
   };
 }
 
-export function submitModelRun(repoRoot: string, payload: ModelRunSubmitRequest): ModelRunSubmitResponse {
+export function submitModelRun(
+  repoRoot: string,
+  payload: ModelRunSubmitRequest,
+  options: SubmitModelRunOptions = {}
+): ModelRunSubmitResponse {
+  const ignoreStorageCap = options.ignoreStorageCap === true;
   const baselineRaw = payload.baseline?.trim();
   if (!baselineRaw) {
     throw new Error('baseline is required.');
@@ -1049,13 +1061,17 @@ export function submitModelRun(repoRoot: string, payload: ModelRunSubmitRequest)
   }
 
   ensureQueueCapacity();
-  assertResultsStorageHeadroom(repoRoot);
+  if (!ignoreStorageCap) {
+    assertResultsStorageHeadroom(repoRoot);
+  }
 
   if (fs.existsSync(runAbsolutePath)) {
     fs.rmSync(runAbsolutePath, { recursive: true, force: true });
   }
 
-  assertResultsStorageHeadroom(repoRoot);
+  if (!ignoreStorageCap) {
+    assertResultsStorageHeadroom(repoRoot);
+  }
 
   const jobId = `job-${formatRunTimestamp(now)}-${randomUUID().slice(0, 8)}`;
 
@@ -1086,7 +1102,8 @@ export function submitModelRun(repoRoot: string, payload: ModelRunSubmitRequest)
     cancelRequested: false,
     tempDirPath,
     configAbsolutePath,
-    runAbsolutePath
+    runAbsolutePath,
+    ignoreStorageCap
   };
 
   jobsById.set(job.jobId, internalJob);

@@ -23,7 +23,14 @@ export interface WriteAuthController {
   authEnabled: boolean;
 }
 
-export function getWriteAuthConfigurationError(writeAuth: WriteAuthController, modelRunsEnabled: boolean): string | null {
+export function getWriteAuthConfigurationError(
+  writeAuth: WriteAuthController,
+  modelRunsEnabled: boolean,
+  devBypassActive = false
+): string | null {
+  if (devBypassActive) {
+    return null;
+  }
   if (modelRunsEnabled && !writeAuth.authEnabled) {
     return 'Model runs are enabled but write credentials are not configured. Set DASHBOARD_WRITE_USERNAME and DASHBOARD_WRITE_PASSWORD.';
   }
@@ -33,9 +40,19 @@ export function getWriteAuthConfigurationError(writeAuth: WriteAuthController, m
 export function resolveDashboardWriteAccess(
   writeAuth: WriteAuthController,
   authorizationHeader: string | undefined,
-  modelRunsEnabled: boolean
+  modelRunsEnabled: boolean,
+  devBypassActive = false
 ): DashboardWriteAccessStatus {
-  const configError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled);
+  if (devBypassActive) {
+    return {
+      authEnabled: false,
+      canWrite: true,
+      token: null,
+      authMisconfigured: false
+    };
+  }
+
+  const configError = getWriteAuthConfigurationError(writeAuth, modelRunsEnabled, false);
   if (configError) {
     return {
       authEnabled: true,
