@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from './lib/service';
+import { compareParameters, getInProgressVersions, getParameterCatalog, getValidationTrend, getVersions } from './lib/service';
 import { buildZeroGitStats, getGitStats, type GitHubConfig } from './lib/gitStats';
 import {
   deleteResultsRun,
@@ -180,6 +180,14 @@ app.get('/api/versions', (_req, res) => {
     const versions = getVersions(repoRoot);
     const inProgressVersions = getInProgressVersions(repoRoot);
     res.json({ versions, inProgressVersions });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/validation-trend', (_req, res) => {
+  try {
+    res.json(getValidationTrend(repoRoot));
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

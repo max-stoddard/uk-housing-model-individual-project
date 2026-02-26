@@ -200,6 +200,19 @@ export interface CompareResponse {
   items: CompareResult[];
 }
 
+export interface ValidationTrendPoint {
+  version: string;
+  incomeDiffPct: number;
+  housingWealthDiffPct: number;
+  financialWealthDiffPct: number;
+  averageAbsDiffPct: number;
+}
+
+export interface ValidationTrendPayload {
+  dataset: 'r8';
+  points: ValidationTrendPoint[];
+}
+
 export type ResultsRunStatus = 'complete' | 'partial' | 'invalid';
 
 export type ResultsFileType =
