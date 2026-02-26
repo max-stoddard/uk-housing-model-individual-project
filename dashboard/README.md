@@ -61,12 +61,19 @@ Write actions requiring login in auth-enabled mode:
 
 ### Local Auth Setup
 
-Default local workflow (no login):
+Default local workflow (no login lockout):
 
 ```bash
 cd dashboard
 npm run dev
 ```
+
+Local development defaults:
+
+- when running in local dev (`NODE_ENV != production`), dashboard requests run in dev view mode by default.
+- dev view mode bypasses write-auth configuration lockouts so `Run Experiments` is usable without setting credentials.
+- actual run execution still requires Java and Maven in the API runtime.
+- use the `Preview non-dev` toggle in the app header (shown in dev) to switch to strict production-like behavior for auth/gating checks.
 
 Optional local auth testing (login required):
 

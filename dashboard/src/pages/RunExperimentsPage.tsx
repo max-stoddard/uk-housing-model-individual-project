@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type {
   ModelRunJob,
   ModelRunOptionsPayload,
@@ -126,7 +126,7 @@ export function RunExperimentsPage() {
     return [...grouped.entries()];
   }, [options]);
 
-  const refreshOptions = async (requestedBaseline?: string) => {
+  const refreshOptions = async (requestedBaseline?: string): Promise<ModelRunOptionsPayload | null> => {
     setPageError('');
     setIsLoadingOptions(true);
 
@@ -136,8 +136,10 @@ export function RunExperimentsPage() {
       setSelectedBaseline(payload.requestedBaseline);
       setFormValues(toInitialFormValues(payload.parameters));
       setWarnings([]);
+      return payload;
     } catch (error) {
       setPageError((error as Error).message);
+      return null;
     } finally {
       setIsLoadingOptions(false);
     }
@@ -178,8 +180,15 @@ export function RunExperimentsPage() {
     let retryTimer: number | undefined;
 
     const load = async () => {
-      await refreshOptions();
+      const loadedOptions = await refreshOptions();
       if (cancelled) {
+        return;
+      }
+      if (!loadedOptions || !loadedOptions.executionEnabled) {
+        setIsLoadingJobs(false);
+        setJobs([]);
+        setSelectedJobId('');
+        setStorageSummary(null);
         return;
       }
       await refreshJobs();
@@ -212,6 +221,9 @@ export function RunExperimentsPage() {
   }, []);
 
   useEffect(() => {
+    if (!options?.executionEnabled) {
+      return;
+    }
     const interval = window.setInterval(() => {
       void refreshJobs();
     }, 2000);
@@ -219,9 +231,12 @@ export function RunExperimentsPage() {
     return () => {
       window.clearInterval(interval);
     };
-  }, []);
+  }, [options?.executionEnabled]);
 
   useEffect(() => {
+    if (!options?.executionEnabled) {
+      return;
+    }
     const interval = window.setInterval(() => {
       void refreshStorageSummary();
     }, 5000);
@@ -229,7 +244,7 @@ export function RunExperimentsPage() {
     return () => {
       window.clearInterval(interval);
     };
-  }, []);
+  }, [options?.executionEnabled]);
 
   useEffect(() => {
     setLogLines([]);
@@ -237,6 +252,9 @@ export function RunExperimentsPage() {
   }, [selectedJobId]);
 
   useEffect(() => {
+    if (!options?.executionEnabled) {
+      return;
+    }
     if (!selectedJobId) {
       return;
     }
@@ -273,7 +291,7 @@ export function RunExperimentsPage() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [selectedJobId]);
+  }, [options?.executionEnabled, selectedJobId]);
 
   useEffect(() => {
     if (!pendingJobId) {
@@ -310,9 +328,7 @@ export function RunExperimentsPage() {
     };
   }, [navigate, pendingRunId]);
 
-  if (!isLoadingOptions && options && !options.executionEnabled) {
-    return <Navigate to="/model-results" replace />;
-  }
+  const executionDisabled = Boolean(options && !options.executionEnabled);
 
   const onBaselineChange = (nextBaseline: string) => {
     if (!nextBaseline || nextBaseline === selectedBaseline) {
@@ -415,6 +431,11 @@ export function RunExperimentsPage() {
       {storageSummary && isStorageOverCap && (
         <p className="error-banner">Results storage is over cap. Delete one or more runs before starting another run.</p>
       )}
+      {executionDisabled && (
+        <p className="info-banner">
+          Model execution is currently unavailable in this mode. Configure runtime/auth requirements or switch to dev view.
+        </p>
+      )}
 
       <article className="results-card">
         <h2>Run Experiments</h2>
@@ -458,6 +479,7 @@ export function RunExperimentsPage() {
                     Calibration Parameter Version
                     <select
                       value={selectedBaseline}
+                      disabled={executionDisabled}
                       onChange={(event) => onBaselineChange(event.target.value)}
                     >
                       {options.snapshots.map((snapshot) => (
@@ -479,6 +501,7 @@ export function RunExperimentsPage() {
                     <input
                       type="text"
                       value={title}
+                      disabled={executionDisabled}
                       onChange={(event) => setTitle(event.target.value)}
                       maxLength={120}
                       placeholder="Policy scenario label"
@@ -512,6 +535,7 @@ export function RunExperimentsPage() {
                               <input
                                 type="checkbox"
                                 checked={Boolean(formValues[parameter.key])}
+                                disabled={executionDisabled}
                                 onChange={(event) => updateFormValue(parameter, event.target.checked)}
                               />
                             ) : (
@@ -519,6 +543,7 @@ export function RunExperimentsPage() {
                                 type="number"
                                 step={parameter.type === 'integer' ? 1 : 'any'}
                                 value={String(formValues[parameter.key] ?? '')}
+                                disabled={executionDisabled}
                                 onChange={(event) => updateFormValue(parameter, event.target.value)}
                               />
                             )}
@@ -531,11 +556,21 @@ export function RunExperimentsPage() {
                 </div>
 
                 <div className="run-form-actions">
-                  <button type="button" className="primary-button" disabled={isSubmitting} onClick={() => void submitRun(false)}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={isSubmitting || executionDisabled}
+                    onClick={() => void submitRun(false)}
+                  >
                     {isSubmitting ? 'Submitting...' : 'Queue Run'}
                   </button>
                   {warnings.length > 0 && (
-                    <button type="button" className="secondary-button" disabled={isSubmitting} onClick={() => void submitRun(true)}>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={isSubmitting || executionDisabled}
+                      onClick={() => void submitRun(true)}
+                    >
                       Confirm and Queue
                     </button>
                   )}
@@ -564,12 +599,22 @@ export function RunExperimentsPage() {
                     </p>
                     <p>{job.createdAt}</p>
                     {(job.status === 'queued' || job.status === 'running') && (
-                      <button type="button" className="secondary-button" onClick={() => void cancelJob(job.jobId)}>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={executionDisabled}
+                        onClick={() => void cancelJob(job.jobId)}
+                      >
                         Cancel
                       </button>
                     )}
                     {(job.status === 'succeeded' || job.status === 'failed' || job.status === 'canceled') && (
-                      <button type="button" className="secondary-button" onClick={() => void clearJob(job.jobId)}>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={executionDisabled}
+                        onClick={() => void clearJob(job.jobId)}
+                      >
                         Clear
                       </button>
                     )}

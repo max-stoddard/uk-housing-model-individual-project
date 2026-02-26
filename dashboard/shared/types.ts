@@ -335,6 +335,8 @@ export interface AuthStatusPayload {
   canWrite: boolean;
   authMisconfigured: boolean;
   modelRunsEnabled: boolean;
+  modelRunsConfigured: boolean;
+  modelRunsDisabledReason: string | null;
 }
 
 export interface AuthLoginRequest {

@@ -75,6 +75,8 @@ export const API_RETRY_DELAY_MS = 2000;
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
 let authToken: string | null = null;
+export type ApiViewMode = 'dev' | 'non_dev_preview';
+let apiViewMode: ApiViewMode = import.meta.env.DEV ? 'dev' : 'non_dev_preview';
 
 function buildApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -86,6 +88,7 @@ function withAuthHeaders(init: RequestInit = {}): RequestInit {
   if (authToken && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${authToken}`);
   }
+  headers.set('X-Dashboard-View-Mode', apiViewMode);
   return {
     ...init,
     headers
@@ -153,6 +156,14 @@ export function setApiAuthToken(token: string | null): void {
 
 export function getApiAuthToken(): string | null {
   return authToken;
+}
+
+export function setApiViewMode(mode: ApiViewMode): void {
+  apiViewMode = mode;
+}
+
+export function getApiViewMode(): ApiViewMode {
+  return apiViewMode;
 }
 
 export async function fetchAuthStatus(): Promise<AuthStatusPayload> {

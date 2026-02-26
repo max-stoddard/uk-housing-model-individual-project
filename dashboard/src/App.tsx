@@ -4,7 +4,8 @@ import type { AuthStatusPayload } from '../shared/types';
 import {
   fetchAuthStatus,
   logoutWriteAccess,
-  setApiAuthToken
+  setApiAuthToken,
+  setApiViewMode
 } from './lib/api';
 import { ComparePage } from './pages/ComparePage';
 import { HomePage } from './pages/HomePage';
@@ -14,12 +15,15 @@ import { RunExperimentsPage } from './pages/RunExperimentsPage';
 import { ValidationPage } from './pages/ValidationPage';
 
 const AUTH_TOKEN_STORAGE_KEY = 'dashboard.writeAuthToken';
+const PREVIEW_MODE_STORAGE_KEY = 'dashboard.prodPreviewEnabled';
 
 const DEFAULT_AUTH_STATUS: AuthStatusPayload = {
   authEnabled: false,
   canWrite: true,
   authMisconfigured: false,
-  modelRunsEnabled: false
+  modelRunsEnabled: false,
+  modelRunsConfigured: false,
+  modelRunsDisabledReason: null
 };
 
 function loadStoredAuthToken(): string | null {
@@ -42,8 +46,31 @@ function persistAuthToken(token: string | null): void {
   }
 }
 
+function loadStoredProdPreviewEnabled(): boolean {
+  try {
+    return window.localStorage.getItem(PREVIEW_MODE_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function persistProdPreviewEnabled(enabled: boolean): void {
+  try {
+    if (enabled) {
+      window.localStorage.setItem(PREVIEW_MODE_STORAGE_KEY, 'true');
+    } else {
+      window.localStorage.removeItem(PREVIEW_MODE_STORAGE_KEY);
+    }
+  } catch {
+    // ignore persistence failures
+  }
+}
+
 export function App() {
   const isDevEnv = import.meta.env.DEV;
+  const [isProdPreviewEnabled, setIsProdPreviewEnabled] = useState<boolean>(() =>
+    isDevEnv ? loadStoredProdPreviewEnabled() : false
+  );
   const [authStatus, setAuthStatus] = useState<AuthStatusPayload>(DEFAULT_AUTH_STATUS);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -67,8 +94,17 @@ export function App() {
   useEffect(() => {
     const token = loadStoredAuthToken();
     setApiAuthToken(token);
+  }, []);
+
+  useEffect(() => {
+    if (!isDevEnv && isProdPreviewEnabled) {
+      setIsProdPreviewEnabled(false);
+      return;
+    }
+    persistProdPreviewEnabled(isDevEnv && isProdPreviewEnabled);
+    setApiViewMode(isDevEnv && !isProdPreviewEnabled ? 'dev' : 'non_dev_preview');
     void refreshAuthStatus();
-  }, [refreshAuthStatus]);
+  }, [isDevEnv, isProdPreviewEnabled, refreshAuthStatus]);
 
   const runExperimentsMisconfigured = authLoaded && authStatus.authMisconfigured;
   const runExperimentsLocked = authLoaded && authStatus.authEnabled && !authStatus.canWrite && !authStatus.authMisconfigured;
@@ -105,6 +141,16 @@ export function App() {
           <h1 className="brand-title">
             <span>UK Housing Market ABM</span>
             {isDevEnv && <span className="env-pill-dev">Dev</span>}
+            {isDevEnv && (
+              <button
+                type="button"
+                className="env-toggle"
+                onClick={() => setIsProdPreviewEnabled((current) => !current)}
+                aria-pressed={isProdPreviewEnabled}
+              >
+                {isProdPreviewEnabled ? 'Show dev view' : 'Preview non-dev'}
+              </button>
+            )}
           </h1>
         </div>
         <div className="header-nav-wrap">
@@ -116,7 +162,7 @@ export function App() {
             <NavLink to="/validation">Validation</NavLink>
             <NavLink to={runExperimentsLink}>Run Experiments</NavLink>
             <NavLink to="/model-results">Model Results</NavLink>
-            {authStatus.authEnabled && !authStatus.canWrite && !authStatus.authMisconfigured && (
+            {authStatus.authEnabled && !authStatus.canWrite && (
               <NavLink className="main-nav-auth-control main-nav-auth-link" to="/login?next=/run-experiments">
                 <span className="main-nav-auth-icon" aria-hidden="true">
                   <svg viewBox="0 0 20 20" role="img" aria-hidden="true">
