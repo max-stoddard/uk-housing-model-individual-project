@@ -5,7 +5,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
-import { compareParameters, getInProgressVersions, getParameterCatalog, getVersions } from '../server/lib/service.js';
+import {
+  compareParameters,
+  getInProgressVersions,
+  getParameterCatalog,
+  getValidationTrend,
+  getVersions
+} from '../server/lib/service.js';
 import {
   deleteResultsRun,
   getResultsCompare,
@@ -471,6 +477,60 @@ assert.equal(v38Note?.validation.status, 'complete', 'v4.0 validation should be 
 assert.equal(v38Note?.validation.income_diff_pct, 7.87, 'v4.0 income diff should match released value');
 assert.equal(v38Note?.validation.housing_wealth_diff_pct, 14.37, 'v4.0 housing diff should match released value');
 assert.equal(v38Note?.validation.financial_wealth_diff_pct, 13.25, 'v4.0 financial diff should match released value');
+
+const validationTrend = getValidationTrend(repoRoot);
+assert.equal(validationTrend.dataset, 'r8', 'Validation trend should be scoped to r8');
+assert.ok(validationTrend.points.length > 0, 'Validation trend should include points');
+assert.equal(validationTrend.points[0]?.version, 'v0', 'Validation trend should start at v0');
+assert.equal(
+  validationTrend.points[validationTrend.points.length - 1]?.version,
+  'v4.0',
+  'Validation trend should end at v4.0'
+);
+
+const versionOrder = new Map(versions.map((version, index) => [version, index]));
+for (let index = 1; index < validationTrend.points.length; index += 1) {
+  const previousVersion = validationTrend.points[index - 1]?.version ?? '';
+  const currentVersion = validationTrend.points[index]?.version ?? '';
+  const previousRank = versionOrder.get(previousVersion);
+  const currentRank = versionOrder.get(currentVersion);
+  assert.ok(previousRank !== undefined && currentRank !== undefined, 'Validation trend points should map to known versions');
+  assert.ok(previousRank < currentRank, 'Validation trend points should be sorted by version');
+}
+
+const expectedTrendCount = new Set(
+  notes
+    .filter(
+      (entry) =>
+        entry.validation_dataset.toLowerCase() === 'r8' &&
+        entry.validation.status === 'complete' &&
+        typeof entry.validation.income_diff_pct === 'number' &&
+        Number.isFinite(entry.validation.income_diff_pct) &&
+        typeof entry.validation.housing_wealth_diff_pct === 'number' &&
+        Number.isFinite(entry.validation.housing_wealth_diff_pct) &&
+        typeof entry.validation.financial_wealth_diff_pct === 'number' &&
+        Number.isFinite(entry.validation.financial_wealth_diff_pct) &&
+        versionOrder.has(entry.snapshot_folder)
+    )
+    .map((entry) => entry.snapshot_folder)
+).size;
+assert.equal(
+  validationTrend.points.length,
+  expectedTrendCount,
+  'Validation trend point count should match complete r8 snapshots'
+);
+
+const v40Point = validationTrend.points.find((point) => point.version === 'v4.0');
+assert.ok(v40Point, 'Validation trend should include v4.0 point');
+assert.equal(v40Point?.incomeDiffPct, 7.87, 'v4.0 trend point should match income diff');
+assert.equal(v40Point?.housingWealthDiffPct, 14.37, 'v4.0 trend point should match housing wealth diff');
+assert.equal(v40Point?.financialWealthDiffPct, 13.25, 'v4.0 trend point should match financial wealth diff');
+assertClose(
+  Number(v40Point?.averageAbsDiffPct),
+  (Math.abs(7.87) + Math.abs(14.37) + Math.abs(13.25)) / 3,
+  1e-12,
+  'v4.0 trend point should compute average absolute diff correctly'
+);
 
 const rangeAtSameVersion = compareParameters(repoRoot, 'v4.0', 'v4.0', ['national_insurance_rates'], 'range');
 const throughRightAtSameVersion = compareParameters(repoRoot, 'v4.0', 'v4.0', ['national_insurance_rates'], 'through_right');
