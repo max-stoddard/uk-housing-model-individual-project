@@ -1097,6 +1097,8 @@ try {
 
   const runOptions = getModelRunOptions(modelRunFixtureRoot, undefined, true);
   assert.equal(runOptions.executionEnabled, true, 'Expected execution flag to be forwarded by options payload');
+  const disabledRunOptions = getModelRunOptions(modelRunFixtureRoot, undefined, false);
+  assert.equal(disabledRunOptions.executionEnabled, false, 'Expected options payload to preserve disabled execution mode');
   assert.equal(runOptions.parameters.length, 30, 'Expected all 30 USER SET parameters in options payload');
   assert.equal(runOptions.defaultBaseline, 'v1.0', 'Expected latest stable baseline to exclude in-progress snapshots');
   assert.equal(runOptions.requestedBaseline, 'v1.0', 'Expected requested baseline default to latest stable snapshot');
@@ -1155,6 +1157,28 @@ try {
       fs.existsSync(overCapOutputPath),
       'Expected strict cap mode to keep completed over-cap run output visible'
     );
+
+    const bypassOverCapSubmit = submitModelRun(
+      modelRunFixtureRoot,
+      {
+        baseline: 'v1.0',
+        title: 'allowed-over-cap-dev-bypass',
+        overrides: { SEED: 14 },
+        confirmWarnings: true
+      },
+      { ignoreStorageCap: true }
+    );
+    assert.equal(
+      bypassOverCapSubmit.accepted,
+      true,
+      'Expected bypass mode to allow submission even when Results storage is above cap'
+    );
+    assert.equal(spawnedProcesses.length, 2, 'Expected bypass over-cap submit to start a second process');
+    spawnedProcesses[spawnedProcesses.length - 1]?.succeed();
+    await waitForAsyncTick();
+    const completedBypassJob = listModelRunJobs().find((job) => job.jobId === bypassOverCapSubmit.job?.jobId);
+    assert.equal(completedBypassJob?.status, 'succeeded', 'Expected bypass over-cap job to complete successfully');
+    clearModelRunJob(bypassOverCapSubmit.job?.jobId ?? '');
     clearModelRunJob(overCapSubmit.job?.jobId ?? '');
   } finally {
     if (originalResultsCapMb === undefined) {
@@ -1397,6 +1421,15 @@ const misconfiguredLoginError = getWriteAuthConfigurationError(writeAuthDisabled
 assert.ok(
   misconfiguredLoginError?.includes('DASHBOARD_WRITE_USERNAME'),
   'Expected auth misconfiguration to surface actionable login-blocking configuration error'
+);
+const devBypassAuthStatus = resolveDashboardWriteAccess(writeAuthDisabled, undefined, true, true);
+assert.equal(devBypassAuthStatus.authEnabled, false, 'Expected dev bypass mode to disable auth lockout presentation');
+assert.equal(devBypassAuthStatus.canWrite, true, 'Expected dev bypass mode to grant write access');
+assert.equal(devBypassAuthStatus.authMisconfigured, false, 'Expected dev bypass mode to clear misconfiguration state');
+assert.equal(
+  getWriteAuthConfigurationError(writeAuthDisabled, true, true),
+  null,
+  'Expected dev bypass mode to suppress write-auth misconfiguration errors'
 );
 
 const writeAuthEnabled = createWriteAuthController('writer', 'secret');
