@@ -730,6 +730,70 @@
           "decision_logic": "Objective=direct method justification; Why=realism-first constrained optimization with explicit guardrails and diagnostics blocks invalid promotions while remaining data-anchored; Tradeoff=legacy 2011 target closeness is comparison-only."
         }
       ]
+    },
+    {
+      "version_id": "v4.1",
+      "snapshot_folder": "v4.1",
+      "validation_dataset": "r8",
+      "description": "Updated bank and central-bank hard LTV caps for FTB, HM, and BTL alignment",
+      "updated_data_sources": [
+        "config-only",
+        "uk-mortgage-policy-alignment"
+      ],
+      "calibration_files": [
+        "N/A (config-only policy-alignment update)"
+      ],
+      "config_parameters": [
+        "BANK_LTV_HARD_MAX_FTB",
+        "BANK_LTV_HARD_MAX_HM",
+        "BANK_LTV_HARD_MAX_BTL",
+        "CENTRAL_BANK_LTV_HARD_MAX_HM",
+        "CENTRAL_BANK_LTV_HARD_MAX_BTL"
+      ],
+      "parameter_changes": [
+        {
+          "config_parameter": "BANK_LTV_HARD_MAX_FTB",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "BANK_LTV_HARD_MAX_HM",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "BANK_LTV_HARD_MAX_BTL",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "CENTRAL_BANK_LTV_HARD_MAX_HM",
+          "dataset_source": null
+        },
+        {
+          "config_parameter": "CENTRAL_BANK_LTV_HARD_MAX_BTL",
+          "dataset_source": null
+        }
+      ],
+      "validation": {
+        "status": "in_progress",
+        "income_diff_pct": 6.73,
+        "housing_wealth_diff_pct": 15.06,
+        "financial_wealth_diff_pct": 13.58,
+        "note": "Forked from v4.0 with bank and central-bank hard LTV caps aligned by default: FTB 0.95, HM 0.95, BTL 0.85."
+      },
+      "method_variations": [
+        {
+          "config_parameters": [
+            "BANK_LTV_HARD_MAX_FTB",
+            "BANK_LTV_HARD_MAX_HM",
+            "BANK_LTV_HARD_MAX_BTL",
+            "CENTRAL_BANK_LTV_HARD_MAX_HM",
+            "CENTRAL_BANK_LTV_HARD_MAX_BTL"
+          ],
+          "improvement_summary": "Aligned bank and central-bank hard LTV ceilings so the default representative-bank limits match the intended policy ceilings for FTB, HM, and BTL experiments.",
+          "why_changed": "To avoid internal bank LTV caps making higher central-bank LTV settings non-binding and to provide a clearer default policy baseline across borrower types.",
+          "method_chosen": "Direct config fork from v4.0 with targeted LTV ceiling updates.",
+          "decision_logic": "Objective=policy-story interpretability; Why=match the representative-bank hard LTV caps to the central-bank defaults for owner-occupier lending and raise the BTL ceiling to 0.85 for aligned experiments; Tradeoff=this snapshot has not yet been revalidated against R8 outputs."
+        }
+      ]
     }
   ]
 }
