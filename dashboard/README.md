@@ -57,7 +57,50 @@ Write actions requiring login in auth-enabled mode:
 - queue model runs
 - cancel model runs
 - clear finished jobs from queue history
-- delete runs from Model Results
+- delete manual result runs from Experiments (`type=manual`, `mode=view`)
+- start sensitivity experiments
+- cancel sensitivity experiments
+- cancel unified experiment jobs (`POST /api/experiments/jobs/:jobRef/cancel`)
+
+Sensitivity API endpoints:
+
+- `GET /api/experiments/sensitivity`
+- `POST /api/experiments/sensitivity`
+- `GET /api/experiments/sensitivity/:experimentId`
+- `GET /api/experiments/sensitivity/:experimentId/results`
+- `GET /api/experiments/sensitivity/:experimentId/charts`
+- `GET /api/experiments/sensitivity/:experimentId/logs`
+- `POST /api/experiments/sensitivity/:experimentId/cancel`
+
+Unified experiment monitoring endpoints:
+
+- `GET /api/experiments/jobs`
+- `GET /api/experiments/jobs/:jobRef/logs`
+- `POST /api/experiments/jobs/:jobRef/cancel`
+
+Experiments route:
+
+- Unified page at `/experiments` with query-based selectors.
+- `type=manual|sensitivity` and `mode=run|view` drive setup/results combinations.
+- optional focus params: `jobRef` (run mode queue/log), `runId` (manual view), `experimentId` (sensitivity view).
+
+KPI definitions (tail-120 window, used for manual KPI cards and sensitivity analytics):
+
+- `Mean`: arithmetic mean of the tail-120 monthly values.
+- `CV`: `stdev / abs(mean)`; returns `null` when `abs(mean)` is near zero.
+- `Annualised Trend`: OLS monthly slope multiplied by `12`.
+- `Range`: `P95 - P5` using linear percentile interpolation.
+
+Sensitivity behavior:
+
+- one-at-a-time numeric USER SET parameter sweeps (manual min/max, baseline-in-range required)
+- 5-point sampling (`min`, `mid-lower`, `baseline`, `mid-upper`, `max`) with integer rounding and duplicate collapse
+- summary-first retention by default (per-point outputs deleted after summary extraction)
+- optional full-output retention under `Results/experiments/sensitivity/<experimentId>/points`
+- persisted experiment metadata + chart-ready summaries under `Results/experiments/sensitivity/<experimentId>`
+- merged live logs with lifecycle markers + stdout/stderr stream under sensitivity and unified logs endpoints
+- tornado charts support KPI-basis selection (`Mean`, `CV`, `Annualised Trend`, `Range`)
+- manual run submissions are blocked while a sensitivity experiment is active, and sensitivity submissions are blocked while manual jobs are active
 
 ### Local Auth Setup
 
@@ -71,7 +114,7 @@ npm run dev
 Local development defaults:
 
 - when running in local dev (`NODE_ENV != production`), dashboard requests run in dev view mode by default.
-- dev view mode bypasses write-auth configuration lockouts so `Run Experiments` is usable without setting credentials.
+- dev view mode bypasses write-auth configuration lockouts so `Experiments` run mode is usable without setting credentials.
 - actual run execution still requires Java and Maven in the API runtime.
 - use the `Preview non-dev` toggle in the app header (shown in dev) to switch to strict production-like behavior for auth/gating checks.
 

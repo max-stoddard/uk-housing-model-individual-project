@@ -31,10 +31,29 @@ import {
   listModelRunJobs,
   submitModelRun
 } from '../server/lib/modelRuns.js';
+import {
+  __resetSensitivityRunsForTests,
+  __setSensitivityRunSpawnForTests,
+  cancelSensitivityExperiment,
+  getSensitivityExperiment,
+  getSensitivityExperimentCharts,
+  getSensitivityExperimentLogs,
+  getSensitivityExperimentResults,
+  hasActiveSensitivityExperiment,
+  listSensitivityExperiments,
+  submitSensitivityExperiment
+} from '../server/lib/sensitivityRuns.js';
+import { cancelExperimentJob, getExperimentJobLogs, listExperimentJobs } from '../server/lib/experimentJobs.js';
 import { getConfigPath, parseConfigFile, readNumericCsvRows, resolveConfigDataFilePath } from '../server/lib/io.js';
 import { createWriteAuthController, getWriteAuthConfigurationError, resolveDashboardWriteAccess } from '../server/lib/writeAuth.js';
 import { loadVersionNotes } from '../server/lib/versionNotes.js';
 import { assertAxisSpecComplete, getAxisSpec } from '../src/lib/chartAxes.js';
+import {
+  buildExperimentSearchParams,
+  normaliseExperimentRouteState,
+  parseExperimentRouteState
+} from '../src/pages/experiments/routeState.js';
+import { computeKpiFromValues } from '../server/lib/stats/kpi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,6 +78,82 @@ function waitForAsyncTick(ms = 0): Promise<void> {
     setTimeout(resolve, ms);
   });
 }
+
+async function waitUntil(predicate: () => boolean, timeoutMs = 3000): Promise<void> {
+  const start = Date.now();
+  while (!predicate()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('Timed out while waiting for asynchronous condition.');
+    }
+    await waitForAsyncTick(10);
+  }
+}
+
+const kpiStats = computeKpiFromValues([1, 2, 3, 4, 5]);
+assertClose(kpiStats.mean ?? NaN, 3, 1e-9, 'Expected KPI mean to be correct');
+assertClose(kpiStats.annualisedTrend ?? NaN, 12, 1e-9, 'Expected annualised trend to be monthly OLS slope x12');
+assertClose(kpiStats.range ?? NaN, 3.6, 1e-9, 'Expected KPI range to be p95-p5 with linear interpolation');
+assertClose(kpiStats.cv ?? NaN, Math.sqrt(2) / 3, 1e-9, 'Expected KPI CV to use stdev/abs(mean)');
+
+const kpiZeroMean = computeKpiFromValues([-1, 1]);
+assert.equal(kpiZeroMean.cv, null, 'Expected KPI CV to be null when mean is near zero');
+
+const kpiSmallWindow = computeKpiFromValues([1, 2]);
+assertClose(kpiSmallWindow.range ?? NaN, 0.9, 1e-9, 'Expected KPI percentile interpolation for small window');
+
+const defaultExperimentRouteState = parseExperimentRouteState(new URLSearchParams(''));
+assert.deepEqual(
+  defaultExperimentRouteState,
+  {
+    type: 'manual',
+    mode: 'run',
+    runId: '',
+    experimentId: '',
+    jobRef: ''
+  },
+  'Expected empty experiment query params to default to manual run mode.'
+);
+
+const invalidExperimentRouteState = parseExperimentRouteState(
+  new URLSearchParams('type=invalid&mode=wat&runId=abc&experimentId=exp-1&jobRef=manual:job-1')
+);
+assert.deepEqual(
+  invalidExperimentRouteState,
+  {
+    type: 'manual',
+    mode: 'run',
+    runId: '',
+    experimentId: '',
+    jobRef: 'manual:job-1'
+  },
+  'Expected invalid route selectors to fall back and clean incompatible params.'
+);
+
+const cleanedViewState = normaliseExperimentRouteState({
+  type: 'sensitivity',
+  mode: 'view',
+  runId: 'run-1',
+  experimentId: 'exp:42',
+  jobRef: 'sensitivity:exp:42'
+});
+assert.deepEqual(
+  cleanedViewState,
+  {
+    type: 'sensitivity',
+    mode: 'view',
+    runId: '',
+    experimentId: 'exp:42',
+    jobRef: ''
+  },
+  'Expected sensitivity view state to keep only experimentId.'
+);
+
+const encodedExperimentQuery = buildExperimentSearchParams(cleanedViewState).toString();
+assert.equal(
+  encodedExperimentQuery,
+  'type=sensitivity&mode=view&experimentId=exp%3A42',
+  'Expected deterministic encoding for experiment route deep links.'
+);
 
 function writeSizedFile(filePath: string, sizeBytes: number): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -152,7 +247,6 @@ const newlyAddedIds = [
   'rent_gross_yield',
   'downpayment_btl_profile',
   'bank_rate_credit_response',
-  'bank_ltv_limits',
   'bank_lti_limits',
   'bank_affordability_icr_limits'
 ] as const;
@@ -244,6 +338,18 @@ function buildCoreCsv(seed: number, rowCount: number): string {
     values.push(String(seed + (index % 9) + index * 0.01));
   }
   return `${values.join(';')}\n`;
+}
+
+function writeSensitivityCoreOutputs(outputPath: string, parameterValue: number): void {
+  fs.mkdirSync(outputPath, { recursive: true });
+  for (let index = 0; index < RESULTS_CORE_FILE_NAMES.length; index += 1) {
+    const base = parameterValue * 10_000 + (index + 1) * 10;
+    const values: string[] = [];
+    for (let offset = 0; offset < 240; offset += 1) {
+      values.push(String(base + offset * 0.01));
+    }
+    fs.writeFileSync(path.join(outputPath, RESULTS_CORE_FILE_NAMES[index]), `${values.join(';')}\n`, 'utf-8');
+  }
 }
 
 function writeResultsFixtureRun(resultsRoot: string, options: ResultsFixtureRunOptions): void {
@@ -618,6 +724,14 @@ for (const item of unchangedCards.items) {
   assert.equal(item.unchanged, true, `Expected newly added card ${item.id} to remain unchanged across versions`);
 }
 
+const bankLtvCompare = compareParameters(repoRoot, 'v0', latestVersion, ['bank_ltv_limits'], 'range');
+assert.equal(bankLtvCompare.items.length, 1, 'Expected bank_ltv_limits compare payload');
+assert.equal(
+  bankLtvCompare.items[0]?.unchanged,
+  false,
+  'Expected bank_ltv_limits to change in the latest version due to v4.1 cap alignment'
+);
+
 const saleMarkup = unchangedCards.items.find((item) => item.id === 'initial_sale_markup_distribution');
 assert.ok(
   saleMarkup && saleMarkup.visualPayload.type === 'binned_distribution',
@@ -955,6 +1069,21 @@ try {
   assert.equal(runDetail.kpiSummary.length, 15, 'Expected 15 core KPI summary metrics');
   assert.equal(runDetail.indicators.length, 27, 'Expected 27 total indicator definitions (15 core + 12 output)');
   assert.ok(runDetail.configAvailable, 'Expected complete fixture run to report config.properties availability');
+  const firstKpi = runDetail.kpiSummary[0];
+  assert.ok(firstKpi, 'Expected KPI summary entry');
+  assert.equal(Object.prototype.hasOwnProperty.call(firstKpi, 'mean'), true, 'Expected KPI payload to include mean');
+  assert.equal(Object.prototype.hasOwnProperty.call(firstKpi, 'cv'), true, 'Expected KPI payload to include cv');
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(firstKpi, 'annualisedTrend'),
+    true,
+    'Expected KPI payload to include annualisedTrend'
+  );
+  assert.equal(Object.prototype.hasOwnProperty.call(firstKpi, 'range'), true, 'Expected KPI payload to include range');
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(firstKpi, 'latest'),
+    false,
+    'Expected legacy latest KPI field to be removed'
+  );
   assert.ok(
     runDetail.indicators.some((indicator) => indicator.id === 'output_interestRate' && indicator.available),
     'Expected output interest rate indicator to be available on complete fixture run'
@@ -1394,6 +1523,496 @@ try {
 } finally {
   __resetModelRunManagerForTests();
   fs.rmSync(modelRunFixtureRoot, { recursive: true, force: true });
+}
+
+const sensitivityFixtureRoot = createModelRunFixtureRepo();
+const sensitivityProcesses: FakeModelProcess[] = [];
+
+try {
+  __resetModelRunManagerForTests();
+  __resetSensitivityRunsForTests();
+  __setSensitivityRunSpawnForTests((_repoRoot, configPath, outputPath) => {
+    const config = parseConfigFile(configPath);
+    const baseRate = Number.parseFloat(config.get('CENTRAL_BANK_INITIAL_BASE_RATE') ?? '0');
+    writeSensitivityCoreOutputs(outputPath, baseRate);
+    const process = new FakeModelProcess();
+    sensitivityProcesses.push(process);
+    setTimeout(() => {
+      process.emitStdout(`running point ${baseRate}`);
+      process.succeed();
+    }, 0);
+    return process as never;
+  });
+
+  const warningSubmit = submitSensitivityExperiment(sensitivityFixtureRoot, {
+    baseline: 'v1.0',
+    parameterKey: 'TARGET_POPULATION',
+    min: 10_000,
+    max: 20_000,
+    confirmWarnings: false
+  });
+  assert.equal(warningSubmit.accepted, false, 'Expected sensitivity submit to require warning confirmation');
+  assert.ok((warningSubmit.warnings.length ?? 0) > 0, 'Expected warning payload for high target population points');
+
+  const successSubmit = submitSensitivityExperiment(sensitivityFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'base-rate-sweep',
+    parameterKey: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+    min: 0.004,
+    max: 0.006,
+    confirmWarnings: true
+  });
+  assert.equal(successSubmit.accepted, true, 'Expected sensitivity submit to start experiment');
+  const successExperimentId = successSubmit.experiment?.experimentId ?? '';
+  assert.ok(successExperimentId.length > 0, 'Expected started sensitivity experiment id');
+
+  await waitUntil(() => {
+    const detail = getSensitivityExperiment(sensitivityFixtureRoot, successExperimentId).experiment;
+    return detail.status === 'succeeded';
+  });
+
+  const successDetail = getSensitivityExperiment(sensitivityFixtureRoot, successExperimentId).experiment;
+  assert.equal(successDetail.status, 'succeeded', 'Expected sensitivity experiment to finish as succeeded');
+  assert.equal(successDetail.sampledPoints.length, 5, 'Expected five sampled points for non-integer sweep');
+  assert.equal(
+    hasActiveSensitivityExperiment(sensitivityFixtureRoot),
+    false,
+    'Expected no active sensitivity experiment after completion'
+  );
+
+  const successResults = getSensitivityExperimentResults(sensitivityFixtureRoot, successExperimentId);
+  assert.equal(successResults.points.length, 5, 'Expected five point results in summary payload');
+  assert.ok(
+    successResults.points.every((point) => point.status === 'succeeded'),
+    'Expected all points to succeed for deterministic sensitivity fixture'
+  );
+  assert.ok(
+    successResults.points.every((point) => point.outputPath === null),
+    'Expected summary-only sensitivity run to avoid retained point outputs'
+  );
+  assert.ok(
+    !fs.existsSync(path.join(sensitivityFixtureRoot, 'Results', 'experiments', 'sensitivity', successExperimentId, 'points')),
+    'Expected summary-only sensitivity run not to retain points folder'
+  );
+  const firstPointMetric = successResults.points[0]?.indicatorMetrics[0];
+  assert.ok(firstPointMetric, 'Expected indicator KPI metrics to be present for sensitivity points');
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(firstPointMetric, 'kpi'),
+    true,
+    'Expected sensitivity metrics to include KPI bundle'
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(firstPointMetric, 'deltaFromBaseline'),
+    true,
+    'Expected sensitivity metrics to include KPI-keyed deltas'
+  );
+  const baselinePoint = successResults.points.find((point) => point.isBaseline) ?? null;
+  const comparisonPoint = successResults.points.find((point) => !point.isBaseline) ?? null;
+  const baselineMetric = baselinePoint?.indicatorMetrics.find((metric) => metric.indicatorId === firstPointMetric.indicatorId) ?? null;
+  const comparisonMetric = comparisonPoint?.indicatorMetrics.find((metric) => metric.indicatorId === firstPointMetric.indicatorId) ?? null;
+  const baselineMean = baselineMetric?.kpi.mean ?? null;
+  const comparisonMean = comparisonMetric?.kpi.mean ?? null;
+  const observedPercentDiff = comparisonMetric?.deltaFromBaseline.mean ?? null;
+  if (baselineMean === null || comparisonMean === null || observedPercentDiff === null) {
+    throw new Error('Expected baseline and comparison KPI means with a computed % diff for at least one indicator');
+  }
+  const expectedPercentDiff = ((comparisonMean - baselineMean) / baselineMean) * 100;
+  assertClose(
+    observedPercentDiff,
+    expectedPercentDiff,
+    1e-9,
+    'Expected KPI delta to be stored as percent difference from baseline'
+  );
+
+  const successCharts = getSensitivityExperimentCharts(sensitivityFixtureRoot, successExperimentId);
+  assert.ok(successCharts.tornado.length > 0, 'Expected tornado chart payload to include indicators');
+  assert.equal(successCharts.windowType, 'tail_120', 'Expected sensitivity charts payload to include tail_120 window');
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(successCharts.tornado[0] ?? {}, 'maxAbsDeltaByKpi'),
+    true,
+    'Expected tornado payload to include KPI-keyed max deltas'
+  );
+  assert.ok(
+    successCharts.deltaTrend.every((series) => series.points.length > 0),
+    'Expected delta-trend payload to include points for each policy indicator'
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(successCharts.deltaTrend[0]?.points[0] ?? {}, 'deltaByKpi'),
+    true,
+    'Expected delta trend points to include KPI-keyed signed % differences'
+  );
+  assert.equal(
+    typeof successCharts.tornado[0]?.maxAbsDeltaByKpi.mean,
+    'number',
+    'Expected tornado mean basis value to be computed'
+  );
+  assert.equal(
+    typeof successCharts.tornado[0]?.maxAbsDeltaByKpi.range,
+    'number',
+    'Expected tornado range basis value to be computed'
+  );
+
+  const logsPayload = getSensitivityExperimentLogs(sensitivityFixtureRoot, successExperimentId, 0, 200);
+  assert.ok(
+    logsPayload.lines.some((line) => line.includes('[system]')),
+    'Expected sensitivity logs to include lifecycle system markers'
+  );
+  assert.ok(
+    logsPayload.lines.some((line) => line.includes('[stdout]')),
+    'Expected sensitivity logs to include stdout output lines'
+  );
+
+  const fullOutputSubmit = submitSensitivityExperiment(sensitivityFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'retain-outputs',
+    parameterKey: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+    min: 0.004,
+    max: 0.006,
+    retainFullOutput: true,
+    confirmWarnings: true
+  });
+  assert.equal(fullOutputSubmit.accepted, true, 'Expected full-output sensitivity submit to be accepted');
+  const fullOutputExperimentId = fullOutputSubmit.experiment?.experimentId ?? '';
+  await waitUntil(() => {
+    const detail = getSensitivityExperiment(sensitivityFixtureRoot, fullOutputExperimentId).experiment;
+    return detail.status === 'succeeded';
+  });
+  const fullOutputResults = getSensitivityExperimentResults(sensitivityFixtureRoot, fullOutputExperimentId);
+  assert.ok(
+    fullOutputResults.points.some((point) => Boolean(point.outputPath)),
+    'Expected full-output sensitivity run to retain output paths'
+  );
+  const retainedOutput = fullOutputResults.points.find((point) => point.outputPath)?.outputPath ?? '';
+  assert.ok(
+    retainedOutput && fs.existsSync(path.join(sensitivityFixtureRoot, retainedOutput)),
+    'Expected retained sensitivity point output path to exist on disk'
+  );
+
+  const duplicateSubmit = submitSensitivityExperiment(sensitivityFixtureRoot, {
+    baseline: 'v1.0',
+    parameterKey: 'CENTRAL_BANK_LTI_MONTHS_TO_CHECK',
+    min: 11.6,
+    max: 12.4,
+    confirmWarnings: true
+  });
+  assert.equal(duplicateSubmit.accepted, true, 'Expected integer duplicate-range sweep to be accepted');
+  const duplicateExperimentId = duplicateSubmit.experiment?.experimentId ?? '';
+  await waitUntil(() => {
+    const detail = getSensitivityExperiment(sensitivityFixtureRoot, duplicateExperimentId).experiment;
+    return detail.status === 'succeeded';
+  });
+  const duplicateDetail = getSensitivityExperiment(sensitivityFixtureRoot, duplicateExperimentId).experiment;
+  assert.equal(duplicateDetail.sampledPoints.length, 1, 'Expected rounded duplicate points to collapse into one sample');
+  assert.equal(
+    duplicateDetail.collapsedSlots.min,
+    duplicateDetail.collapsedSlots.max,
+    'Expected collapsed slot mapping to point at a single sampled point'
+  );
+
+  assert.throws(
+    () =>
+      submitSensitivityExperiment(sensitivityFixtureRoot, {
+        baseline: 'v1.0',
+        parameterKey: 'recordTransactions',
+        min: 0,
+        max: 1,
+        confirmWarnings: true
+      }),
+    /must be numeric/,
+    'Expected boolean sensitivity parameter to be rejected'
+  );
+
+  assert.throws(
+    () =>
+      submitSensitivityExperiment(sensitivityFixtureRoot, {
+        baseline: 'v1.0',
+        parameterKey: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+        min: 0.006,
+        max: 0.007,
+        confirmWarnings: true
+      }),
+    /must be within/,
+    'Expected sensitivity range to require baseline inclusion'
+  );
+
+  __resetSensitivityRunsForTests();
+  __setSensitivityRunSpawnForTests((_repoRoot, configPath, outputPath) => {
+    const config = parseConfigFile(configPath);
+    const baseRate = Number.parseFloat(config.get('CENTRAL_BANK_INITIAL_BASE_RATE') ?? '0');
+    writeSensitivityCoreOutputs(outputPath, baseRate);
+    const process = new FakeModelProcess();
+    sensitivityProcesses.push(process);
+    return process as never;
+  });
+
+  const cancelSubmit = submitSensitivityExperiment(sensitivityFixtureRoot, {
+    baseline: 'v1.0',
+    parameterKey: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+    min: 0.004,
+    max: 0.006,
+    confirmWarnings: true
+  });
+  assert.equal(cancelSubmit.accepted, true, 'Expected cancel target sensitivity submit to be accepted');
+  const cancelExperimentId = cancelSubmit.experiment?.experimentId ?? '';
+  await waitUntil(() => sensitivityProcesses.length > 0);
+  cancelSensitivityExperiment(sensitivityFixtureRoot, cancelExperimentId);
+  await waitUntil(() => {
+    const detail = getSensitivityExperiment(sensitivityFixtureRoot, cancelExperimentId).experiment;
+    return detail.status === 'canceled';
+  });
+  const canceledDetail = getSensitivityExperiment(sensitivityFixtureRoot, cancelExperimentId).experiment;
+  assert.equal(canceledDetail.status, 'canceled', 'Expected canceled sensitivity experiment status');
+
+  __resetModelRunManagerForTests();
+  __setModelRunSpawnForTests(() => {
+    const process = new FakeModelProcess();
+    return process as never;
+  });
+  const lockedManualSubmit = submitModelRun(sensitivityFixtureRoot, {
+    baseline: 'v1.0',
+    title: 'manual-lock',
+    overrides: { SEED: 42 },
+    confirmWarnings: true
+  });
+  assert.equal(lockedManualSubmit.accepted, true, 'Expected manual queue submit to seed unified job lock test');
+  const lockedManualJobId = lockedManualSubmit.job?.jobId ?? '';
+  const unifiedJobs = listExperimentJobs(sensitivityFixtureRoot);
+  assert.ok(
+    unifiedJobs.jobs.some((job) => job.jobRef === `manual:${lockedManualJobId}`),
+    'Expected unified job list to include manual job entry'
+  );
+  assert.ok(
+    unifiedJobs.jobs.some((job) => job.jobRef === `sensitivity:${successExperimentId}`),
+    'Expected unified job list to include sensitivity job entry'
+  );
+  assert.equal(
+    unifiedJobs.locks.sensitivitySubmissionLocked,
+    true,
+    'Expected unified locks to block sensitivity submission when manual queue is active'
+  );
+  const unifiedSensitivityLogs = getExperimentJobLogs(
+    sensitivityFixtureRoot,
+    `sensitivity:${cancelExperimentId}`,
+    0,
+    200
+  );
+  assert.ok(unifiedSensitivityLogs.lines.length > 0, 'Expected unified logs endpoint to return sensitivity logs');
+  assert.throws(
+    () =>
+      submitSensitivityExperiment(sensitivityFixtureRoot, {
+        baseline: 'v1.0',
+        parameterKey: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+        min: 0.004,
+        max: 0.006,
+        confirmWarnings: true
+      }),
+    /manual model runs are queued or running/,
+    'Expected sensitivity submission to be blocked while manual run queue is active'
+  );
+  cancelExperimentJob(sensitivityFixtureRoot, `manual:${lockedManualJobId}`);
+  await waitUntil(() => {
+    const job = listExperimentJobs(sensitivityFixtureRoot).jobs.find((item) => item.jobRef === `manual:${lockedManualJobId}`);
+    return job?.status === 'canceled';
+  });
+
+  __resetModelRunManagerForTests();
+  __resetSensitivityRunsForTests();
+  const experimentsAfterReload = listSensitivityExperiments(sensitivityFixtureRoot).experiments;
+  assert.ok(
+    experimentsAfterReload.some((experiment) => experiment.experimentId === successExperimentId),
+    'Expected persisted completed sensitivity experiment to reload from disk'
+  );
+
+  const legacyExperimentId = 'sensitivity-legacy-schema-fixture';
+  const legacyRoot = path.join(
+    sensitivityFixtureRoot,
+    'Results',
+    'experiments',
+    'sensitivity',
+    legacyExperimentId
+  );
+  fs.mkdirSync(legacyRoot, { recursive: true });
+  fs.writeFileSync(
+    path.join(legacyRoot, 'metadata.json'),
+    JSON.stringify(
+      {
+        experimentId: legacyExperimentId,
+        baseline: 'v1.0',
+        status: 'succeeded',
+        createdAt: new Date().toISOString(),
+        endedAt: new Date().toISOString(),
+        retainFullOutput: false,
+        parameter: {
+          key: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+          title: 'Initial base rate',
+          description: 'fixture',
+          type: 'number',
+          baselineValue: 0.005,
+          min: 0.004,
+          max: 0.006
+        },
+        warnings: [],
+        warningSummary: { byPoint: {} },
+        sampledPoints: [
+          { pointId: 'point-0.005', value: 0.005, label: '0.005', slotLabels: ['baseline'], isBaseline: true }
+        ],
+        collapsedSlots: {
+          min: 'point-0.005',
+          mid_lower: 'point-0.005',
+          baseline: 'point-0.005',
+          mid_upper: 'point-0.005',
+          max: 'point-0.005'
+        },
+        runCommand: {
+          mavenBin: 'mvn',
+          commandTemplate: 'fixture'
+        }
+      },
+      null,
+      2
+    ),
+    'utf-8'
+  );
+  fs.writeFileSync(
+    path.join(legacyRoot, 'summary.json'),
+    JSON.stringify(
+      {
+        results: {
+          experimentId: legacyExperimentId,
+          baselinePointId: 'point-0.005',
+          points: [
+            {
+              pointId: 'point-0.005',
+              value: 0.005,
+              label: '0.005',
+              slotLabels: ['baseline'],
+              isBaseline: true,
+              status: 'succeeded',
+              runId: 'legacy-run',
+              outputPath: null,
+              indicatorMetrics: [
+                {
+                  indicatorId: 'core_ooLTV',
+                  title: 'Owner-Occupier LTV (Mean Above Median)',
+                  units: '%',
+                  tail120Mean: 1.23,
+                  deltaFromBaseline: 0
+                }
+              ]
+            }
+          ]
+        },
+        charts: {
+          experimentId: legacyExperimentId,
+          parameter: {
+            key: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+            title: 'Initial base rate',
+            description: 'fixture',
+            type: 'number',
+            baselineValue: 0.005,
+            min: 0.004,
+            max: 0.006
+          },
+          tornado: [
+            {
+              indicatorId: 'core_ooLTV',
+              title: 'Owner-Occupier LTV (Mean Above Median)',
+              units: '%',
+              maxAbsDelta: 0
+            }
+          ],
+          deltaTrend: [
+            {
+              indicatorId: 'core_ooLTV',
+              title: 'Owner-Occupier LTV (Mean Above Median)',
+              units: '%',
+              points: [{ parameterValue: 0.005, delta: 0 }]
+            }
+          ]
+        }
+      },
+      null,
+      2
+    ),
+    'utf-8'
+  );
+
+  __resetSensitivityRunsForTests();
+  const legacyResults = getSensitivityExperimentResults(sensitivityFixtureRoot, legacyExperimentId);
+  const legacyMetric = legacyResults.points[0]?.indicatorMetrics[0];
+  assert.equal(legacyMetric?.kpi.mean, 1.23, 'Expected legacy mean metric to migrate into KPI mean');
+  assert.equal(legacyMetric?.kpi.cv, null, 'Expected legacy summary migration to default unsupported KPI keys to null');
+  const legacyCharts = getSensitivityExperimentCharts(sensitivityFixtureRoot, legacyExperimentId);
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(legacyCharts.tornado[0] ?? {}, 'maxAbsDeltaByKpi'),
+    true,
+    'Expected legacy tornado payload to migrate to KPI-keyed shape on read'
+  );
+
+  const interruptedExperimentId = 'sensitivity-interrupted-fixture';
+  const interruptedRoot = path.join(
+    sensitivityFixtureRoot,
+    'Results',
+    'experiments',
+    'sensitivity',
+    interruptedExperimentId
+  );
+  fs.mkdirSync(interruptedRoot, { recursive: true });
+  fs.writeFileSync(
+    path.join(interruptedRoot, 'metadata.json'),
+    JSON.stringify(
+      {
+        experimentId: interruptedExperimentId,
+        baseline: 'v1.0',
+        status: 'running',
+        createdAt: new Date().toISOString(),
+        retainFullOutput: false,
+        parameter: {
+          key: 'CENTRAL_BANK_INITIAL_BASE_RATE',
+          title: 'Initial base rate',
+          description: 'fixture',
+          type: 'number',
+          baselineValue: 0.005,
+          min: 0.004,
+          max: 0.006
+        },
+        warnings: [],
+        warningSummary: { byPoint: {} },
+        sampledPoints: [],
+        collapsedSlots: {
+          min: 'point-0',
+          mid_lower: 'point-0',
+          baseline: 'point-0',
+          mid_upper: 'point-0',
+          max: 'point-0'
+        },
+        runCommand: {
+          mavenBin: 'mvn',
+          commandTemplate: 'fixture'
+        }
+      },
+      null,
+      2
+    ),
+    'utf-8'
+  );
+
+  __resetSensitivityRunsForTests();
+  const restartedDetail = getSensitivityExperiment(sensitivityFixtureRoot, interruptedExperimentId).experiment;
+  assert.equal(
+    restartedDetail.status,
+    'failed',
+    'Expected non-terminal sensitivity experiment to be marked failed after restart reload'
+  );
+  assert.equal(
+    restartedDetail.failureReason,
+    'interrupted_on_restart',
+    'Expected restart interruption failure reason to be persisted'
+  );
+} finally {
+  __resetSensitivityRunsForTests();
+  __resetModelRunManagerForTests();
+  fs.rmSync(sensitivityFixtureRoot, { recursive: true, force: true });
 }
 
 const writeAuthDisabled = createWriteAuthController(undefined, undefined);
