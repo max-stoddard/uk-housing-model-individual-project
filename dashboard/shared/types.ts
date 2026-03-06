@@ -235,15 +235,24 @@ export interface ResultsIndicatorMeta {
   source: ResultsSeriesSource;
 }
 
+export type KpiMetricKey = 'mean' | 'cv' | 'annualisedTrend' | 'range';
+
+export interface KpiMetricValues {
+  mean: number | null;
+  cv: number | null;
+  annualisedTrend: number | null;
+  range: number | null;
+}
+
 export interface KpiMetricSummary {
   indicatorId: string;
   title: string;
   units: string;
   windowType: 'tail_120';
-  latest: number | null;
   mean: number | null;
-  yoyDelta: number | null;
-  yoyPercent: number | null;
+  cv: number | null;
+  annualisedTrend: number | null;
+  range: number | null;
 }
 
 export interface ResultsCoverageSummary {
@@ -437,4 +446,181 @@ export interface ModelRunJobLogsPayload {
 export interface ResultsRunDeleteResponse {
   runId: string;
   deleted: boolean;
+}
+
+export type SensitivityExperimentStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
+export type SensitivitySampleSlot = 'min' | 'mid_lower' | 'baseline' | 'mid_upper' | 'max';
+
+export interface SensitivitySamplePoint {
+  pointId: string;
+  value: number;
+  label: string;
+  slotLabels: SensitivitySampleSlot[];
+  isBaseline: boolean;
+}
+
+export interface SensitivityExperimentParameterSelection {
+  key: string;
+  title: string;
+  description: string;
+  type: Extract<ModelRunParameterType, 'integer' | 'number'>;
+  baselineValue: number;
+  min: number;
+  max: number;
+}
+
+export interface SensitivityExperimentCreateRequest {
+  baseline: string;
+  title?: string;
+  parameterKey: string;
+  min: number;
+  max: number;
+  retainFullOutput?: boolean;
+  confirmWarnings?: boolean;
+}
+
+export interface SensitivityExperimentSummary {
+  experimentId: string;
+  title?: string;
+  baseline: string;
+  status: SensitivityExperimentStatus;
+  createdAt: string;
+  startedAt?: string;
+  endedAt?: string;
+  retainFullOutput: boolean;
+  parameter: SensitivityExperimentParameterSelection;
+}
+
+export interface SensitivityExperimentWarningSummary {
+  byPoint: Record<string, string[]>;
+}
+
+export interface SensitivityExperimentMetadata extends SensitivityExperimentSummary {
+  warnings: ModelRunWarning[];
+  warningSummary: SensitivityExperimentWarningSummary;
+  failureReason?: string;
+  canceledByUser?: boolean;
+  sampledPoints: SensitivitySamplePoint[];
+  collapsedSlots: Record<SensitivitySampleSlot, string>;
+  runCommand: {
+    mavenBin: string;
+    commandTemplate: string;
+  };
+}
+
+export interface SensitivityIndicatorPointMetric {
+  indicatorId: string;
+  title: string;
+  units: string;
+  kpi: KpiMetricValues;
+  deltaFromBaseline: KpiMetricValues;
+}
+
+export interface SensitivityPointResult extends SensitivitySamplePoint {
+  status: 'succeeded' | 'failed' | 'canceled';
+  runId: string;
+  outputPath: string | null;
+  error?: string;
+  indicatorMetrics: SensitivityIndicatorPointMetric[];
+}
+
+export interface SensitivityTornadoBar {
+  indicatorId: string;
+  title: string;
+  units: string;
+  maxAbsDeltaByKpi: KpiMetricValues;
+}
+
+export interface SensitivityDeltaTrendPoint {
+  parameterValue: number;
+  deltaByKpi: KpiMetricValues;
+}
+
+export interface SensitivityDeltaTrendSeries {
+  indicatorId: string;
+  title: string;
+  units: string;
+  points: SensitivityDeltaTrendPoint[];
+}
+
+export interface SensitivityExperimentResultsPayload {
+  experimentId: string;
+  baselinePointId: string | null;
+  points: SensitivityPointResult[];
+}
+
+export interface SensitivityExperimentChartsPayload {
+  experimentId: string;
+  parameter: SensitivityExperimentParameterSelection;
+  windowType: 'tail_120';
+  tornado: SensitivityTornadoBar[];
+  deltaTrend: SensitivityDeltaTrendSeries[];
+}
+
+export interface SensitivityExperimentDetailPayload {
+  experiment: SensitivityExperimentMetadata;
+}
+
+export interface SensitivityExperimentListPayload {
+  experiments: SensitivityExperimentSummary[];
+}
+
+export interface SensitivityExperimentSubmitResponse {
+  accepted: boolean;
+  warnings: ModelRunWarning[];
+  warningSummary?: SensitivityExperimentWarningSummary;
+  experiment?: SensitivityExperimentSummary;
+}
+
+export interface SensitivityExperimentLogsPayload {
+  experimentId: string;
+  cursor: number;
+  nextCursor: number;
+  lines: string[];
+  hasMore: boolean;
+  done: boolean;
+  truncated: boolean;
+}
+
+export type ExperimentJobType = 'manual' | 'sensitivity';
+export type ExperimentJobStatus = ModelRunJobStatus | SensitivityExperimentStatus;
+
+export interface ExperimentJobSummary {
+  jobRef: string;
+  type: ExperimentJobType;
+  id: string;
+  title: string;
+  status: ExperimentJobStatus;
+  createdAt: string;
+  startedAt?: string;
+  endedAt?: string;
+  baseline?: string;
+  runId?: string;
+}
+
+export interface ExperimentExecutionLocks {
+  manualSubmissionLocked: boolean;
+  sensitivitySubmissionLocked: boolean;
+  activeManualJobRef: string | null;
+  activeSensitivityJobRef: string | null;
+}
+
+export interface ExperimentJobsPayload {
+  jobs: ExperimentJobSummary[];
+  locks: ExperimentExecutionLocks;
+}
+
+export interface ExperimentJobLogsPayload {
+  jobRef: string;
+  type: ExperimentJobType;
+  cursor: number;
+  nextCursor: number;
+  lines: string[];
+  hasMore: boolean;
+  done: boolean;
+  truncated: boolean;
+}
+
+export interface ExperimentJobCancelResponse {
+  job: ExperimentJobSummary;
 }

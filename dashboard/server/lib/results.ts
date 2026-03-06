@@ -16,6 +16,7 @@ import type {
   ResultsSeriesPoint,
   ResultsSeriesSource
 } from '../../shared/types';
+import { computeKpiFromValues } from './stats/kpi';
 
 type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;
@@ -642,7 +643,7 @@ function listRunDirectories(resultsRoot: string): string[] {
 
   return fs
     .readdirSync(resultsRoot, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.isDirectory() && entry.name !== 'experiments')
     .map((entry) => entry.name);
 }
 
@@ -846,44 +847,21 @@ function isPointSeriesAvailable(points: ResultsSeriesPoint[]): boolean {
 }
 
 function computeKpi(points: ResultsSeriesPoint[], indicator: IndicatorDefinition): KpiMetricSummary {
-  const latestIndex = (() => {
-    for (let index = points.length - 1; index >= 0; index -= 1) {
-      if (points[index].value !== null) {
-        return index;
-      }
-    }
-    return -1;
-  })();
-
-  const latest = latestIndex >= 0 ? (points[latestIndex].value as number) : null;
   const windowPoints = points.slice(Math.max(0, points.length - 120));
   const windowValues = windowPoints
     .map((point) => point.value)
     .filter((value): value is number => value !== null);
-  const mean =
-    windowValues.length > 0
-      ? windowValues.reduce((sum, value) => sum + value, 0) / windowValues.length
-      : null;
-
-  let yoyDelta: number | null = null;
-  let yoyPercent: number | null = null;
-  if (latestIndex >= 12 && latest !== null) {
-    const prior = points[latestIndex - 12]?.value ?? null;
-    if (prior !== null) {
-      yoyDelta = latest - prior;
-      yoyPercent = Math.abs(prior) < Number.EPSILON ? null : (yoyDelta / prior) * 100;
-    }
-  }
+  const kpi = computeKpiFromValues(windowValues);
 
   return {
     indicatorId: indicator.id,
     title: indicator.title,
     units: indicator.units,
     windowType: 'tail_120',
-    latest,
-    mean,
-    yoyDelta,
-    yoyPercent
+    mean: kpi.mean,
+    cv: kpi.cv,
+    annualisedTrend: kpi.annualisedTrend,
+    range: kpi.range
   };
 }
 
@@ -945,10 +923,10 @@ function buildRunDiagnostics(repoRoot: string, runId: string): RunDiagnostics {
         title: indicator.title,
         units: indicator.units,
         windowType: 'tail_120',
-        latest: null,
         mean: null,
-        yoyDelta: null,
-        yoyPercent: null
+        cv: null,
+        annualisedTrend: null,
+        range: null
       };
     }
     return computeKpi(series.points, indicator);

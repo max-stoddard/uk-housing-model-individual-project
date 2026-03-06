@@ -18,6 +18,13 @@ import type {
   ModelRunWarning
 } from '../../shared/types';
 import { getInProgressVersions, getVersions } from './service';
+import {
+  appendLogLine,
+  appendOutputChunk,
+  flushPartialLine,
+  readLogSlice,
+  type LogBufferState
+} from './logs/logBuffer';
 
 const INPUT_DATA_VERSIONS_DIR = 'input-data-versions';
 const RESULTS_DIR = 'Results';
@@ -25,8 +32,6 @@ const TMP_RUNS_DIR = path.join('tmp', 'dashboard-model-runs');
 const MANAGED_RUN_MARKER = '.dashboard-managed-run.json';
 const MAX_QUEUE_SIZE = 10;
 const MAX_LOG_LINES = 10_000;
-const LOG_DEFAULT_LIMIT = 200;
-const LOG_MAX_LIMIT = 1_000;
 const CANCEL_KILL_TIMEOUT_MS = 10_000;
 const DEFAULT_RESULTS_CAP_MB = 400;
 const DEFAULT_MAVEN_BIN = process.env.DASHBOARD_MAVEN_BIN?.trim() || 'mvn';
@@ -262,9 +267,7 @@ type ParsedOverride = {
 interface ModelRunJobInternal {
   job: ModelRunJob;
   warnings: ModelRunWarning[];
-  logLines: string[];
-  logStart: number;
-  partialLine: string;
+  logBuffer: LogBufferState;
   process?: ChildProcessWithoutNullStreams;
   cancelRequested: boolean;
   killTimer?: NodeJS.Timeout;
@@ -628,37 +631,6 @@ function hasActiveRunId(runId: string): boolean {
   return false;
 }
 
-function appendLogLine(job: ModelRunJobInternal, line: string): void {
-  job.logLines.push(line);
-  if (job.logLines.length > MAX_LOG_LINES) {
-    const overflow = job.logLines.length - MAX_LOG_LINES;
-    job.logLines.splice(0, overflow);
-    job.logStart += overflow;
-  }
-}
-
-function appendOutputChunk(job: ModelRunJobInternal, streamName: 'stdout' | 'stderr', chunk: Buffer): void {
-  job.partialLine += chunk.toString('utf-8').replace(/\r\n/g, '\n');
-
-  while (true) {
-    const lineBreak = job.partialLine.indexOf('\n');
-    if (lineBreak < 0) {
-      break;
-    }
-    const line = job.partialLine.slice(0, lineBreak);
-    job.partialLine = job.partialLine.slice(lineBreak + 1);
-    appendLogLine(job, `[${streamName}] ${line}`);
-  }
-}
-
-function flushPartialLine(job: ModelRunJobInternal): void {
-  if (!job.partialLine) {
-    return;
-  }
-  appendLogLine(job, `[stdout] ${job.partialLine}`);
-  job.partialLine = '';
-}
-
 function resolveResultsCapBytes(): number {
   const rawCapMb = process.env.DASHBOARD_RESULTS_CAP_MB?.trim();
   if (!rawCapMb) {
@@ -744,7 +716,7 @@ function startNextQueuedJob(repoRoot: string): void {
       queuedJob.job.endedAt = new Date().toISOString();
       queuedJob.job.exitCode = null;
       queuedJob.job.signal = null;
-      appendLogLine(queuedJob, `[stderr] ${(error as Error).message}`);
+      appendLogLine(queuedJob.logBuffer, `[stderr] ${(error as Error).message}`, MAX_LOG_LINES);
       fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
       fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
       startNextQueuedJob(repoRoot);
@@ -782,7 +754,7 @@ function startNextQueuedJob(repoRoot: string): void {
     queuedJob.job.endedAt = new Date().toISOString();
     queuedJob.job.exitCode = null;
     queuedJob.job.signal = null;
-    appendLogLine(queuedJob, `[stderr] Failed to spawn model process: ${(error as Error).message}`);
+    appendLogLine(queuedJob.logBuffer, `[stderr] Failed to spawn model process: ${(error as Error).message}`, MAX_LOG_LINES);
     runningJobId = null;
     fs.rmSync(queuedJob.runAbsolutePath, { recursive: true, force: true });
     fs.rmSync(queuedJob.tempDirPath, { recursive: true, force: true });
@@ -793,27 +765,29 @@ function startNextQueuedJob(repoRoot: string): void {
   queuedJob.process = child;
 
   child.stdout.on('data', (chunk: Buffer) => {
-    appendOutputChunk(queuedJob, 'stdout', chunk);
+    appendOutputChunk(queuedJob.logBuffer, 'stdout', chunk, MAX_LOG_LINES);
   });
 
   child.stderr.on('data', (chunk: Buffer) => {
-    appendOutputChunk(queuedJob, 'stderr', chunk);
+    appendOutputChunk(queuedJob.logBuffer, 'stderr', chunk, MAX_LOG_LINES);
   });
 
   child.on('error', (error: Error) => {
     const spawnError = error as NodeJS.ErrnoException;
     if (spawnError.code === 'ENOENT') {
       appendLogLine(
-        queuedJob,
+        queuedJob.logBuffer,
         `[stderr] Model process error: Maven executable "${DEFAULT_MAVEN_BIN}" was not found. Configure DASHBOARD_MAVEN_BIN or run the API in an environment with Java+Maven (e.g. Docker runtime).`
+        ,
+        MAX_LOG_LINES
       );
       return;
     }
-    appendLogLine(queuedJob, `[stderr] Model process error: ${error.message}`);
+    appendLogLine(queuedJob.logBuffer, `[stderr] Model process error: ${error.message}`, MAX_LOG_LINES);
   });
 
   child.on('close', (code, signal) => {
-    flushPartialLine(queuedJob);
+    flushPartialLine(queuedJob.logBuffer, MAX_LOG_LINES);
 
     if (queuedJob.killTimer) {
       clearTimeout(queuedJob.killTimer);
@@ -844,24 +818,6 @@ function startNextQueuedJob(repoRoot: string): void {
 
 function toPublicJob(job: ModelRunJobInternal): ModelRunJob {
   return { ...job.job };
-}
-
-function coerceLogCursor(value: number | undefined): number {
-  if (!Number.isFinite(value as number)) {
-    return 0;
-  }
-  return Math.max(0, Math.trunc(value as number));
-}
-
-function coerceLogLimit(value: number | undefined): number {
-  if (!Number.isFinite(value as number)) {
-    return LOG_DEFAULT_LIMIT;
-  }
-  const limit = Math.trunc(value as number);
-  if (limit <= 0) {
-    return LOG_DEFAULT_LIMIT;
-  }
-  return Math.min(limit, LOG_MAX_LIMIT);
 }
 
 export function getModelRunOptions(
@@ -913,23 +869,16 @@ export function getModelRunJobLogs(jobId: string, cursor: number | undefined, li
     throw new Error(`Unknown model run job: ${jobId}`);
   }
 
-  const safeCursor = coerceLogCursor(cursor);
-  const safeLimit = coerceLogLimit(limit);
-
-  const startCursor = Math.max(safeCursor, job.logStart);
-  const offset = Math.max(0, startCursor - job.logStart);
-  const lines = job.logLines.slice(offset, offset + safeLimit);
-  const nextCursor = startCursor + lines.length;
-  const absoluteEnd = job.logStart + job.logLines.length;
+  const slice = readLogSlice(job.logBuffer, cursor, limit);
 
   return {
     jobId: normalized,
-    cursor: startCursor,
-    nextCursor,
-    lines,
-    hasMore: nextCursor < absoluteEnd,
-    done: isTerminal(job.job.status) && nextCursor >= absoluteEnd,
-    truncated: safeCursor < job.logStart
+    cursor: slice.cursor,
+    nextCursor: slice.nextCursor,
+    lines: slice.lines,
+    hasMore: slice.hasMore,
+    done: isTerminal(job.job.status) && !slice.hasMore,
+    truncated: slice.truncated
   };
 }
 
@@ -967,7 +916,11 @@ export function cancelModelRunJob(repoRoot: string, jobId: string): ModelRunJob 
           }
         }, CANCEL_KILL_TIMEOUT_MS);
       } else {
-        appendLogLine(job, '[stderr] Cancel requested but SIGTERM could not be delivered; waiting for process close.');
+        appendLogLine(
+          job.logBuffer,
+          '[stderr] Cancel requested but SIGTERM could not be delivered; waiting for process close.',
+          MAX_LOG_LINES
+        );
       }
     }
     return toPublicJob(job);
@@ -1096,9 +1049,11 @@ export function submitModelRun(
   const internalJob: ModelRunJobInternal = {
     job,
     warnings,
-    logLines: [],
-    logStart: 0,
-    partialLine: '',
+    logBuffer: {
+      logLines: [],
+      logStart: 0,
+      partialLine: ''
+    },
     cancelRequested: false,
     tempDirPath,
     configAbsolutePath,
