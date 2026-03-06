@@ -21,6 +21,18 @@ import {
   listModelRunJobs,
   submitModelRun
 } from './lib/modelRuns';
+import { cancelExperimentJob, getExperimentJobLogs, listExperimentJobs } from './lib/experimentJobs';
+import {
+  cancelSensitivityExperiment,
+  getActiveSensitivityExperimentId,
+  getSensitivityExperiment,
+  getSensitivityExperimentCharts,
+  getSensitivityExperimentLogs,
+  getSensitivityExperimentResults,
+  hasActiveSensitivityExperiment,
+  listSensitivityExperiments,
+  submitSensitivityExperiment
+} from './lib/sensitivityRuns';
 import { checkRuntimeDependencies } from './lib/runtimeDeps';
 import { createWriteAuthControllerFromEnv, getWriteAuthConfigurationError, resolveDashboardWriteAccess } from './lib/writeAuth';
 
@@ -397,6 +409,14 @@ app.post('/api/model-runs', (req, res) => {
     return;
   }
 
+  if (hasActiveSensitivityExperiment(repoRoot)) {
+    const experimentId = getActiveSensitivityExperimentId(repoRoot);
+    res.status(409).json({
+      error: `Cannot queue manual runs while sensitivity experiment ${experimentId ?? ''} is active.`.trim()
+    });
+    return;
+  }
+
   try {
     const payload = submitModelRun(repoRoot, req.body, {
       ignoreStorageCap: policy.devBypassActive
@@ -486,6 +506,132 @@ app.get('/api/model-runs/jobs/:jobId/logs', (req, res) => {
       Number.isFinite(limitRaw) ? limitRaw : undefined
     );
     res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/sensitivity', (_req, res) => {
+  try {
+    res.json(listSensitivityExperiments(repoRoot));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.post('/api/experiments/sensitivity', (req, res) => {
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
+    return;
+  }
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    const payload = submitSensitivityExperiment(repoRoot, req.body);
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/sensitivity/:experimentId', (req, res) => {
+  try {
+    res.json(getSensitivityExperiment(repoRoot, String(req.params.experimentId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/sensitivity/:experimentId/results', (req, res) => {
+  try {
+    res.json(getSensitivityExperimentResults(repoRoot, String(req.params.experimentId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/sensitivity/:experimentId/charts', (req, res) => {
+  try {
+    res.json(getSensitivityExperimentCharts(repoRoot, String(req.params.experimentId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/sensitivity/:experimentId/logs', (req, res) => {
+  const cursorRaw = Number.parseInt(String(req.query.cursor ?? '0'), 10);
+  const limitRaw = Number.parseInt(String(req.query.limit ?? '200'), 10);
+
+  try {
+    const payload = getSensitivityExperimentLogs(
+      repoRoot,
+      String(req.params.experimentId ?? ''),
+      Number.isFinite(cursorRaw) ? cursorRaw : undefined,
+      Number.isFinite(limitRaw) ? limitRaw : undefined
+    );
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.post('/api/experiments/sensitivity/:experimentId/cancel', (req, res) => {
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
+    return;
+  }
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    res.json(cancelSensitivityExperiment(repoRoot, String(req.params.experimentId ?? '')));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/jobs', (_req, res) => {
+  try {
+    res.json(listExperimentJobs(repoRoot));
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.get('/api/experiments/jobs/:jobRef/logs', (req, res) => {
+  const cursorRaw = Number.parseInt(String(req.query.cursor ?? '0'), 10);
+  const limitRaw = Number.parseInt(String(req.query.limit ?? '200'), 10);
+
+  try {
+    const payload = getExperimentJobLogs(
+      repoRoot,
+      String(req.params.jobRef ?? ''),
+      Number.isFinite(cursorRaw) ? cursorRaw : undefined,
+      Number.isFinite(limitRaw) ? limitRaw : undefined
+    );
+    res.json(payload);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.post('/api/experiments/jobs/:jobRef/cancel', (req, res) => {
+  const policy = resolveRuntimePolicy(req);
+  if (!policy.modelRunsEnabled) {
+    res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
+    return;
+  }
+  if (!requireWriteAccess(req, res)) {
+    return;
+  }
+
+  try {
+    res.json(cancelExperimentJob(repoRoot, String(req.params.jobRef ?? '')));
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }

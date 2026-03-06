@@ -4,6 +4,9 @@ import type {
   AuthLogoutResponse,
   AuthStatusPayload,
   CompareResponse,
+  ExperimentJobCancelResponse,
+  ExperimentJobLogsPayload,
+  ExperimentJobsPayload,
   ModelRunJob,
   ModelRunJobClearResponse,
   ModelRunJobLogsPayload,
@@ -19,6 +22,13 @@ import type {
   ResultsRunSummary,
   ResultsStorageSummary,
   ResultsSeriesPayload,
+  SensitivityExperimentChartsPayload,
+  SensitivityExperimentCreateRequest,
+  SensitivityExperimentDetailPayload,
+  SensitivityExperimentListPayload,
+  SensitivityExperimentLogsPayload,
+  SensitivityExperimentResultsPayload,
+  SensitivityExperimentSubmitResponse,
   ValidationTrendPayload
 } from '../../shared/types';
 
@@ -347,5 +357,103 @@ export async function fetchModelRunLogs(jobId: string, cursor: number, limit = 2
   return requestJson<ModelRunJobLogsPayload>(
     `${buildApiUrl(`/api/model-runs/jobs/${encodeURIComponent(jobId)}/logs`)}?${params.toString()}`,
     'Failed to fetch model run logs'
+  );
+}
+
+export async function fetchSensitivityExperiments(): Promise<SensitivityExperimentListPayload> {
+  return requestJson<SensitivityExperimentListPayload>(
+    buildApiUrl('/api/experiments/sensitivity'),
+    'Failed to fetch sensitivity experiments'
+  );
+}
+
+export async function submitSensitivityExperiment(
+  payload: SensitivityExperimentCreateRequest
+): Promise<SensitivityExperimentSubmitResponse> {
+  return requestJsonWithInit<SensitivityExperimentSubmitResponse>(
+    buildApiUrl('/api/experiments/sensitivity'),
+    'Failed to submit sensitivity experiment',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
+export async function fetchSensitivityExperiment(experimentId: string): Promise<SensitivityExperimentDetailPayload> {
+  return requestJson<SensitivityExperimentDetailPayload>(
+    buildApiUrl(`/api/experiments/sensitivity/${encodeURIComponent(experimentId)}`),
+    'Failed to fetch sensitivity experiment'
+  );
+}
+
+export async function fetchSensitivityExperimentResults(experimentId: string): Promise<SensitivityExperimentResultsPayload> {
+  return requestJson<SensitivityExperimentResultsPayload>(
+    buildApiUrl(`/api/experiments/sensitivity/${encodeURIComponent(experimentId)}/results`),
+    'Failed to fetch sensitivity experiment results'
+  );
+}
+
+export async function fetchSensitivityExperimentCharts(experimentId: string): Promise<SensitivityExperimentChartsPayload> {
+  return requestJson<SensitivityExperimentChartsPayload>(
+    buildApiUrl(`/api/experiments/sensitivity/${encodeURIComponent(experimentId)}/charts`),
+    'Failed to fetch sensitivity experiment charts'
+  );
+}
+
+export async function fetchSensitivityExperimentLogs(
+  experimentId: string,
+  cursor: number,
+  limit = 200
+): Promise<SensitivityExperimentLogsPayload> {
+  const params = new URLSearchParams({
+    cursor: String(cursor),
+    limit: String(limit)
+  });
+  return requestJson<SensitivityExperimentLogsPayload>(
+    `${buildApiUrl(`/api/experiments/sensitivity/${encodeURIComponent(experimentId)}/logs`)}?${params.toString()}`,
+    'Failed to fetch sensitivity experiment logs'
+  );
+}
+
+export async function cancelSensitivityExperiment(experimentId: string): Promise<SensitivityExperimentDetailPayload> {
+  return requestJsonWithInit<SensitivityExperimentDetailPayload>(
+    buildApiUrl(`/api/experiments/sensitivity/${encodeURIComponent(experimentId)}/cancel`),
+    'Failed to cancel sensitivity experiment',
+    {
+      method: 'POST'
+    }
+  );
+}
+
+export async function fetchExperimentJobs(): Promise<ExperimentJobsPayload> {
+  return requestJson<ExperimentJobsPayload>(buildApiUrl('/api/experiments/jobs'), 'Failed to fetch experiment jobs');
+}
+
+export async function fetchExperimentJobLogs(
+  jobRef: string,
+  cursor: number,
+  limit = 200
+): Promise<ExperimentJobLogsPayload> {
+  const params = new URLSearchParams({
+    cursor: String(cursor),
+    limit: String(limit)
+  });
+  return requestJson<ExperimentJobLogsPayload>(
+    `${buildApiUrl(`/api/experiments/jobs/${encodeURIComponent(jobRef)}/logs`)}?${params.toString()}`,
+    'Failed to fetch experiment logs'
+  );
+}
+
+export async function cancelExperimentJob(jobRef: string): Promise<ExperimentJobCancelResponse> {
+  return requestJsonWithInit<ExperimentJobCancelResponse>(
+    buildApiUrl(`/api/experiments/jobs/${encodeURIComponent(jobRef)}/cancel`),
+    'Failed to cancel experiment job',
+    {
+      method: 'POST'
+    }
   );
 }
