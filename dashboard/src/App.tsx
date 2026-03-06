@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import type { AuthStatusPayload } from '../shared/types';
 import {
@@ -8,14 +8,14 @@ import {
   setApiViewMode
 } from './lib/api';
 import { ComparePage } from './pages/ComparePage';
+import { ExperimentsPage } from './pages/ExperimentsPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
-import { ModelResultsPage } from './pages/ModelResultsPage';
-import { RunExperimentsPage } from './pages/RunExperimentsPage';
 import { ValidationPage } from './pages/ValidationPage';
 
 const AUTH_TOKEN_STORAGE_KEY = 'dashboard.writeAuthToken';
 const PREVIEW_MODE_STORAGE_KEY = 'dashboard.prodPreviewEnabled';
+const EXPERIMENTS_RUN_PATH = '/experiments?mode=run&type=manual';
 
 const DEFAULT_AUTH_STATUS: AuthStatusPayload = {
   authEnabled: false,
@@ -75,6 +75,8 @@ export function App() {
   const [authLoaded, setAuthLoaded] = useState(false);
   const [authError, setAuthError] = useState('');
 
+  const loginPath = `/login?next=${encodeURIComponent(EXPERIMENTS_RUN_PATH)}`;
+
   const refreshAuthStatus = useCallback(async () => {
     try {
       const status = await fetchAuthStatus();
@@ -105,13 +107,6 @@ export function App() {
     setApiViewMode(isDevEnv && !isProdPreviewEnabled ? 'dev' : 'non_dev_preview');
     void refreshAuthStatus();
   }, [isDevEnv, isProdPreviewEnabled, refreshAuthStatus]);
-
-  const runExperimentsMisconfigured = authLoaded && authStatus.authMisconfigured;
-  const runExperimentsLocked = authLoaded && authStatus.authEnabled && !authStatus.canWrite && !authStatus.authMisconfigured;
-  const runExperimentsLink = useMemo(
-    () => (runExperimentsMisconfigured ? '/model-results' : runExperimentsLocked ? '/login?next=/run-experiments' : '/run-experiments'),
-    [runExperimentsLocked, runExperimentsMisconfigured]
-  );
 
   const handleLoginSuccess = useCallback(
     async (token: string | null) => {
@@ -160,10 +155,9 @@ export function App() {
             </NavLink>
             <NavLink to="/compare">Calibration Versions</NavLink>
             <NavLink to="/validation">Validation</NavLink>
-            <NavLink to={runExperimentsLink}>Run Experiments</NavLink>
-            <NavLink to="/model-results">Model Results</NavLink>
+            <NavLink to="/experiments">Experiments</NavLink>
             {authStatus.authEnabled && !authStatus.canWrite && (
-              <NavLink className="main-nav-auth-control main-nav-auth-link" to="/login?next=/run-experiments">
+              <NavLink className="main-nav-auth-control main-nav-auth-link" to={loginPath}>
                 <span className="main-nav-auth-icon" aria-hidden="true">
                   <svg viewBox="0 0 20 20" role="img" aria-hidden="true">
                     <path
@@ -206,25 +200,14 @@ export function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/validation" element={<ValidationPage />} />
-            <Route path="/model-results" element={<ModelResultsPage canWrite={authStatus.canWrite} />} />
             <Route
-              path="/run-experiments"
-              element={
-                runExperimentsMisconfigured ? (
-                  <Navigate to="/model-results" replace />
-                ) : runExperimentsLocked ? (
-                  <Navigate to="/login?next=/run-experiments" replace />
-                ) : (
-                  <RunExperimentsPage />
-                )
-              }
+              path="/experiments"
+              element={<ExperimentsPage canWrite={authStatus.canWrite} authEnabled={authStatus.authEnabled} />}
             />
             <Route
               path="/login"
               element={<LoginPage authStatus={authStatus} onLoginSuccess={handleLoginSuccess} />}
             />
-            <Route path="/run-model" element={<Navigate to="/model-results" replace />} />
-            <Route path="/experiments" element={<Navigate to="/run-experiments" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}

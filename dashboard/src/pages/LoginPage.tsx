@@ -8,6 +8,8 @@ interface LoginPageProps {
   onLoginSuccess: (token: string | null) => Promise<void>;
 }
 
+const DEFAULT_EXPERIMENTS_RUN_PATH = '/experiments?mode=run&type=manual';
+
 export function LoginPage({ authStatus, onLoginSuccess }: LoginPageProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ export function LoginPage({ authStatus, onLoginSuccess }: LoginPageProps) {
     const params = new URLSearchParams(location.search);
     const raw = params.get('next')?.trim() ?? '';
     if (!raw || !raw.startsWith('/')) {
-      return '/run-experiments';
+      return DEFAULT_EXPERIMENTS_RUN_PATH;
     }
     return raw;
   }, [location.search]);
