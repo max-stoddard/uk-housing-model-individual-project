@@ -35,8 +35,24 @@ const WEEK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const CACHE_FILE_NAME = 'dashboard-git-stats-cache.json';
+const CACHE_SCHEMA_VERSION = 2;
+const SOURCE_FILE_EXTENSIONS = ['.java', '.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.ts', '.tsx', '.py', '.sh'];
+const SOURCE_FILE_PATHSPECS = [
+  '*.java',
+  '*.cpp',
+  '*.cc',
+  '*.cxx',
+  '*.hpp',
+  '*.hh',
+  '*.hxx',
+  '*.ts',
+  '*.tsx',
+  '*.py',
+  '*.sh'
+];
 
 interface CacheEntry {
+  version: number;
   timestamp: number;
   baseCommit: string;
   payload: GitStatsPayload;
@@ -76,6 +92,14 @@ function getSinceIsoForWeeklyWindow(): string {
   return new Date(Date.now() - WEEK_WINDOW_MS).toISOString();
 }
 
+function isTrackedSourceFile(filePath: string): boolean {
+  return SOURCE_FILE_EXTENSIONS.some((extension) => filePath.endsWith(extension));
+}
+
+function buildShortStatArgs(base: string, head = 'HEAD'): string[] {
+  return ['diff', '--shortstat', base, head, '--', ...SOURCE_FILE_PATHSPECS];
+}
+
 function readGitNumber(repoRoot: string, args: string[]): number {
   const value = Number(
     execFileSync('git', args, {
@@ -98,7 +122,7 @@ function readGitString(repoRoot: string, args: string[]): string {
 function getLocalWeeklyStats(repoRoot: string, sinceIso: string): WeeklyGitStats {
   const cutoffCommit = readGitString(repoRoot, ['rev-list', '-1', `--before=${sinceIso}`, 'HEAD']);
   const weeklyDiffBase = cutoffCommit || EMPTY_TREE_HASH;
-  const weeklyShortStat = readGitString(repoRoot, ['diff', '--shortstat', weeklyDiffBase, 'HEAD']);
+  const weeklyShortStat = readGitString(repoRoot, buildShortStatArgs(weeklyDiffBase));
   const weeklyStat = parseShortStatLine(weeklyShortStat);
   const weeklyCommitCount = readGitNumber(repoRoot, ['rev-list', '--count', `--since=${sinceIso}`, 'HEAD']);
 
@@ -110,7 +134,7 @@ function getLocalWeeklyStats(repoRoot: string, sinceIso: string): WeeklyGitStats
 }
 
 function getLocalGitStats(repoRoot: string, baseCommit: string): GitStatsPayload {
-  const shortStat = execFileSync('git', ['diff', '--shortstat', baseCommit], {
+  const shortStat = execFileSync('git', buildShortStatArgs(baseCommit), {
     cwd: repoRoot,
     encoding: 'utf-8',
     stdio: ['pipe', 'pipe', 'pipe']
@@ -139,7 +163,11 @@ function readDiskCache(baseCommit: string): GitStatsPayload | null {
   try {
     const raw = fs.readFileSync(getCacheFilePath(), 'utf-8');
     const entry: CacheEntry = JSON.parse(raw);
-    if (entry.baseCommit === baseCommit && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    if (
+      entry.version === CACHE_SCHEMA_VERSION &&
+      entry.baseCommit === baseCommit &&
+      Date.now() - entry.timestamp < CACHE_TTL_MS
+    ) {
       return entry.payload;
     }
   } catch {
@@ -149,7 +177,12 @@ function readDiskCache(baseCommit: string): GitStatsPayload | null {
 }
 
 function writeDiskCache(baseCommit: string, payload: GitStatsPayload): void {
-  const entry: CacheEntry = { timestamp: Date.now(), baseCommit, payload };
+  const entry: CacheEntry = {
+    version: CACHE_SCHEMA_VERSION,
+    timestamp: Date.now(),
+    baseCommit,
+    payload
+  };
   try {
     fs.writeFileSync(getCacheFilePath(), JSON.stringify(entry), 'utf-8');
   } catch {
@@ -163,13 +196,23 @@ function readCache(baseCommit: string): GitStatsPayload | null {
   }
   const diskResult = readDiskCache(baseCommit);
   if (diskResult) {
-    memoryCache = { timestamp: Date.now(), baseCommit, payload: diskResult };
+    memoryCache = {
+      version: CACHE_SCHEMA_VERSION,
+      timestamp: Date.now(),
+      baseCommit,
+      payload: diskResult
+    };
   }
   return diskResult;
 }
 
 function writeCache(baseCommit: string, payload: GitStatsPayload): void {
-  memoryCache = { timestamp: Date.now(), baseCommit, payload };
+  memoryCache = {
+    version: CACHE_SCHEMA_VERSION,
+    timestamp: Date.now(),
+    baseCommit,
+    payload
+  };
   writeDiskCache(baseCommit, payload);
 }
 
@@ -197,19 +240,65 @@ async function githubFetchDiff(url: string, token: string): Promise<Response> {
   });
 }
 
+function stripGitDiffPathPrefix(filePath: string): string {
+  if (filePath === '/dev/null') {
+    return filePath;
+  }
+  if (filePath.startsWith('a/') || filePath.startsWith('b/')) {
+    return filePath.slice(2);
+  }
+  return filePath;
+}
+
+function resolveDiffFilePath(leftPath: string, rightPath: string): string {
+  const normalizedLeft = stripGitDiffPathPrefix(leftPath);
+  const normalizedRight = stripGitDiffPathPrefix(rightPath);
+  if (normalizedRight !== '/dev/null') {
+    return normalizedRight;
+  }
+  return normalizedLeft;
+}
+
+function parseDiffHeaderPaths(line: string): { leftPath: string; rightPath: string } | null {
+  const prefix = 'diff --git ';
+  if (!line.startsWith(prefix)) {
+    return null;
+  }
+
+  const remainder = line.slice(prefix.length);
+  const separator = remainder.indexOf(' b/');
+  if (separator <= 2 || !remainder.startsWith('a/')) {
+    return null;
+  }
+
+  return {
+    leftPath: remainder.slice(0, separator),
+    rightPath: remainder.slice(separator + 1)
+  };
+}
+
 function parseDiffStats(diffText: string): { filesChanged: number; insertions: number; deletions: number } {
   let filesChanged = 0;
   let insertions = 0;
   let deletions = 0;
+  let currentFileAllowed = false;
 
   const lines = diffText.split('\n');
   for (const line of lines) {
-    if (line.startsWith('diff --git a/')) {
-      filesChanged++;
+    const headerPaths = parseDiffHeaderPaths(line);
+    if (headerPaths) {
+      currentFileAllowed = isTrackedSourceFile(resolveDiffFilePath(headerPaths.leftPath, headerPaths.rightPath));
+      if (currentFileAllowed) {
+        filesChanged++;
+      }
     } else if (line.startsWith('+') && !line.startsWith('+++')) {
-      insertions++;
+      if (currentFileAllowed) {
+        insertions++;
+      }
     } else if (line.startsWith('-') && !line.startsWith('---')) {
-      deletions++;
+      if (currentFileAllowed) {
+        deletions++;
+      }
     }
   }
 

@@ -138,8 +138,15 @@ Health endpoint:
 
 `/api/git-stats` behavior:
 
-- uses local git endpoint-diff semantics (`git diff --shortstat` + `git rev-list`) from base commit to `HEAD`
-- weekly stats use the same local git semantics over the rolling 7-day window
+- uses local git endpoint-diff semantics from base commit to `HEAD`
+- `filesChanged` and `lineChanges` are restricted to source files only:
+  - Java: `.java`
+  - C++: `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hh`, `.hxx`
+  - TypeScript: `.ts`, `.tsx`
+  - Python: `.py`
+  - Shell: `.sh`
+- weekly source-file stats use the same local git semantics over the rolling 7-day window
+- `commitCount` and `weekly.commitCount` remain repo-wide git commit counts
 - if local git stats fail in runtime, API returns a safe zero-valued payload so homepage rendering remains stable
 - response includes `weekly` metrics for rolling last 7 days:
   - `weekly.filesChanged`

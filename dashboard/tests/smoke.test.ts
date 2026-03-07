@@ -2077,20 +2077,32 @@ assert.ok(
 
 const gitStatsSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/lib/gitStats.ts'), 'utf-8');
 assert.ok(
-  gitStatsSource.includes("execFileSync('git', ['diff', '--shortstat', baseCommit]"),
-  'git-stats should compute totals with local git shortstat semantics'
+  gitStatsSource.includes('const SOURCE_FILE_PATHSPECS = ['),
+  'git-stats should define a central source-file pathspec list'
+);
+assert.ok(
+  gitStatsSource.includes("return ['diff', '--shortstat', base, head, '--', ...SOURCE_FILE_PATHSPECS];"),
+  'git-stats should compute source-only shortstat args from the shared pathspec list'
 );
 assert.ok(
   gitStatsSource.includes("['rev-list', '--count', `${baseCommit}..HEAD`]"),
   'git-stats should compute total commits with local git rev-list semantics'
 );
 assert.ok(
-  gitStatsSource.includes("['diff', '--shortstat', weeklyDiffBase, 'HEAD']"),
-  'git-stats should compute weekly totals with local git shortstat semantics'
+  gitStatsSource.includes('buildShortStatArgs(weeklyDiffBase)'),
+  'git-stats should compute weekly totals with the source-only shortstat helper'
 );
 assert.ok(
   gitStatsSource.includes("['rev-list', '--count', `--since=${sinceIso}`, 'HEAD']"),
   'git-stats should compute weekly commits with local git rev-list semantics'
+);
+assert.ok(
+  gitStatsSource.includes('entry.version === CACHE_SCHEMA_VERSION'),
+  'git-stats cache should be versioned so old all-files payloads are invalidated'
+);
+assert.ok(
+  gitStatsSource.includes('isTrackedSourceFile(resolveDiffFilePath(headerPaths.leftPath, headerPaths.rightPath))'),
+  'git-stats GitHub diff parsing should filter files by source extension'
 );
 assert.ok(
   gitStatsSource.includes('api.github.com/repos'),
