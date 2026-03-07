@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import type { EChartsOption } from 'echarts';
-import type { CompareResult } from '../../shared/types';
+import type { HomePreviewItem } from '../../shared/types';
 import {
   API_RETRY_DELAY_MS,
   fetchCatalog,
-  fetchCompare,
-  fetchGitStats,
+  fetchHomePreview,
   fetchVersions,
   isRetryableApiError
 } from '../lib/api';
@@ -32,7 +31,7 @@ const BUY_QUAD_CURVE_LAYOUT_OVERRIDES = { gridLeft: 108, gridRight: 30, yAxisNam
 
 type HomeLoadState = 'loading' | 'waiting' | 'ready' | 'error';
 
-function buildPreviewOption(item: CompareResult): EChartsOption {
+function buildPreviewOption(item: HomePreviewItem): EChartsOption {
   const axisSpec = getAxisSpec(item.id);
 
   switch (item.visualPayload.type) {
@@ -101,21 +100,13 @@ export function HomePage() {
   const [inProgressVersions, setInProgressVersions] = useState<string[]>([]);
   const [latestVersion, setLatestVersion] = useState<string>('...');
   const [cardsCount, setCardsCount] = useState<number>(0);
-  const [filesChanged, setFilesChanged] = useState<number>(0);
-  const [linesWritten, setLinesWritten] = useState<number>(0);
-  const [commitCount, setCommitCount] = useState<number>(0);
-  const [filesChangedWeekly, setFilesChangedWeekly] = useState<number>(0);
-  const [linesWrittenWeekly, setLinesWrittenWeekly] = useState<number>(0);
-  const [commitCountWeekly, setCommitCountWeekly] = useState<number>(0);
-  const [previewItems, setPreviewItems] = useState<CompareResult[]>([]);
+  const [previewItems, setPreviewItems] = useState<HomePreviewItem[]>([]);
   const [previewIndex, setPreviewIndex] = useState<number>(0);
   const [isPreviewPaused, setIsPreviewPaused] = useState<boolean>(false);
-  const [gitStatsLoading, setGitStatsLoading] = useState<boolean>(true);
   const [loadState, setLoadState] = useState<HomeLoadState>('loading');
   const [loadError, setLoadError] = useState<string>('');
 
   const formatCount = (value: number) => value.toLocaleString('en-GB');
-  const formatSignedCount = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString('en-GB')}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -126,13 +117,6 @@ export function HomePage() {
       setInProgressVersions([]);
       setLatestVersion('n/a');
       setCardsCount(0);
-      setFilesChanged(0);
-      setLinesWritten(0);
-      setCommitCount(0);
-      setFilesChangedWeekly(0);
-      setLinesWrittenWeekly(0);
-      setCommitCountWeekly(0);
-      setGitStatsLoading(true);
       setPreviewItems([]);
     };
 
@@ -141,25 +125,7 @@ export function HomePage() {
       setLoadError('');
 
       try {
-        // Fetch git stats in parallel but independently (it's slower on Render)
-        const gitStatsPromise = fetchGitStats().then((gitStats) => {
-          if (cancelled) return;
-          setFilesChanged(gitStats.filesChanged);
-          setLinesWritten(gitStats.lineChanges);
-          setCommitCount(gitStats.commitCount);
-          setFilesChangedWeekly(gitStats.weekly.filesChanged);
-          setLinesWrittenWeekly(gitStats.weekly.lineChanges);
-          setCommitCountWeekly(gitStats.weekly.commitCount);
-          setGitStatsLoading(false);
-        }).catch(() => {
-          if (!cancelled) setGitStatsLoading(false);
-        });
-
-        const [versionsPayload, cards] = await Promise.all([
-          fetchVersions(),
-          fetchCatalog(),
-          gitStatsPromise
-        ]);
+        const [versionsPayload, cards] = await Promise.all([fetchVersions(), fetchCatalog()]);
 
         if (cancelled) {
           return;
@@ -173,12 +139,12 @@ export function HomePage() {
 
         const latest = versions[versions.length - 1] ?? '';
         if (latest) {
-          const previewPayload = await fetchCompare(latest, latest, PREVIEW_PARAMETER_IDS, 'through_right');
+          const previewPayload = await fetchHomePreview(latest);
           if (cancelled) {
             return;
           }
           const byId = new Map(previewPayload.items.map((item) => [item.id, item]));
-          const ordered = PREVIEW_PARAMETER_IDS.map((id) => byId.get(id)).filter((item): item is CompareResult =>
+          const ordered = PREVIEW_PARAMETER_IDS.map((id) => byId.get(id)).filter((item): item is HomePreviewItem =>
             Boolean(item)
           );
           setPreviewItems(ordered);
@@ -295,54 +261,6 @@ export function HomePage() {
             <span>LinkedIn</span>
           </a>
         </div>
-      </div>
-
-      <div className="stats-grid fade-up-delay">
-        <article>
-          <p className="stat-title">
-            <span>Lines of Code Written</span>
-          </p>
-          <strong>
-            <span className={`stat-value${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
-              {gitStatsLoading ? '\u00A0' : formatCount(linesWritten)}
-            </span>
-            <span
-              className={`stat-delta${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-pill' : linesWrittenWeekly < 0 ? ' negative' : ''}`}
-            >
-              {gitStatsLoading ? '\u00A0' : `${formatSignedCount(linesWrittenWeekly)} this week`}
-            </span>
-          </strong>
-        </article>
-        <article>
-          <p className="stat-title">
-            <span>Files Changed</span>
-          </p>
-          <strong>
-            <span className={`stat-value${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
-              {gitStatsLoading ? '\u00A0' : formatCount(filesChanged)}
-            </span>
-            <span
-              className={`stat-delta${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-pill' : filesChangedWeekly < 0 ? ' negative' : ''}`}
-            >
-              {gitStatsLoading ? '\u00A0' : `${formatSignedCount(filesChangedWeekly)} this week`}
-            </span>
-          </strong>
-        </article>
-        <article>
-          <p className="stat-title">
-            <span>Git Commits</span>
-          </p>
-          <strong>
-            <span className={`stat-value${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-line' : ''}`}>
-              {gitStatsLoading ? '\u00A0' : formatCount(commitCount)}
-            </span>
-            <span
-              className={`stat-delta${gitStatsLoading ? ' stat-loading loading-skeleton loading-skeleton-pill' : commitCountWeekly < 0 ? ' negative' : ''}`}
-            >
-              {gitStatsLoading ? '\u00A0' : `${formatSignedCount(commitCountWeekly)} this week`}
-            </span>
-          </strong>
-        </article>
       </div>
 
       <div className="hero-card fade-up">

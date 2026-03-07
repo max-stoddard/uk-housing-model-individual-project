@@ -7,6 +7,7 @@ import type {
   ExperimentJobCancelResponse,
   ExperimentJobLogsPayload,
   ExperimentJobsPayload,
+  HomePreviewPayload,
   ModelRunJob,
   ModelRunJobClearResponse,
   ModelRunJobLogsPayload,
@@ -53,20 +54,6 @@ interface ResultsRunsResponse {
 interface ResultsRunFilesResponse {
   runId: string;
   files: ResultsFileManifestEntry[];
-}
-
-interface GitStatsResponse {
-  baseCommit: string;
-  filesChanged: number;
-  insertions: number;
-  deletions: number;
-  lineChanges: number;
-  commitCount: number;
-  weekly: {
-    filesChanged: number;
-    lineChanges: number;
-    commitCount: number;
-  };
 }
 
 export class ApiRequestError extends Error {
@@ -213,8 +200,12 @@ export async function fetchCatalog(): Promise<ParameterCardMeta[]> {
   return payload.items;
 }
 
-export async function fetchGitStats(): Promise<GitStatsResponse> {
-  return requestJson<GitStatsResponse>(buildApiUrl('/api/git-stats'), 'Failed to fetch git stats');
+export async function fetchHomePreview(version: string): Promise<HomePreviewPayload> {
+  const params = new URLSearchParams({ version });
+  return requestJson<HomePreviewPayload>(
+    `${buildApiUrl('/api/home-preview')}?${params.toString()}`,
+    'Failed to fetch homepage preview'
+  );
 }
 
 export async function fetchCompare(

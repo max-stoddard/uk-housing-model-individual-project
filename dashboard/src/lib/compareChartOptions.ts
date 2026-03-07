@@ -1,6 +1,6 @@
 // Author: Max Stoddard
 import type { EChartsOption } from 'echarts';
-import type { CompareResult, CurvePoint, ScalarDatum } from '../../shared/types';
+import type { CompareResult, CurvePoint, HomePreviewItem, ScalarDatum } from '../../shared/types';
 import type { JointHeatmapLayoutOverrides } from './jointHeatmapOption';
 
 export function formatChartNumber(value: number): string {
@@ -310,7 +310,7 @@ export function binnedOption(
 }
 
 export function binnedSingleOption(
-  item: CompareResult,
+  item: Pick<CompareResult | HomePreviewItem, 'visualPayload' | 'rightVersion'>,
   xAxisName: string,
   yAxisName: string,
   versionLabel?: string

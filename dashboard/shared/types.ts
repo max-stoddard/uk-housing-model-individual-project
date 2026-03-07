@@ -200,6 +200,18 @@ export interface CompareResponse {
   items: CompareResult[];
 }
 
+export interface HomePreviewItem {
+  id: string;
+  title: string;
+  rightVersion: VersionId;
+  visualPayload: VisualPayload;
+}
+
+export interface HomePreviewPayload {
+  version: VersionId;
+  items: HomePreviewItem[];
+}
+
 export interface ValidationTrendPoint {
   version: string;
   incomeDiffPct: number;

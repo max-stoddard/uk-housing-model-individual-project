@@ -7,12 +7,15 @@ import type {
   CompareResult,
   CompareResponse,
   CurvePoint,
+  HomePreviewItem,
+  HomePreviewPayload,
   JointCell,
   JointPayload,
   ParameterCardMeta,
   ScalarDatum,
   ValidationTrendPayload,
-  VersionChangeOrigin
+  VersionChangeOrigin,
+  VisualPayload
 } from '../../shared/types';
 import {
   getConfigPath,
@@ -46,6 +49,8 @@ interface CompareContext {
   versionNotes: VersionNoteEntry[];
   provenanceScope: ProvenanceScope;
 }
+
+type VisualContext = Pick<CompareContext, 'repoRoot' | 'leftVersion' | 'rightVersion' | 'leftConfig' | 'rightConfig'>;
 
 interface StepRateRow {
   threshold: number;
@@ -625,7 +630,7 @@ function buildHpaExpectationLines(
   return { domain, dt, curveLeft, curveRight };
 }
 
-function deriveIncomeDomain(context: CompareContext): { min: number; max: number } {
+function deriveIncomeDomain(context: VisualContext): { min: number; max: number } {
   const ranges: Array<{ min: number; max: number }> = [];
 
   for (const side of [
@@ -745,24 +750,15 @@ function ensureVersionExists(repoRoot: string, version: string): void {
   }
 }
 
-function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): CompareResult {
-  const sourceInfo = createSourceInfo(context, meta);
-  const changeOriginsInRange = toChangeOriginsInRange(context, meta);
-
+function buildVisualComparison(
+  context: VisualContext,
+  meta: ParameterCardMeta
+): { unchanged: boolean; visualPayload: VisualPayload } {
   switch (meta.format) {
     case 'scalar': {
       const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'scalar',
           values
@@ -773,16 +769,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
     case 'scalar_pair': {
       const values = scalarRows(meta.configKeys, context.leftConfig, context.rightConfig);
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'scalar',
           values
@@ -812,16 +799,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
         : buildBinnedComparison(leftRows, rightRows, getBinnedScaleType(meta.id));
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: bins.every((bin) => isNearlyZero(bin.delta)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'binned_distribution',
           bins
@@ -851,16 +829,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const matrix = buildJointPayload(leftRows, rightRows, xScaleType, yScaleType);
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: matrix.delta.every((cell) => isNearlyZero(cell.value)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'joint_distribution',
           matrix
@@ -882,16 +851,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const curves = buildLognormalCurves(muLeft, sigmaLeft, muRight, sigmaRight);
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'lognormal_pair',
           parameters: values,
@@ -919,16 +879,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const curveRight = xs.map((x) => ({ x, y: scaleRight * x ** exponentRight }));
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'power_law_pair',
           parameters: values,
@@ -947,16 +898,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const curves = buildGaussianCurves(values[0].left, values[1].left, values[0].right, values[1].right);
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'gaussian_pair',
           parameters: values,
@@ -981,16 +923,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const lines = buildHpaExpectationLines(values[0].left, values[1].left, values[0].right, values[1].right);
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'hpa_expectation_line',
           parameters: values,
@@ -1028,16 +961,7 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
       const expectedRight = Math.exp(mu.right + 0.5 * sigma.right ** 2);
 
       return {
-        id: meta.id,
-        title: meta.title,
-        group: meta.group,
-        format: meta.format,
         unchanged: values.every((value) => isNearlyZero(value.delta.absolute)),
-        sourceInfo,
-        explanation: meta.explanation,
-        leftVersion: context.leftVersion,
-        rightVersion: context.rightVersion,
-        changeOriginsInRange,
         visualPayload: {
           type: 'buy_quad',
           parameters: values,
@@ -1063,6 +987,26 @@ function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): Com
     default:
       throw new Error(`Unsupported format for ${meta.id}`);
   }
+}
+
+function buildCompareItem(context: CompareContext, meta: ParameterCardMeta): CompareResult {
+  const sourceInfo = createSourceInfo(context, meta);
+  const changeOriginsInRange = toChangeOriginsInRange(context, meta);
+  const { unchanged, visualPayload } = buildVisualComparison(context, meta);
+
+  return {
+    id: meta.id,
+    title: meta.title,
+    group: meta.group,
+    format: meta.format,
+    unchanged,
+    sourceInfo,
+    explanation: meta.explanation,
+    leftVersion: context.leftVersion,
+    rightVersion: context.rightVersion,
+    changeOriginsInRange,
+    visualPayload
+  };
 }
 
 export function getVersions(repoRoot: string): string[] {
@@ -1130,6 +1074,40 @@ export function getValidationTrend(repoRoot: string): ValidationTrendPayload {
 
 export function getParameterCatalog() {
   return PARAMETER_CATALOG;
+}
+
+export function getHomePreview(repoRoot: string, version: string, ids: string[]): HomePreviewPayload {
+  ensureVersionExists(repoRoot, version);
+
+  const config = parseConfigFile(getConfigPath(repoRoot, version));
+  const catalogById = new Map(PARAMETER_CATALOG.map((meta) => [meta.id, meta]));
+  const selected = ids.map((id) => {
+    const meta = catalogById.get(id);
+    if (!meta) {
+      throw new Error(`Unknown parameter id: ${id}`);
+    }
+    return meta;
+  });
+
+  const context: VisualContext = {
+    repoRoot,
+    leftVersion: version,
+    rightVersion: version,
+    leftConfig: config,
+    rightConfig: config
+  };
+
+  const items: HomePreviewItem[] = selected.map((meta) => ({
+    id: meta.id,
+    title: meta.title,
+    rightVersion: version,
+    visualPayload: buildVisualComparison(context, meta).visualPayload
+  }));
+
+  return {
+    version,
+    items
+  };
 }
 
 export function compareParameters(
