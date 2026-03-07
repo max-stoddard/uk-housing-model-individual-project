@@ -8,11 +8,12 @@ Policy-story catalog for the Bank of England demo workflow.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
-from scripts.python.helpers.common.abm_policy_sweep import POLICY_INDICATORS, SweepPoint, build_sweep_points
+from scripts.python.helpers.common.abm_policy_sweep import POLICY_INDICATORS, SweepPoint
+from scripts.python.helpers.common.cli import format_float
 from scripts.python.helpers.common.io_properties import read_properties
 
 
@@ -46,6 +47,80 @@ class StorySource:
 
 
 @dataclass(frozen=True)
+class BindingEvaluation:
+    """Binding status and context for one story under one version."""
+
+    binds: bool
+    relevant_values: dict[str, str]
+    reason: str
+
+    def to_json(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MethodPointAudit:
+    """Raw-versus-aligned effectiveness for one sweep point."""
+
+    point_id: str
+    label: str
+    x_value: float
+    raw_effective: bool
+    aligned_effective: bool
+    raw_updates: dict[str, str]
+    aligned_updates: dict[str, str]
+    raw_reason: str
+    aligned_reason: str
+
+    def to_json(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class StoryVersionMethodAudit:
+    """Method audit for one story under one version."""
+
+    screen_points: tuple[MethodPointAudit, ...]
+    final_points: tuple[MethodPointAudit, ...]
+    raw_has_conflict: bool
+    aligned_resolves_conflict: bool
+    note: str
+
+    def to_json(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload["screen_points"] = [point.to_json() for point in self.screen_points]
+        payload["final_points"] = [point.to_json() for point in self.final_points]
+        return payload
+
+
+@dataclass(frozen=True)
+class StoryMethodAudit:
+    """Method-validity audit for one policy story across versions."""
+
+    story_id: str
+    title: str
+    effective_rule: str
+    linked_bank_keys: tuple[str, ...]
+    shortlist_eligible: bool
+    resolution_summary: str
+    versions: dict[str, StoryVersionMethodAudit]
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "story_id": self.story_id,
+            "title": self.title,
+            "effective_rule": self.effective_rule,
+            "linked_bank_keys": list(self.linked_bank_keys),
+            "shortlist_eligible": self.shortlist_eligible,
+            "resolution_summary": self.resolution_summary,
+            "versions": {
+                version: audit.to_json()
+                for version, audit in self.versions.items()
+            },
+        }
+
+
+@dataclass(frozen=True)
 class PolicyStoryDefinition:
     """Configuration for one candidate policy story."""
 
@@ -73,15 +148,34 @@ class PolicyStoryDefinition:
     binding_checker: Callable[[Mapping[str, str]], bool]
     sources: tuple[StorySource, ...]
     appendix_only: bool = False
+    effective_rule: str = "none"
+    linked_bank_keys: tuple[str, ...] = ()
 
-    def build_points(self, stage_name: str) -> list[SweepPoint]:
+    def build_points(self, stage_name: str, *, aligned: bool = False) -> list[SweepPoint]:
         values = self.screen_values if stage_name == "screen" else self.final_values
-        return build_sweep_points(
-            values=values,
-            baseline_value=self.baseline_value,
-            fixed_updates=self.fixed_updates,
-            swept_keys=self.swept_keys,
-        )
+        points: list[SweepPoint] = []
+        for index, value in enumerate(values):
+            updates = dict(self.fixed_updates)
+            formatted_value = format_float(value)
+            for key in self.swept_keys:
+                updates[key] = formatted_value
+            if aligned and self.effective_rule in {"min_cap", "max_floor"}:
+                for key in self.linked_bank_keys:
+                    updates[key] = formatted_value
+            safe_label = formatted_value.replace("-", "m").replace(".", "p")
+            points.append(
+                SweepPoint(
+                    point_id=f"point_{index:02d}_{safe_label}",
+                    point_index=index,
+                    label=formatted_value,
+                    x_value=value,
+                    updates=updates,
+                    is_baseline=abs(value - self.baseline_value) < 1e-9,
+                )
+            )
+        if not any(point.is_baseline for point in points):
+            raise RuntimeError(f"Baseline value {self.baseline_value} was not present in the sweep grid.")
+        return points
 
     @property
     def narrative_weight(self) -> float:
@@ -151,12 +245,14 @@ def get_policy_story_catalog() -> list[PolicyStoryDefinition]:
                     note="Sets the regulatory backdrop for borrower-level mortgage constraint policy.",
                 ),
             ),
+            effective_rule="soft_vs_hard_quota",
+            linked_bank_keys=("BANK_LTI_HARD_MAX_FTB", "BANK_LTI_HARD_MAX_HM"),
         ),
         PolicyStoryDefinition(
             story_id="ftb_ltv_cap",
-            title="First-Time Buyer LTV Cap",
-            instrument_label="FTB hard LTV cap",
-            description="Tighten or loosen the first-time-buyer hard LTV cap.",
+            title="First-Time Buyer LTV Cap (Aligned Bank + Central-Bank Limit)",
+            instrument_label="aligned FTB bank + central-bank hard LTV cap",
+            description="Tighten or loosen the aligned first-time-buyer hard LTV cap.",
             axis_label="First-time buyer hard LTV cap",
             axis_units="ratio",
             fixed_updates={},
@@ -204,12 +300,14 @@ def get_policy_story_catalog() -> list[PolicyStoryDefinition]:
                     note="Supports the high-price/high-deposit backdrop for contemporary first-time buyers.",
                 ),
             ),
+            effective_rule="min_cap",
+            linked_bank_keys=("BANK_LTV_HARD_MAX_FTB",),
         ),
         PolicyStoryDefinition(
             story_id="hm_ltv_cap",
-            title="Home-Mover LTV Cap",
-            instrument_label="home-mover hard LTV cap",
-            description="Tighten or loosen the home-mover hard LTV cap.",
+            title="Home-Mover LTV Cap (Aligned Bank + Central-Bank Limit)",
+            instrument_label="aligned home-mover bank + central-bank hard LTV cap",
+            description="Tighten or loosen the aligned home-mover hard LTV cap.",
             axis_label="Home-mover hard LTV cap",
             axis_units="ratio",
             fixed_updates={},
@@ -235,19 +333,21 @@ def get_policy_story_catalog() -> list[PolicyStoryDefinition]:
                 "BANK_LTV_HARD_MAX_HM", (0.70, 0.80, 0.90), props
             ),
             sources=(),
+            effective_rule="min_cap",
+            linked_bank_keys=("BANK_LTV_HARD_MAX_HM",),
         ),
         PolicyStoryDefinition(
             story_id="affordability_cap",
-            title="Affordability Cap",
-            instrument_label="mortgage affordability cap",
-            description="Tighten or loosen the cap on the income share spent on mortgage repayments.",
+            title="Affordability Cap (Aligned Bank + Central-Bank Limit)",
+            instrument_label="aligned bank + central-bank affordability cap",
+            description="Tighten or loosen the aligned cap on the income share spent on mortgage repayments.",
             axis_label="Maximum mortgage payment share of income",
             axis_units="fraction",
             fixed_updates={},
             swept_keys=("CENTRAL_BANK_AFFORDABILITY_HARD_MAX",),
-            screen_values=(0.25, 0.325, 0.40),
-            final_values=(0.25, 0.28, 0.31, 0.325, 0.34, 0.37, 0.40),
-            baseline_value=0.325,
+            screen_values=(0.25, 0.32, 0.40),
+            final_values=(0.26, 0.28, 0.30, 0.32, 0.34, 0.36, 0.38),
+            baseline_value=0.32,
             primary_outputs=("core_mortgageApprovals", "core_debtToIncome"),
             secondary_outputs=("core_priceToIncome",),
             figure_indicator_ids=("core_debtToIncome", "core_priceToIncome", "core_mortgageApprovals"),
@@ -263,15 +363,17 @@ def get_policy_story_catalog() -> list[PolicyStoryDefinition]:
                 "Updated prices, mortgage term, and purchase budgets can change how often affordability rather than leverage becomes the binding constraint."
             ),
             binding_checker=lambda props: _binding_upper_than_bank_values(
-                "BANK_AFFORDABILITY_HARD_MAX", (0.25, 0.325, 0.40), props
+                "BANK_AFFORDABILITY_HARD_MAX", (0.25, 0.32, 0.40), props
             ),
             sources=(),
+            effective_rule="min_cap",
+            linked_bank_keys=("BANK_AFFORDABILITY_HARD_MAX",),
         ),
         PolicyStoryDefinition(
             story_id="btl_icr_cap",
-            title="BTL ICR Cap",
-            instrument_label="BTL interest coverage ratio cap",
-            description="Raise or lower the minimum expected rental-cover ratio for BTL borrowing.",
+            title="BTL ICR Cap (Aligned Bank + Central-Bank Floor)",
+            instrument_label="aligned bank + central-bank BTL ICR floor",
+            description="Raise or lower the aligned minimum expected rental-cover ratio for BTL borrowing.",
             axis_label="Minimum ICR",
             axis_units="ratio",
             fixed_updates={},
@@ -297,6 +399,8 @@ def get_policy_story_catalog() -> list[PolicyStoryDefinition]:
                 "BANK_ICR_HARD_MIN", (1.20, 1.40, 1.60), props
             ),
             sources=(),
+            effective_rule="max_floor",
+            linked_bank_keys=("BANK_ICR_HARD_MIN",),
         ),
         PolicyStoryDefinition(
             story_id="base_rate",
@@ -338,6 +442,8 @@ def get_policy_story_catalog() -> list[PolicyStoryDefinition]:
                 ),
             ),
             appendix_only=True,
+            effective_rule="structurally_weak",
+            linked_bank_keys=("BANK_INITIAL_RATE",),
         ),
     ]
 
@@ -383,10 +489,313 @@ def eligible_stories_by_binding(
     return eligible, binding_matrix
 
 
+def story_binding_details(
+    story: PolicyStoryDefinition,
+    *,
+    repo_root: Path,
+    versions: Sequence[str],
+) -> dict[str, BindingEvaluation]:
+    """Return binding diagnostics for each requested version."""
+
+    details: dict[str, BindingEvaluation] = {}
+    for version in versions:
+        props = load_version_properties(repo_root, version)
+        details[version] = BindingEvaluation(
+            binds=story.binding_checker(props),
+            relevant_values=relevant_policy_values(story, props),
+            reason=binding_reason(story, props),
+        )
+    return details
+
+
+def relevant_policy_values(story: PolicyStoryDefinition, props: Mapping[str, str]) -> dict[str, str]:
+    """Return the key baseline policy values that matter for a story."""
+
+    key_map = {
+        "lti_flow_limit_bundle": (
+            "CENTRAL_BANK_LTI_SOFT_MAX_FTB",
+            "CENTRAL_BANK_LTI_SOFT_MAX_HM",
+            "CENTRAL_BANK_LTI_MAX_FRAC_OVER_SOFT_MAX_FTB",
+            "CENTRAL_BANK_LTI_MAX_FRAC_OVER_SOFT_MAX_HM",
+            "BANK_LTI_HARD_MAX_FTB",
+            "BANK_LTI_HARD_MAX_HM",
+        ),
+        "ftb_ltv_cap": (
+            "CENTRAL_BANK_LTV_HARD_MAX_FTB",
+            "BANK_LTV_HARD_MAX_FTB",
+        ),
+        "hm_ltv_cap": (
+            "CENTRAL_BANK_LTV_HARD_MAX_HM",
+            "BANK_LTV_HARD_MAX_HM",
+        ),
+        "affordability_cap": (
+            "CENTRAL_BANK_AFFORDABILITY_HARD_MAX",
+            "BANK_AFFORDABILITY_HARD_MAX",
+        ),
+        "btl_icr_cap": (
+            "CENTRAL_BANK_ICR_HARD_MIN",
+            "BANK_ICR_HARD_MIN",
+        ),
+        "base_rate": (
+            "CENTRAL_BANK_INITIAL_BASE_RATE",
+            "BANK_INITIAL_RATE",
+        ),
+    }
+    return {
+        key: props[key]
+        for key in key_map.get(story.story_id, ())
+    }
+
+
+def binding_reason(story: PolicyStoryDefinition, props: Mapping[str, str]) -> str:
+    """Return a human-readable explanation of why the screening grid does or does not bind."""
+
+    story_id = story.story_id
+    binds = story.binding_checker(props)
+    if story_id == "lti_flow_limit_bundle":
+        ftb_hard = float(props["BANK_LTI_HARD_MAX_FTB"])
+        hm_hard = float(props["BANK_LTI_HARD_MAX_HM"])
+        if binds:
+            return (
+                "Binding because both representative-bank hard LTI ceilings "
+                f"({ftb_hard:.1f} FTB, {hm_hard:.1f} HM) sit above the shared 4.5x soft cap."
+            )
+        return (
+            "Not binding because at least one representative-bank hard LTI ceiling "
+            "is already at or below the shared 4.5x soft cap."
+        )
+    if story_id == "ftb_ltv_cap":
+        bank_value = float(props["BANK_LTV_HARD_MAX_FTB"])
+        if binds:
+            return f"Binding because the screen tightens below the representative-bank FTB hard LTV cap of {bank_value:.2f}."
+        return f"Not binding because the screen never tightens below the representative-bank FTB hard LTV cap of {bank_value:.2f}."
+    if story_id == "hm_ltv_cap":
+        bank_value = float(props["BANK_LTV_HARD_MAX_HM"])
+        if binds:
+            return f"Binding because the screen tightens below the representative-bank home-mover hard LTV cap of {bank_value:.2f}."
+        return f"Not binding because the screen never tightens below the representative-bank home-mover hard LTV cap of {bank_value:.2f}."
+    if story_id == "affordability_cap":
+        bank_value = float(props["BANK_AFFORDABILITY_HARD_MAX"])
+        if binds:
+            return f"Binding because the screen tightens below the representative-bank affordability cap of {bank_value:.3f}."
+        return f"Not binding because the screen never tightens below the representative-bank affordability cap of {bank_value:.3f}."
+    if story_id == "btl_icr_cap":
+        bank_value = float(props["BANK_ICR_HARD_MIN"])
+        if binds:
+            return f"Binding because the screen raises the minimum ICR above the representative-bank floor of {bank_value:.2f}."
+        return f"Not binding because the screen never raises the minimum ICR above the representative-bank floor of {bank_value:.2f}."
+    if story_id == "base_rate":
+        return (
+            "Binding by construction because the sweep directly changes the central-bank base rate; "
+            "no representative-bank ceiling prevents the experiment from operating."
+        )
+    return "Binding status follows the configured story-specific checker."
+
+
 def story_lookup(stories: Sequence[PolicyStoryDefinition]) -> dict[str, PolicyStoryDefinition]:
     """Build a story-id lookup."""
 
     return {story.story_id: story for story in stories}
+
+
+def build_story_method_audits(
+    stories: Sequence[PolicyStoryDefinition],
+    *,
+    repo_root: Path,
+    versions: Sequence[str],
+) -> dict[str, StoryMethodAudit]:
+    """Audit each story for raw masking and aligned-method validity."""
+
+    return {
+        story.story_id: story_method_audit(
+            story,
+            repo_root=repo_root,
+            versions=versions,
+        )
+        for story in stories
+    }
+
+
+def story_method_audit(
+    story: PolicyStoryDefinition,
+    *,
+    repo_root: Path,
+    versions: Sequence[str],
+) -> StoryMethodAudit:
+    """Build the raw-versus-aligned method audit for one story."""
+
+    version_audits: dict[str, StoryVersionMethodAudit] = {}
+    for version in versions:
+        props = load_version_properties(repo_root, version)
+        aligned_screen_lookup = {
+            point.point_id: point.updates
+            for point in story.build_points("screen", aligned=True)
+        }
+        aligned_final_lookup = {
+            point.point_id: point.updates
+            for point in story.build_points("final", aligned=True)
+        }
+        screen_points = tuple(
+            evaluate_story_point_effectiveness(
+                story,
+                point,
+                props,
+                aligned_updates=aligned_screen_lookup[point.point_id],
+            )
+            for point in story.build_points("screen", aligned=False)
+        )
+        final_points = tuple(
+            evaluate_story_point_effectiveness(
+                story,
+                point,
+                props,
+                aligned_updates=aligned_final_lookup[point.point_id],
+            )
+            for point in story.build_points("final", aligned=False)
+        )
+        raw_has_conflict = any(
+            not point.raw_effective
+            for point in (*screen_points, *final_points)
+        )
+        aligned_resolves_conflict = all(
+            point.aligned_effective
+            for point in (*screen_points, *final_points)
+        )
+        note = build_story_method_note(story, props)
+        version_audits[version] = StoryVersionMethodAudit(
+            screen_points=screen_points,
+            final_points=final_points,
+            raw_has_conflict=raw_has_conflict,
+            aligned_resolves_conflict=aligned_resolves_conflict,
+            note=note,
+        )
+
+    shortlist_eligible = (
+        story.effective_rule != "structurally_weak"
+        and all(audit.aligned_resolves_conflict for audit in version_audits.values())
+    )
+    return StoryMethodAudit(
+        story_id=story.story_id,
+        title=story.title,
+        effective_rule=story.effective_rule,
+        linked_bank_keys=story.linked_bank_keys,
+        shortlist_eligible=shortlist_eligible,
+        resolution_summary=build_story_resolution_summary(story, version_audits, shortlist_eligible),
+        versions=version_audits,
+    )
+
+
+def evaluate_story_point_effectiveness(
+    story: PolicyStoryDefinition,
+    point: SweepPoint,
+    props: Mapping[str, str],
+    *,
+    aligned_updates: Mapping[str, str],
+) -> MethodPointAudit:
+    """Evaluate whether a raw or aligned point is effective under the model rule."""
+
+    raw_effective, raw_reason = point_effectiveness(story, point.x_value, props, aligned=False)
+    aligned_effective, aligned_reason = point_effectiveness(story, point.x_value, props, aligned=True)
+    return MethodPointAudit(
+        point_id=point.point_id,
+        label=point.label,
+        x_value=point.x_value,
+        raw_effective=raw_effective,
+        aligned_effective=aligned_effective,
+        raw_updates=point.updates,
+        aligned_updates=dict(aligned_updates),
+        raw_reason=raw_reason,
+        aligned_reason=aligned_reason,
+    )
+
+
+def point_effectiveness(
+    story: PolicyStoryDefinition,
+    x_value: float,
+    props: Mapping[str, str],
+    *,
+    aligned: bool,
+) -> tuple[bool, str]:
+    """Return whether a given point is effective under raw or aligned semantics."""
+
+    if story.effective_rule == "structurally_weak":
+        return (
+            False,
+            "Structurally weak: `BANK_INITIAL_RATE` initialization offsets the central-bank base-rate change at startup."
+            if not aligned
+            else "Still structurally weak after alignment; this story is audited but excluded from shortlist selection.",
+        )
+    if story.effective_rule == "soft_vs_hard_quota":
+        if story.story_id != "lti_flow_limit_bundle":
+            return True, "Soft-vs-hard quota story remains valid."
+        ftb_bank = float(props["BANK_LTI_HARD_MAX_FTB"])
+        hm_bank = float(props["BANK_LTI_HARD_MAX_HM"])
+        effective = 4.5 < ftb_bank - 1e-9 and 4.5 < hm_bank - 1e-9
+        reason = (
+            f"Valid because the 4.5x soft cap stays below both bank hard LTIs ({ftb_bank:.1f}, {hm_bank:.1f})."
+            if effective
+            else "Invalid because the 4.5x soft cap is not below both bank hard LTIs."
+        )
+        return effective, reason
+    if story.effective_rule == "min_cap":
+        bank_values = [
+            x_value if aligned else float(props[key])
+            for key in story.linked_bank_keys
+        ]
+        effective = all(x_value <= bank_value + 1e-9 for bank_value in bank_values)
+        if effective:
+            return True, (
+                "Aligned point is active because BANK and CENTRAL_BANK are co-moved to the same cap."
+                if aligned
+                else "Raw point is active because the central-bank cap is at or below the bank cap."
+            )
+        return False, "Raw point is masked because the bank cap is tighter than the central-bank cap."
+    if story.effective_rule == "max_floor":
+        bank_values = [
+            x_value if aligned else float(props[key])
+            for key in story.linked_bank_keys
+        ]
+        effective = all(x_value >= bank_value - 1e-9 for bank_value in bank_values)
+        if effective:
+            return True, (
+                "Aligned point is active because BANK and CENTRAL_BANK are co-moved to the same floor."
+                if aligned
+                else "Raw point is active because the central-bank floor is at or above the bank floor."
+            )
+        return False, "Raw point is masked because the bank floor is already tighter than the central-bank floor."
+    return True, "No bank-level masking rule applies to this story."
+
+
+def build_story_method_note(story: PolicyStoryDefinition, props: Mapping[str, str]) -> str:
+    """Return the per-version method note for a story."""
+
+    if story.effective_rule == "min_cap":
+        bank_values = ", ".join(f"{key}={props[key]}" for key in story.linked_bank_keys)
+        return f"Effective cap uses min(BANK, CENTRAL_BANK); raw masking is possible when BANK is tighter ({bank_values})."
+    if story.effective_rule == "max_floor":
+        bank_values = ", ".join(f"{key}={props[key]}" for key in story.linked_bank_keys)
+        return f"Effective floor uses max(BANK, CENTRAL_BANK); raw masking is possible when BANK is already tighter ({bank_values})."
+    if story.effective_rule == "soft_vs_hard_quota":
+        return "Valid only while the 4.5x soft cap remains below the representative-bank hard LTIs."
+    if story.effective_rule == "structurally_weak":
+        return "Audited but excluded from shortlist selection because the central-bank base-rate sweep does not cleanly propagate through the initial bank-rate setup."
+    return "No bank-level method conflict detected."
+
+
+def build_story_resolution_summary(
+    story: PolicyStoryDefinition,
+    version_audits: Mapping[str, StoryVersionMethodAudit],
+    shortlist_eligible: bool,
+) -> str:
+    """Summarize whether alignment resolved method conflicts for a story."""
+
+    if story.effective_rule == "structurally_weak":
+        return "Excluded from shortlist selection due to structural weakness in the current bank-rate setup."
+    if shortlist_eligible and any(audit.raw_has_conflict for audit in version_audits.values()):
+        return "Raw masking exists, but the aligned bank + central-bank method resolves it in every audited version."
+    if shortlist_eligible:
+        return "No unresolved method conflict remains after audit."
+    return "Story remains method-conflicted and is excluded from shortlist selection."
 
 
 def indicator_title(indicator_id: str) -> str:
