@@ -634,45 +634,6 @@
       ]
     },
     {
-      "version_id": "v3.7",
-      "snapshot_folder": "v3.7",
-      "validation_dataset": "r8",
-      "description": "Updated MARKET_AVERAGE_PRICE_DECAY",
-      "updated_data_sources": [
-        "output-calibrated",
-        "r8-first-campaign"
-      ],
-      "calibration_files": [
-        "N/A (config-only output-calibration campaign)"
-      ],
-      "config_parameters": [
-        "MARKET_AVERAGE_PRICE_DECAY"
-      ],
-      "parameter_changes": [
-        {
-          "config_parameter": "MARKET_AVERAGE_PRICE_DECAY",
-          "dataset_source": null
-        }
-      ],
-      "validation": {
-        "status": "complete",
-        "income_diff_pct": 7.13,
-        "housing_wealth_diff_pct": 29.04,
-        "financial_wealth_diff_pct": 12.55
-      },
-      "method_variations": [
-        {
-          "config_parameters": [
-            "MARKET_AVERAGE_PRICE_DECAY"
-          ],
-          "improvement_summary": "Ran a governed R8-first output calibration campaign to select decay under explicit guardrails.",
-          "why_changed": "To tune market-response dynamics using validation-led evidence rather than static prior assumptions.",
-          "method_chosen": "R8-first, evidence-governed config-only campaign with empirical-key updates and output-key sweep",
-          "decision_logic": "Objective=target reproduction; Why=MARKET_AVERAGE_PRICE_DECAY=0.4 minimized housing_wealth_diff under guardrails across a 16-run governed campaign; Tradeoff=seed sensitivity remains material and one seed breached the financial guardrail in stability checks."
-        }
-      ]
-    },
-    {
       "version_id": "v4.0",
       "snapshot_folder": "v4.0",
       "validation_dataset": "r8",
@@ -711,9 +672,9 @@
       ],
       "validation": {
         "status": "complete",
-        "income_diff_pct": 7.87,
-        "housing_wealth_diff_pct": 14.37,
-        "financial_wealth_diff_pct": 13.25,
+        "income_diff_pct": 7.192856,
+        "housing_wealth_diff_pct": 12.534289,
+        "financial_wealth_diff_pct": 13.438086,
         "note": "Stable v4.0 release from modern realism-constrained BUY* calibration with completed R8 validation."
       },
       "method_variations": [
@@ -773,10 +734,10 @@
         }
       ],
       "validation": {
-        "status": "in_progress",
-        "income_diff_pct": 6.73,
-        "housing_wealth_diff_pct": 15.06,
-        "financial_wealth_diff_pct": 13.58,
+        "status": "complete",
+        "income_diff_pct": 6.526575,
+        "housing_wealth_diff_pct": 14.523047,
+        "financial_wealth_diff_pct": 12.933264,
         "note": "Forked from v4.0 with bank and central-bank hard LTV caps aligned by default: FTB 0.95, HM 0.95, BTL 0.85."
       },
       "method_variations": [
