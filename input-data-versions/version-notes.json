@@ -734,7 +734,7 @@
         }
       ],
       "validation": {
-        "status": "complete",
+        "status": "in_progress",
         "income_diff_pct": 6.526575,
         "housing_wealth_diff_pct": 14.523047,
         "financial_wealth_diff_pct": 12.933264,
