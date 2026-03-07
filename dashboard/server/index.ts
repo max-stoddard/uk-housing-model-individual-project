@@ -55,6 +55,8 @@ const MODEL_RUNS_DISABLED_REASON_CONFIG =
   'Model execution is disabled in this environment.';
 const MODEL_RUNS_DISABLED_REASON_RUNTIME =
   'Model execution is unavailable because Java/Maven are missing in this API runtime. Deploy API with Docker runtime (Java+Maven) or install dependencies.';
+const EXPERIMENTS_DISABLED_REASON =
+  'Experiments are not available in this environment.';
 
 interface RuntimePolicy {
   devBypassActive: boolean;
@@ -191,6 +193,18 @@ function requireWriteAccess(req: express.Request, res: express.Response): boolea
   return false;
 }
 
+function experimentsFeatureEnabled(req: express.Request): boolean {
+  return resolveRuntimePolicy(req).devBypassActive;
+}
+
+function requireExperimentsFeature(req: express.Request, res: express.Response): boolean {
+  if (experimentsFeatureEnabled(req)) {
+    return true;
+  }
+  res.status(404).json({ error: EXPERIMENTS_DISABLED_REASON });
+  return false;
+}
+
 app.get('/api/auth/status', (req, res) => {
   const policy = resolveRuntimePolicy(req);
   const access = resolveDashboardWriteAccess(
@@ -210,6 +224,9 @@ app.get('/api/auth/status', (req, res) => {
 });
 
 app.post('/api/auth/login', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (policy.writeAuthConfigurationError) {
     res.status(503).json({ error: policy.writeAuthConfigurationError });
@@ -227,6 +244,9 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   const access = resolveDashboardWriteAccess(
     writeAuth,
@@ -300,7 +320,10 @@ app.get('/api/compare', (req, res) => {
   }
 });
 
-app.get('/api/results/runs', (_req, res) => {
+app.get('/api/results/runs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     const runs = getResultsRuns(repoRoot);
     res.json({ runs });
@@ -309,7 +332,10 @@ app.get('/api/results/runs', (_req, res) => {
   }
 });
 
-app.get('/api/results/storage', (_req, res) => {
+app.get('/api/results/storage', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     res.json(getResultsStorageSummary(repoRoot));
   } catch (error) {
@@ -318,6 +344,9 @@ app.get('/api/results/storage', (_req, res) => {
 });
 
 app.get('/api/results/runs/:runId', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     const detail = getResultsRunDetail(repoRoot, String(req.params.runId ?? ''));
     res.json(detail);
@@ -327,6 +356,9 @@ app.get('/api/results/runs/:runId', (req, res) => {
 });
 
 app.get('/api/results/runs/:runId/files', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     const files = getResultsRunFiles(repoRoot, String(req.params.runId ?? ''));
     res.json({ runId: String(req.params.runId ?? ''), files });
@@ -336,6 +368,9 @@ app.get('/api/results/runs/:runId/files', (req, res) => {
 });
 
 app.delete('/api/results/runs/:runId', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   if (!requireWriteAccess(req, res)) {
     return;
   }
@@ -349,6 +384,9 @@ app.delete('/api/results/runs/:runId', (req, res) => {
 });
 
 app.get('/api/results/runs/:runId/series', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const runId = String(req.params.runId ?? '');
   const indicator = String(req.query.indicator ?? '');
   if (!indicator) {
@@ -368,6 +406,9 @@ app.get('/api/results/runs/:runId/series', (req, res) => {
 });
 
 app.get('/api/results/compare', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const runIds = String(req.query.runIds ?? '')
     .split(',')
     .map((value) => value.trim())
@@ -389,6 +430,9 @@ app.get('/api/results/compare', (req, res) => {
 });
 
 app.get('/api/model-runs/options', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     const policy = resolveRuntimePolicy(req);
     const baseline = String(req.query.baseline ?? '').trim() || undefined;
@@ -400,6 +444,9 @@ app.get('/api/model-runs/options', (req, res) => {
 });
 
 app.post('/api/model-runs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -428,6 +475,9 @@ app.post('/api/model-runs', (req, res) => {
 });
 
 app.get('/api/model-runs/jobs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -442,6 +492,9 @@ app.get('/api/model-runs/jobs', (req, res) => {
 });
 
 app.get('/api/model-runs/jobs/:jobId', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -456,6 +509,9 @@ app.get('/api/model-runs/jobs/:jobId', (req, res) => {
 });
 
 app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -473,6 +529,9 @@ app.post('/api/model-runs/jobs/:jobId/cancel', (req, res) => {
 });
 
 app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -490,6 +549,9 @@ app.delete('/api/model-runs/jobs/:jobId', (req, res) => {
 });
 
 app.get('/api/model-runs/jobs/:jobId/logs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -511,7 +573,10 @@ app.get('/api/model-runs/jobs/:jobId/logs', (req, res) => {
   }
 });
 
-app.get('/api/experiments/sensitivity', (_req, res) => {
+app.get('/api/experiments/sensitivity', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     res.json(listSensitivityExperiments(repoRoot));
   } catch (error) {
@@ -520,6 +585,9 @@ app.get('/api/experiments/sensitivity', (_req, res) => {
 });
 
 app.post('/api/experiments/sensitivity', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -538,6 +606,9 @@ app.post('/api/experiments/sensitivity', (req, res) => {
 });
 
 app.get('/api/experiments/sensitivity/:experimentId', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     res.json(getSensitivityExperiment(repoRoot, String(req.params.experimentId ?? '')));
   } catch (error) {
@@ -546,6 +617,9 @@ app.get('/api/experiments/sensitivity/:experimentId', (req, res) => {
 });
 
 app.get('/api/experiments/sensitivity/:experimentId/results', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     res.json(getSensitivityExperimentResults(repoRoot, String(req.params.experimentId ?? '')));
   } catch (error) {
@@ -554,6 +628,9 @@ app.get('/api/experiments/sensitivity/:experimentId/results', (req, res) => {
 });
 
 app.get('/api/experiments/sensitivity/:experimentId/charts', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     res.json(getSensitivityExperimentCharts(repoRoot, String(req.params.experimentId ?? '')));
   } catch (error) {
@@ -562,6 +639,9 @@ app.get('/api/experiments/sensitivity/:experimentId/charts', (req, res) => {
 });
 
 app.get('/api/experiments/sensitivity/:experimentId/logs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const cursorRaw = Number.parseInt(String(req.query.cursor ?? '0'), 10);
   const limitRaw = Number.parseInt(String(req.query.limit ?? '200'), 10);
 
@@ -579,6 +659,9 @@ app.get('/api/experiments/sensitivity/:experimentId/logs', (req, res) => {
 });
 
 app.post('/api/experiments/sensitivity/:experimentId/cancel', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });
@@ -595,7 +678,10 @@ app.post('/api/experiments/sensitivity/:experimentId/cancel', (req, res) => {
   }
 });
 
-app.get('/api/experiments/jobs', (_req, res) => {
+app.get('/api/experiments/jobs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   try {
     res.json(listExperimentJobs(repoRoot));
   } catch (error) {
@@ -604,6 +690,9 @@ app.get('/api/experiments/jobs', (_req, res) => {
 });
 
 app.get('/api/experiments/jobs/:jobRef/logs', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const cursorRaw = Number.parseInt(String(req.query.cursor ?? '0'), 10);
   const limitRaw = Number.parseInt(String(req.query.limit ?? '200'), 10);
 
@@ -621,6 +710,9 @@ app.get('/api/experiments/jobs/:jobRef/logs', (req, res) => {
 });
 
 app.post('/api/experiments/jobs/:jobRef/cancel', (req, res) => {
+  if (!requireExperimentsFeature(req, res)) {
+    return;
+  }
   const policy = resolveRuntimePolicy(req);
   if (!policy.modelRunsEnabled) {
     res.status(403).json({ error: policy.modelRunsDisabledReason ?? MODEL_RUNS_DISABLED_REASON_CONFIG });

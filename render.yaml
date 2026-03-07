@@ -37,7 +37,7 @@ services:
       - key: DASHBOARD_CORS_ORIGIN
         value: https://uk-housing-market-abm.onrender.com
       - key: DASHBOARD_ENABLE_MODEL_RUNS
-        value: "true"
+        value: "false"
       - key: DASHBOARD_RESULTS_CAP_MB
         value: "400"
       - key: DASHBOARD_GIT_STATS_BASE_COMMIT

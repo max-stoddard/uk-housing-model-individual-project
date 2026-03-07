@@ -2075,6 +2075,50 @@ assert.ok(
   'Compare card should not render Validation dataset field'
 );
 
+const appSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/App.tsx'), 'utf-8');
+assert.ok(
+  appSource.includes('const experimentsVisible = isDevEnv && !isProdPreviewEnabled;'),
+  'App should gate experiments behind the dev-only visibility condition'
+);
+assert.ok(
+  appSource.includes("{experimentsVisible && <NavLink to=\"/experiments\">Experiments</NavLink>}"),
+  'App should hide the experiments nav when experiments are not visible'
+);
+assert.ok(
+  appSource.includes("{experimentsVisible && (\n              <Route\n                path=\"/experiments\""),
+  'App should only register the experiments route when experiments are visible'
+);
+assert.ok(
+  appSource.includes("{experimentsVisible && (\n              <Route\n                path=\"/login\""),
+  'App should only register the experiments login route when experiments are visible'
+);
+
+const serverIndexSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/index.ts'), 'utf-8');
+assert.ok(
+  serverIndexSource.includes("const EXPERIMENTS_DISABLED_REASON =\n  'Experiments are not available in this environment.';"),
+  'Server should define a stable experiments-disabled error message'
+);
+assert.ok(
+  serverIndexSource.includes('function requireExperimentsFeature(req: express.Request, res: express.Response): boolean {'),
+  'Server should centralize experiments feature gating'
+);
+assert.ok(
+  serverIndexSource.includes("app.post('/api/auth/login', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
+  'Server should hide login when experiments are disabled'
+);
+assert.ok(
+  serverIndexSource.includes("app.get('/api/model-runs/options', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
+  'Server should guard model-run endpoints behind the experiments feature gate'
+);
+assert.ok(
+  serverIndexSource.includes("app.get('/api/experiments/sensitivity', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
+  'Server should guard experiments endpoints behind the experiments feature gate'
+);
+assert.ok(
+  serverIndexSource.includes("app.get('/api/results/runs', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
+  'Server should guard experiment-only results endpoints behind the experiments feature gate'
+);
+
 const gitStatsSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/lib/gitStats.ts'), 'utf-8');
 assert.ok(
   gitStatsSource.includes('const SOURCE_FILE_PATHSPECS = ['),

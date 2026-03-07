@@ -74,6 +74,7 @@ export function App() {
   const [authStatus, setAuthStatus] = useState<AuthStatusPayload>(DEFAULT_AUTH_STATUS);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [authError, setAuthError] = useState('');
+  const experimentsVisible = isDevEnv && !isProdPreviewEnabled;
 
   const loginPath = `/login?next=${encodeURIComponent(EXPERIMENTS_RUN_PATH)}`;
 
@@ -105,8 +106,13 @@ export function App() {
     }
     persistProdPreviewEnabled(isDevEnv && isProdPreviewEnabled);
     setApiViewMode(isDevEnv && !isProdPreviewEnabled ? 'dev' : 'non_dev_preview');
+    if (!experimentsVisible) {
+      setAuthError('');
+      setAuthLoaded(true);
+      return;
+    }
     void refreshAuthStatus();
-  }, [isDevEnv, isProdPreviewEnabled, refreshAuthStatus]);
+  }, [experimentsVisible, isDevEnv, isProdPreviewEnabled, refreshAuthStatus]);
 
   const handleLoginSuccess = useCallback(
     async (token: string | null) => {
@@ -155,8 +161,8 @@ export function App() {
             </NavLink>
             <NavLink to="/compare">Calibration Versions</NavLink>
             <NavLink to="/validation">Validation</NavLink>
-            <NavLink to="/experiments">Experiments</NavLink>
-            {authStatus.authEnabled && !authStatus.canWrite && (
+            {experimentsVisible && <NavLink to="/experiments">Experiments</NavLink>}
+            {experimentsVisible && authStatus.authEnabled && !authStatus.canWrite && (
               <NavLink className="main-nav-auth-control main-nav-auth-link" to={loginPath}>
                 <span className="main-nav-auth-icon" aria-hidden="true">
                   <svg viewBox="0 0 20 20" role="img" aria-hidden="true">
@@ -169,7 +175,7 @@ export function App() {
                 <span>Login</span>
               </NavLink>
             )}
-            {authStatus.authEnabled && authStatus.canWrite && (
+            {experimentsVisible && authStatus.authEnabled && authStatus.canWrite && (
               <button type="button" className="main-nav-auth-control main-nav-auth-button" onClick={() => void handleLogout()}>
                 <span className="main-nav-auth-icon" aria-hidden="true">
                   <svg viewBox="0 0 20 20" role="img" aria-hidden="true">
@@ -188,7 +194,7 @@ export function App() {
 
       <main className="app-main">
         {authError && <p className="error-banner">{authError}</p>}
-        {authLoaded && authStatus.authMisconfigured && (
+        {experimentsVisible && authLoaded && authStatus.authMisconfigured && (
           <p className="error-banner">
             Write access is disabled: model runs are enabled but dashboard write credentials are not configured.
           </p>
@@ -200,14 +206,18 @@ export function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/validation" element={<ValidationPage />} />
-            <Route
-              path="/experiments"
-              element={<ExperimentsPage canWrite={authStatus.canWrite} authEnabled={authStatus.authEnabled} />}
-            />
-            <Route
-              path="/login"
-              element={<LoginPage authStatus={authStatus} onLoginSuccess={handleLoginSuccess} />}
-            />
+            {experimentsVisible && (
+              <Route
+                path="/experiments"
+                element={<ExperimentsPage canWrite={authStatus.canWrite} authEnabled={authStatus.authEnabled} />}
+              />
+            )}
+            {experimentsVisible && (
+              <Route
+                path="/login"
+                element={<LoginPage authStatus={authStatus} onLoginSuccess={handleLoginSuccess} />}
+              />
+            )}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
