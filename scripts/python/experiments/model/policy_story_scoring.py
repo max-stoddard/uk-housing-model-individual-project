@@ -16,6 +16,8 @@ from scripts.python.experiments.model.policy_story_catalog import PolicyStoryDef
 from scripts.python.helpers.common.abm_policy_sweep import AggregatedPoint, AggregatedStoryResults
 from scripts.python.helpers.common.cli import format_float
 
+SELECTION_POLICIES = ("demo_legacy", "ranking_only", "compare_both")
+
 
 @dataclass(frozen=True)
 class SeriesDiagnostics:
@@ -256,8 +258,56 @@ def build_story_interpretation(
 def select_stories(
     story_scores: Sequence[StoryScore],
     stories: Sequence[PolicyStoryDefinition],
+    *,
+    policy: str = "demo_legacy",
 ) -> list[StoryScore]:
-    """Select the two final stories using deterministic inclusion and fallback rules."""
+    """Select the two final stories using the requested selection policy."""
+
+    if policy == "demo_legacy":
+        return _select_stories_demo_legacy(story_scores, stories)
+    if policy == "ranking_only":
+        return _select_stories_ranking_only(story_scores, stories)
+    raise ValueError(f"Unsupported selection policy: {policy}")
+
+
+def build_selection_results(
+    story_scores: Sequence[StoryScore],
+    stories: Sequence[PolicyStoryDefinition],
+    *,
+    selection_policy: str,
+) -> dict[str, list[StoryScore]]:
+    """Return one or more selected-story sets for the requested policy mode."""
+
+    if selection_policy == "compare_both":
+        return {
+            "demo_legacy": _select_stories_demo_legacy(story_scores, stories),
+            "ranking_only": _select_stories_ranking_only(story_scores, stories),
+        }
+    return {selection_policy: select_stories(story_scores, stories, policy=selection_policy)}
+
+
+def canonical_selection_policy(selection_policy: str) -> str:
+    """Return the canonical policy used for downstream final-stage execution."""
+
+    return "ranking_only" if selection_policy == "compare_both" else selection_policy
+
+
+def validate_selection_policy(selection_policy: str) -> str:
+    """Validate a CLI-facing selection policy string."""
+
+    if selection_policy not in SELECTION_POLICIES:
+        raise SystemExit(
+            "Selection policy must be one of: "
+            + ", ".join(SELECTION_POLICIES)
+        )
+    return selection_policy
+
+
+def _select_stories_demo_legacy(
+    story_scores: Sequence[StoryScore],
+    stories: Sequence[PolicyStoryDefinition],
+) -> list[StoryScore]:
+    """Legacy demo selector that keeps the affordability-first override."""
 
     story_by_id = {story.story_id: story for story in stories}
     score_by_id = {score.story_id: score for score in story_scores}
@@ -291,6 +341,41 @@ def select_stories(
         "hm_ltv_cap",
         "btl_icr_cap",
         "base_rate",
+    ]
+    for story_id in fallback_order:
+        if story_id in {item.story_id for item in selected}:
+            continue
+        if story_id in score_by_id:
+            selected.append(score_by_id[story_id])
+            if len(selected) == 2:
+                return selected
+    return selected[:2]
+
+
+def _select_stories_ranking_only(
+    story_scores: Sequence[StoryScore],
+    stories: Sequence[PolicyStoryDefinition],
+) -> list[StoryScore]:
+    """Neutral selector driven by robustness, score, and deterministic fallback order."""
+
+    story_by_id = {story.story_id: story for story in stories}
+    score_by_id = {score.story_id: score for score in story_scores}
+    ranked = sorted(
+        story_scores,
+        key=lambda item: (
+            item.passes_minimum_robustness,
+            item.total_score,
+            -story_by_id[item.story_id].fallback_rank,
+        ),
+        reverse=True,
+    )
+    selected = [score for score in ranked if score.passes_minimum_robustness][:2]
+    if len(selected) == 2:
+        return selected
+
+    fallback_order = [
+        score.story_id
+        for score in ranked
     ]
     for story_id in fallback_order:
         if story_id in {item.story_id for item in selected}:

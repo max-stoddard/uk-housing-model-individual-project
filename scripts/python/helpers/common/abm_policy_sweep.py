@@ -16,6 +16,7 @@ import math
 import re
 import shutil
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -514,6 +515,13 @@ def run_story_sweep(
         for point in points
     ]
 
+    total_requests = len(requests)
+    sweep_start = time.monotonic()
+    print(
+        f"[policy-sweep] start stage={stage_name} story={story_id} "
+        f"runs={total_requests} workers={max(1, workers)} force_rerun={'yes' if force_rerun else 'no'}"
+    )
+
     run_results: list[RunResult] = []
     with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
         futures = [
@@ -528,10 +536,31 @@ def run_story_sweep(
             )
             for request in requests
         ]
+        completed = 0
         for future in as_completed(futures):
-            run_results.append(future.result())
+            run_result = future.result()
+            run_results.append(run_result)
+            completed += 1
+            elapsed_seconds = max(1e-9, time.monotonic() - sweep_start)
+            average_seconds = elapsed_seconds / completed
+            remaining = total_requests - completed
+            eta_seconds = remaining * average_seconds
+            print(
+                f"[policy-sweep] stage={stage_name} story={story_id} "
+                f"progress={completed}/{total_requests} ({(100.0 * completed / total_requests):.1f}%) "
+                f"elapsed={_format_duration(elapsed_seconds)} "
+                f"avg={average_seconds:.1f}s/run "
+                f"eta={_format_duration(eta_seconds)} "
+                f"last={run_result.version}/seed-{run_result.seed}/{run_result.point_label}"
+                f"{' [cached]' if run_result.cached else ''}"
+            )
 
     run_results.sort(key=lambda item: (item.version, item.seed, item.point_index))
+    total_elapsed = time.monotonic() - sweep_start
+    print(
+        f"[policy-sweep] done stage={stage_name} story={story_id} "
+        f"runs={total_requests} elapsed={_format_duration(total_elapsed)}"
+    )
     return run_results, aggregate_story_results(run_results)
 
 
@@ -664,3 +693,12 @@ def _deserialize_run_result(raw: Mapping[str, object]) -> RunResult:
         cached=True,
         indicators=indicators,
     )
+
+
+def _format_duration(seconds: float) -> str:
+    rounded = max(0, int(round(seconds)))
+    hours, remainder = divmod(rounded, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours > 0:
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
