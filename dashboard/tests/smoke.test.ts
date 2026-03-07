@@ -7,6 +7,7 @@ import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import {
   compareParameters,
+  getHomePreview,
   getInProgressVersions,
   getParameterCatalog,
   getValidationTrend,
@@ -551,6 +552,24 @@ assert.ok(
 );
 assert.ok(!inProgressVersions.includes('v4.0'), 'Expected v4.0 to be reported as a stable snapshot');
 const latestVersion = versions[versions.length - 1];
+
+const homePreview = getHomePreview(repoRoot, latestVersion, [
+  'wealth_given_income_joint',
+  'house_price_lognormal',
+  'downpayment_oo_lognormal',
+  'btl_probability_bins'
+]);
+assert.equal(homePreview.version, latestVersion, 'Expected home preview payload to report the requested version');
+assert.equal(homePreview.items.length, 4, 'Expected home preview payload to include the requested items only');
+assert.deepEqual(
+  homePreview.items.map((item) => item.id),
+  ['wealth_given_income_joint', 'house_price_lognormal', 'downpayment_oo_lognormal', 'btl_probability_bins'],
+  'Expected home preview payload to preserve requested item order'
+);
+assert.ok(
+  homePreview.items.every((item) => !('sourceInfo' in item) && !('changeOriginsInRange' in item)),
+  'Expected home preview payload to exclude compare-page provenance and source metadata'
+);
 
 const notes = loadVersionNotes(repoRoot);
 assert.ok(notes.length > 0, 'Expected at least one version note entry');
@@ -2093,6 +2112,20 @@ assert.ok(
   'App should only register the experiments login route when experiments are visible'
 );
 
+const homePageSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/pages/HomePage.tsx'), 'utf-8');
+assert.ok(
+  !homePageSource.includes('fetchGitStats'),
+  'Home page should no longer fetch git stats'
+);
+assert.ok(
+  homePageSource.includes('fetchHomePreview(latest)'),
+  'Home page should fetch the lightweight home preview payload'
+);
+assert.ok(
+  !homePageSource.includes('Lines of Code Written'),
+  'Home page should no longer render git stats cards'
+);
+
 const serverIndexSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/index.ts'), 'utf-8');
 assert.ok(
   serverIndexSource.includes("const EXPERIMENTS_DISABLED_REASON =\n  'Experiments are not available in this environment.';"),
@@ -2103,54 +2136,76 @@ assert.ok(
   'Server should centralize experiments feature gating'
 );
 assert.ok(
-  serverIndexSource.includes("app.post('/api/auth/login', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
-  'Server should hide login when experiments are disabled'
+  serverIndexSource.includes("import { registerPublicRoutes } from './routes/publicRoutes';"),
+  'Server should register public routes through a dedicated module'
 );
 assert.ok(
-  serverIndexSource.includes("app.get('/api/model-runs/options', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
-  'Server should guard model-run endpoints behind the experiments feature gate'
+  serverIndexSource.includes("const { registerDevRoutes } = await import('./routes/devRoutes');"),
+  'Server should load dev-only routes lazily so production does not import them'
 );
 assert.ok(
-  serverIndexSource.includes("app.get('/api/experiments/sensitivity', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
-  'Server should guard experiments endpoints behind the experiments feature gate'
-);
-assert.ok(
-  serverIndexSource.includes("app.get('/api/results/runs', (req, res) => {\n  if (!requireExperimentsFeature(req, res)) {"),
-  'Server should guard experiment-only results endpoints behind the experiments feature gate'
+  serverIndexSource.includes("const memoryLoggingEnabled = (process.env.DASHBOARD_LOG_MEMORY?.trim().toLowerCase() ?? '') === 'true';"),
+  'Server should support optional request-level memory logging'
 );
 
-const gitStatsSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/lib/gitStats.ts'), 'utf-8');
+const publicRoutesSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/routes/publicRoutes.ts'), 'utf-8');
 assert.ok(
-  gitStatsSource.includes('const SOURCE_FILE_PATHSPECS = ['),
-  'git-stats should define a central source-file pathspec list'
+  publicRoutesSource.includes("app.get('/api/home-preview'"),
+  'Public routes should expose the lightweight home preview endpoint'
 );
 assert.ok(
-  gitStatsSource.includes("return ['diff', '--shortstat', base, head, '--', ...SOURCE_FILE_PATHSPECS];"),
-  'git-stats should compute source-only shortstat args from the shared pathspec list'
+  !publicRoutesSource.includes("/api/git-stats"),
+  'Public routes should not expose git stats'
 );
 assert.ok(
-  gitStatsSource.includes("['rev-list', '--count', `${baseCommit}..HEAD`]"),
-  'git-stats should compute total commits with local git rev-list semantics'
+  publicRoutesSource.includes('getHomePreview(context.repoRoot, version, HOME_PREVIEW_PARAMETER_IDS)'),
+  'Public routes should serve the home preview from the lightweight service function'
+);
+
+const devRoutesSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/routes/devRoutes.ts'), 'utf-8');
+assert.ok(
+  devRoutesSource.includes("app.get('/api/model-runs/options'"),
+  'Dev routes should contain model-run endpoints'
 );
 assert.ok(
-  gitStatsSource.includes('buildShortStatArgs(weeklyDiffBase)'),
-  'git-stats should compute weekly totals with the source-only shortstat helper'
+  devRoutesSource.includes("app.get('/api/results/runs'"),
+  'Dev routes should contain results-management endpoints'
 );
 assert.ok(
-  gitStatsSource.includes("['rev-list', '--count', `--since=${sinceIso}`, 'HEAD']"),
-  'git-stats should compute weekly commits with local git rev-list semantics'
+  devRoutesSource.includes("if (!context.requireExperimentsFeature(req, res)) {"),
+  'Dev routes should still guard experiments behind the experiments feature flag'
+);
+
+const apiSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/lib/api.ts'), 'utf-8');
+assert.ok(
+  !apiSource.includes('fetchGitStats'),
+  'Client API should no longer expose fetchGitStats'
 );
 assert.ok(
-  gitStatsSource.includes('entry.version === CACHE_SCHEMA_VERSION'),
-  'git-stats cache should be versioned so old all-files payloads are invalidated'
+  apiSource.includes("buildApiUrl('/api/home-preview')"),
+  'Client API should expose the lightweight home preview fetcher'
+);
+
+const resultsSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/server/lib/results.ts'), 'utf-8');
+assert.ok(
+  resultsSource.includes("const OUTPUT_CACHE_MAX_ENTRIES = (process.env.NODE_ENV?.trim().toLowerCase() ?? '') === 'production' ? 0 : 2;"),
+  'Results parsing should disable the output cache in production'
+);
+
+const packageSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/package.json'), 'utf-8');
+assert.ok(
+  packageSource.includes("\"start:server\": \"node dist-server/server/index.js\""),
+  'Production server should run compiled JavaScript instead of tsx'
+);
+
+const dockerfileSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/Dockerfile.api'), 'utf-8');
+assert.ok(
+  dockerfileSource.includes('RUN npm run build:server'),
+  'Docker API image should build compiled server output'
 );
 assert.ok(
-  gitStatsSource.includes('isTrackedSourceFile(resolveDiffFilePath(headerPaths.leftPath, headerPaths.rightPath))'),
-  'git-stats GitHub diff parsing should filter files by source extension'
-);
-assert.ok(
-  gitStatsSource.includes('api.github.com/repos'),
-  'git-stats should include GitHub API fallback for production environments without local git'
+  !dockerfileSource.includes('openjdk-17-jdk'),
+  'Docker API image should no longer install Java'
 );
 
 console.log('Smoke tests passed.');

@@ -33,17 +33,18 @@ Dashboard API environment variables:
 - `PORT` (preferred in production): HTTP port.
 - `DASHBOARD_API_PORT` (local fallback): HTTP port when `PORT` is not set.
 - `DASHBOARD_CORS_ORIGIN` (optional): allowed browser origin for cross-origin requests (for split frontend/API deploys).
-- `DASHBOARD_GIT_STATS_BASE_COMMIT` (optional): git base commit used by `/api/git-stats`.
 - `DASHBOARD_ENABLE_MODEL_RUNS` (optional): set to `true` to enable dev-only model-run APIs/UI.
 - `DASHBOARD_WRITE_USERNAME` + `DASHBOARD_WRITE_PASSWORD` (optional pair): enables write-login mode when both are set.
 - `DASHBOARD_MAVEN_BIN` (optional): Maven executable used by model runs (defaults to `mvn`).
 - `DASHBOARD_RESULTS_CAP_MB` (optional): total `Results/` storage cap in MB for dashboard-managed runs (defaults to `400`). New run submissions are blocked when usage is at/above cap after managed-run pruning.
+- `DASHBOARD_LOG_MEMORY` (optional): set to `true` to log request duration plus RSS/heap deltas for public API routes.
 
 Experiments availability:
 
 - Experiments are intentionally dev-only.
 - Production and `Preview non-dev` hide the `Experiments` navigation item and do not expose `/experiments` or `/login`.
 - In non-dev, experiment/model-run/results-management/auth-for-experiments API routes return `404` so the feature is absent rather than blocked.
+- The homepage no longer shows git-history stats; production avoids all git/GitHub diff work entirely.
 
 Write-access behavior:
 
@@ -143,51 +144,32 @@ Health endpoint:
 - `GET /api/runtime-deps` (runtime diagnostics):
   - returns `java`, `maven`, `mavenBin`, and `versionInfo` for dependency checks.
 
-`/api/git-stats` behavior:
+Homepage preview endpoint:
 
-- uses local git endpoint-diff semantics from base commit to `HEAD`
-- `filesChanged` and `lineChanges` are restricted to source files only:
-  - Java: `.java`
-  - C++: `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hh`, `.hxx`
-  - TypeScript: `.ts`, `.tsx`
-  - Python: `.py`
-  - Shell: `.sh`
-- weekly source-file stats use the same local git semantics over the rolling 7-day window
-- `commitCount` and `weekly.commitCount` remain repo-wide git commit counts
-- if local git stats fail in runtime, API returns a safe zero-valued payload so homepage rendering remains stable
-- response includes `weekly` metrics for rolling last 7 days:
-  - `weekly.filesChanged`
-  - `weekly.lineChanges`
-  - `weekly.commitCount`
-
-Expected parity check: `/api/git-stats` should match `./scripts/helpers/git-stats.sh` on the same branch and `HEAD`.
+- `GET /api/home-preview?version=<version>`
+- returns only the lightweight chart payload needed for the homepage hero preview
+- avoids provenance history, dataset attribution, and other compare-page metadata
+- keeps the homepage live without forcing the full compare path on first public load
 
 ## Render Deployment
 
 Repository root includes `render.yaml` with:
 
 - static web service: `uk-housing-market-abm`
-- API web service: `uk-housing-market-abm-api` (Docker runtime with Java + Maven)
+- API web service: `uk-housing-market-abm-api` (slim Docker runtime for public dashboard APIs)
 
-Remote model runs require Java and Maven in the API runtime. The Blueprint now uses Docker for the API service to provide both dependencies.
+The public Render API is intentionally lightweight:
 
 - Dockerfile: `dashboard/Dockerfile.api`
-- API runtime dependency diagnostics: `GET /api/runtime-deps`
-
-If you deploy API as plain `runtime: node` without Java/Maven, run submission will fail with `spawn mvn ENOENT`. In that case either:
-
-- migrate to Docker runtime (recommended), or
-- disable remote execution (`DASHBOARD_ENABLE_MODEL_RUNS=false`) and keep read-only usage.
-
-Current server behavior when `DASHBOARD_ENABLE_MODEL_RUNS=true` but Java/Maven are missing:
-
-- API does **not** crash on startup
-- `/api/runtime-deps` reports missing dependencies
-- model-run endpoints return disabled errors until dependencies are available
+- ships only the public dashboard server plus `input-data-versions`
+- does not include git, Java, Maven, or baseline `Results/` outputs
+- uses compiled server output (`dist-server`) instead of running through `tsx`
 
 Render production defaults to `DASHBOARD_ENABLE_MODEL_RUNS=false`, which removes experiments from the live website and disables the related API surface.
 
-If you intentionally want remote experiment execution again, re-enable these API environment variables in Render:
+If you intentionally want remote experiment execution again, treat it as a separate service concern. The public 512 MB instance is not intended to host model execution or results analytics.
+
+Local development remains the supported way to use experiments. If you still want to re-enable them in another environment, start with:
 
 - `DASHBOARD_ENABLE_MODEL_RUNS=true`
 - `DASHBOARD_WRITE_USERNAME` (secret)
