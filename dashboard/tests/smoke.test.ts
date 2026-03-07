@@ -599,9 +599,9 @@ assert.ok(
 const v38Note = notes.find((entry) => entry.version_id === 'v4.0');
 assert.ok(v38Note, 'Expected v4.0 note entry');
 assert.equal(v38Note?.validation.status, 'complete', 'v4.0 validation should be complete');
-assert.equal(v38Note?.validation.income_diff_pct, 7.87, 'v4.0 income diff should match released value');
-assert.equal(v38Note?.validation.housing_wealth_diff_pct, 14.37, 'v4.0 housing diff should match released value');
-assert.equal(v38Note?.validation.financial_wealth_diff_pct, 13.25, 'v4.0 financial diff should match released value');
+assert.equal(v38Note?.validation.income_diff_pct, 7.192856, 'v4.0 income diff should match released value');
+assert.equal(v38Note?.validation.housing_wealth_diff_pct, 12.534289, 'v4.0 housing diff should match released value');
+assert.equal(v38Note?.validation.financial_wealth_diff_pct, 13.438086, 'v4.0 financial diff should match released value');
 
 const validationTrend = getValidationTrend(repoRoot);
 assert.equal(validationTrend.dataset, 'r8', 'Validation trend should be scoped to r8');
@@ -647,12 +647,12 @@ assert.equal(
 
 const v40Point = validationTrend.points.find((point) => point.version === 'v4.0');
 assert.ok(v40Point, 'Validation trend should include v4.0 point');
-assert.equal(v40Point?.incomeDiffPct, 7.87, 'v4.0 trend point should match income diff');
-assert.equal(v40Point?.housingWealthDiffPct, 14.37, 'v4.0 trend point should match housing wealth diff');
-assert.equal(v40Point?.financialWealthDiffPct, 13.25, 'v4.0 trend point should match financial wealth diff');
+assert.equal(v40Point?.incomeDiffPct, 7.192856, 'v4.0 trend point should match income diff');
+assert.equal(v40Point?.housingWealthDiffPct, 12.534289, 'v4.0 trend point should match housing wealth diff');
+assert.equal(v40Point?.financialWealthDiffPct, 13.438086, 'v4.0 trend point should match financial wealth diff');
 assertClose(
   Number(v40Point?.averageAbsDiffPct),
-  (Math.abs(7.87) + Math.abs(14.37) + Math.abs(13.25)) / 3,
+  (Math.abs(7.192856) + Math.abs(12.534289) + Math.abs(13.438086)) / 3,
   1e-12,
   'v4.0 trend point should compute average absolute diff correctly'
 );
@@ -2092,6 +2092,55 @@ const compareCardSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/
 assert.ok(
   !compareCardSource.includes('Validation dataset'),
   'Compare card should not render Validation dataset field'
+);
+
+const validationPageSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/pages/ValidationPage.tsx'), 'utf-8');
+assert.ok(
+  validationPageSource.includes("const [mode, setMode] = useState<ValidationMode>('average');"),
+  'Validation page should default to the average view'
+);
+assert.ok(
+  validationPageSource.includes('const ORIGINAL_MODEL_LOSS = 11.83;'),
+  'Validation page should define the original model loss benchmark'
+);
+assert.ok(
+  validationPageSource.includes('<span>Original model loss</span>'),
+  'Validation page should render a visible Original model loss reference label above the chart'
+);
+assert.ok(
+  !validationPageSource.includes("color: '#c92a2a'"),
+  'Validation page benchmark should no longer use the old red error colour'
+);
+assert.ok(
+  validationPageSource.includes('markLine: averageReferenceMarkLine'),
+  'Validation page should apply the original-model benchmark on the average chart'
+);
+assert.ok(
+  validationPageSource.includes("label: { show: false }"),
+  'Validation page should hide the in-chart benchmark label after moving it into a dedicated reference row'
+);
+assert.ok(
+  validationPageSource.includes("grid: { left: 84, right: 34, top: 18, bottom: 86, containLabel: true }"),
+  'Validation page should reduce excess top spacing above the average chart'
+);
+assert.ok(
+  !validationPageSource.includes('Validation trends from <code>input-data-versions/version-notes.json</code> using dataset <code>r8</code>.'),
+  'Validation page should not use the old technical intro copy'
+);
+assert.ok(
+  validationPageSource.includes('This view tracks validation performance across successive calibration versions.'),
+  'Validation page should describe validation performance across calibration versions'
+);
+assert.ok(
+  validationPageSource.includes('Lower loss indicates closer') &&
+    validationPageSource.includes('agreement with observed data'),
+  'Validation page should explain that lower loss means better agreement with observed data'
+);
+assert.ok(
+  validationPageSource.includes('providing clear evidence') &&
+    validationPageSource.includes('improving model fit over') &&
+    validationPageSource.includes('time.'),
+  'Validation page should frame the trend as evidence of improving model fit over time'
 );
 
 const appSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/App.tsx'), 'utf-8');

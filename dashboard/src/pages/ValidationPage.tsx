@@ -10,6 +10,7 @@ import {
 } from '../lib/api';
 
 type ValidationMode = 'three_lines' | 'average';
+const ORIGINAL_MODEL_LOSS = 11.83;
 
 function formatPercent(value: number): string {
   return `${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`;
@@ -29,6 +30,22 @@ function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode)
     label: { formatter: '0%', color: '#6c757d' },
     data: [{ yAxis: 0 }]
   };
+  const averageReferenceMarkLine = {
+    symbol: 'none',
+    silent: true,
+    data: [
+      {
+        yAxis: 0,
+        lineStyle: { type: 'dashed' as const, width: 1.4, color: '#868e96' },
+        label: { formatter: '0%', color: '#6c757d' }
+      },
+      {
+        yAxis: ORIGINAL_MODEL_LOSS,
+        lineStyle: { type: 'dotted' as const, width: 1.8, color: '#5f6b76' },
+        label: { show: false }
+      }
+    ]
+  };
 
   const tooltipFormatter = (rawParams: unknown) => {
     const rows = Array.isArray(rawParams) ? rawParams : [rawParams];
@@ -46,8 +63,7 @@ function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode)
   if (mode === 'average') {
     return {
       tooltip: { trigger: 'axis', formatter: tooltipFormatter },
-      legend: { top: 0, data: ['Average absolute diff'] },
-      grid: { left: 84, right: 34, top: 44, bottom: 86, containLabel: true },
+      grid: { left: 84, right: 34, top: 18, bottom: 86, containLabel: true },
       xAxis: {
         type: 'category',
         data: versions,
@@ -78,7 +94,7 @@ function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode)
           data: averageValues,
           lineStyle: { color: '#0b7285', width: 2.2 },
           itemStyle: { color: '#0b7285' },
-          markLine: baselineMarkLine
+          markLine: averageReferenceMarkLine
         }
       ]
     };
@@ -145,7 +161,7 @@ function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode)
 }
 
 export function ValidationPage() {
-  const [mode, setMode] = useState<ValidationMode>('three_lines');
+  const [mode, setMode] = useState<ValidationMode>('average');
   const [payload, setPayload] = useState<ValidationTrendPayload | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isWaitingForApi, setIsWaitingForApi] = useState<boolean>(false);
@@ -207,8 +223,9 @@ export function ValidationPage() {
       <article className="results-card">
         <h2>Validation</h2>
         <p>
-          Validation trends from <code>input-data-versions/version-notes.json</code> using dataset <code>r8</code>. Lower
-          values closer to <code>0%</code> indicate better agreement.
+          This view tracks validation performance across successive calibration versions. Lower loss indicates closer
+          agreement with observed data, providing clear evidence that the calibration process is improving model fit over
+          time.
         </p>
       </article>
 
@@ -234,6 +251,16 @@ export function ValidationPage() {
             Average
           </button>
         </div>
+
+        {mode === 'average' && (
+          <div className="validation-reference-row" aria-label="Validation benchmark reference">
+            <span className="validation-reference-item">
+              <span className="validation-reference-line validation-reference-line-original" aria-hidden="true" />
+              <span>Original model loss</span>
+              <strong>{formatPercent(ORIGINAL_MODEL_LOSS)}</strong>
+            </span>
+          </div>
+        )}
 
         {isLoading ? (
           <p className="loading-banner">Loading validation trend...</p>
