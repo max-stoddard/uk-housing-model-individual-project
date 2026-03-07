@@ -52,6 +52,7 @@ TODO.md
 # dashboard artifacts
 dashboard/node_modules/
 dashboard/dist/
+dashboard/dist-server/
 
 # dashboard smoke artifacts
 dashboard/.smoke-dist/

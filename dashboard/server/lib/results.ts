@@ -318,6 +318,25 @@ const MICRO_SNAPSHOT_FILES = new Set([
 
 const parsedOutputCache = new Map<string, CachedValue<ParsedOutputFile>>();
 const parsedCoreCache = new Map<string, CachedValue<ParsedCoreIndicatorFile>>();
+const OUTPUT_CACHE_MAX_ENTRIES = (process.env.NODE_ENV?.trim().toLowerCase() ?? '') === 'production' ? 0 : 2;
+const CORE_CACHE_MAX_ENTRIES = (process.env.NODE_ENV?.trim().toLowerCase() ?? '') === 'production' ? 0 : 16;
+
+function setBoundedCacheValue<T>(cache: Map<string, CachedValue<T>>, key: string, value: CachedValue<T>, maxEntries: number): void {
+  if (maxEntries <= 0) {
+    return;
+  }
+  if (cache.has(key)) {
+    cache.delete(key);
+  }
+  cache.set(key, value);
+  while (cache.size > maxEntries) {
+    const oldestKey = cache.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    cache.delete(oldestKey);
+  }
+}
 
 function resolveResultsRoot(repoRoot: string): string {
   return path.join(repoRoot, RESULTS_FOLDER_NAME);
@@ -533,32 +552,36 @@ function getFileStats(filePath: string): fs.Stats {
 function getCachedParsedOutput(filePath: string): ParsedOutputFile {
   const fileStats = getFileStats(filePath);
   const cached = parsedOutputCache.get(filePath);
-  if (cached && cached.modifiedMs === fileStats.mtimeMs && cached.sizeBytes === fileStats.size) {
+  if (OUTPUT_CACHE_MAX_ENTRIES > 0 && cached && cached.modifiedMs === fileStats.mtimeMs && cached.sizeBytes === fileStats.size) {
+    parsedOutputCache.delete(filePath);
+    parsedOutputCache.set(filePath, cached);
     return cached.value;
   }
 
   const parsed = parseOutputFile(filePath);
-  parsedOutputCache.set(filePath, {
+  setBoundedCacheValue(parsedOutputCache, filePath, {
     modifiedMs: fileStats.mtimeMs,
     sizeBytes: fileStats.size,
     value: parsed
-  });
+  }, OUTPUT_CACHE_MAX_ENTRIES);
   return parsed;
 }
 
 function getCachedParsedCore(filePath: string): ParsedCoreIndicatorFile {
   const fileStats = getFileStats(filePath);
   const cached = parsedCoreCache.get(filePath);
-  if (cached && cached.modifiedMs === fileStats.mtimeMs && cached.sizeBytes === fileStats.size) {
+  if (CORE_CACHE_MAX_ENTRIES > 0 && cached && cached.modifiedMs === fileStats.mtimeMs && cached.sizeBytes === fileStats.size) {
+    parsedCoreCache.delete(filePath);
+    parsedCoreCache.set(filePath, cached);
     return cached.value;
   }
 
   const parsed = parseCoreIndicatorFile(filePath);
-  parsedCoreCache.set(filePath, {
+  setBoundedCacheValue(parsedCoreCache, filePath, {
     modifiedMs: fileStats.mtimeMs,
     sizeBytes: fileStats.size,
     value: parsed
-  });
+  }, CORE_CACHE_MAX_ENTRIES);
   return parsed;
 }
 

@@ -7,8 +7,10 @@
     "dev": "concurrently -k -n API,WEB -c \"#0b7285,#c92a2a\" \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite",
-    "start:server": "node --import tsx/esm server/index.ts",
-    "build": "npm run typecheck && vite build",
+    "start:server": "node dist-server/server/index.js",
+    "build": "npm run typecheck && npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json && node -e \"require('node:fs').writeFileSync('dist-server/package.json', '{\\n  \\\"type\\\": \\\"commonjs\\\"\\n}\\n')\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:smoke": "node --import tsx/esm tests/smoke.test.ts"

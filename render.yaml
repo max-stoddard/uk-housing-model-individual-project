@@ -38,20 +38,12 @@ services:
         value: https://uk-housing-market-abm.onrender.com
       - key: DASHBOARD_ENABLE_MODEL_RUNS
         value: "false"
-      - key: DASHBOARD_RESULTS_CAP_MB
-        value: "400"
-      - key: DASHBOARD_GIT_STATS_BASE_COMMIT
-        value: 4e89f5e277cdba4b4ef0c08254e5731e19bd51c3
-      - key: DASHBOARD_GITHUB_REPO
-        value: max-stoddard/UK-Housing-Market-ABM
-      - key: DASHBOARD_GITHUB_BRANCH
-        value: master
-      - key: DASHBOARD_GITHUB_TOKEN
-        sync: false
       - key: DASHBOARD_WRITE_USERNAME
         sync: false
       - key: DASHBOARD_WRITE_PASSWORD
         sync: false
+      - key: DASHBOARD_LOG_MEMORY
+        value: "false"
     buildFilter:
       paths:
         - dashboard/Dockerfile.api
@@ -59,13 +51,7 @@ services:
         - dashboard/shared/**
         - dashboard/package.json
         - dashboard/package-lock.json
-        - pom.xml
-        - src/**
         - input-data-versions/**
-        - Results/v0-output/**
-        - Results/v1.0-output/**
-        - Results/v2.0-output/**
-        - Results/v3.0-output/**
-        - Results/v4.0-output/**
+        - dashboard/tsconfig.server.json
         - .dockerignore
         - render.yaml

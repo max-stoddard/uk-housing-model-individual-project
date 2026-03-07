@@ -21,6 +21,6 @@ export default tseslint.config(
     }
   },
   {
-    ignores: ['dist/**', '.smoke-dist/**', 'node_modules/**']
+    ignores: ['dist/**', 'dist-server/**', '.smoke-dist/**', 'node_modules/**']
   }
 );
