@@ -1,0 +1,1817 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="442" viewBox="0 0 3200 442">
+<style>text { font-family: "DejaVu Sans Mono", monospace; }</style>
+<text x="10" y="20" font-size="20" font-weight="bold" fill="#111111">E2E Default 10k modelStep() Flame Graph</text>
+<text x="10" y="38" font-size="12" fill="#444444">Source: tmp/model-speed/benchmarks-smoke/v4.1/e2e-default-10k/20260307T020626Z/median-jfr/profile.jfr</text>
+<text x="10" y="440" font-size="11" fill="#444444">Samples: 1693 | View: modelStep()-only | Root: housing.Model.modelStep()</text>
+<g><title>housing.Model.modelStep (1693 samples, 100.00%)</title><rect x="10.000" y="414.000" width="3180.000" height="17" fill="hsl(271,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="13.000" y="427.000" font-size="12" fill="#111111">housing.Model.modelStep</text>
+</g>
+<g><title>housing.Demographics.step (49 samples, 2.89%)</title><rect x="10.000" y="396.000" width="92.038" height="17" fill="hsl(296,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="13.000" y="409.000" font-size="12" fill="#111111">housing.Dem…</text>
+</g>
+<g><title>housing.Demographics.implementBirths (2 samples, 0.12%)</title><rect x="10.000" y="378.000" width="3.757" height="17" fill="hsl(148,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.&lt;init&gt; (2 samples, 0.12%)</title><rect x="10.000" y="360.000" width="3.757" height="17" fill="hsl(194,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.&lt;clinit&gt; (1 samples, 0.06%)</title><rect x="10.000" y="342.000" width="1.878" height="17" fill="hsl(286,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.BinnedDataDouble.&lt;init&gt; (1 samples, 0.06%)</title><rect x="10.000" y="324.000" width="1.878" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.csv.CSVParser$1.hasNext (1 samples, 0.06%)</title><rect x="10.000" y="306.000" width="1.878" height="17" fill="hsl(36,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.csv.CSVParser$1.getNextRecord (1 samples, 0.06%)</title><rect x="10.000" y="288.000" width="1.878" height="17" fill="hsl(27,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.csv.CSVParser.nextRecord (1 samples, 0.06%)</title><rect x="10.000" y="270.000" width="1.878" height="17" fill="hsl(115,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.csv.CSVParser.addRecordValue (1 samples, 0.06%)</title><rect x="10.000" y="252.000" width="1.878" height="17" fill="hsl(149,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualGrossTotalIncome (1 samples, 0.06%)</title><rect x="11.878" y="342.000" width="1.878" height="17" fill="hsl(359,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (1 samples, 0.06%)</title><rect x="11.878" y="324.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (1 samples, 0.06%)</title><rect x="11.878" y="306.000" width="1.878" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.values (1 samples, 0.06%)</title><rect x="11.878" y="288.000" width="1.878" height="17" fill="hsl(47,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Demographics.implementDeaths (35 samples, 2.07%)</title><rect x="13.757" y="378.000" width="65.741" height="17" fill="hsl(253,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="16.757" y="391.000" font-size="12" fill="#111111">housing…</text>
+</g>
+<g><title>java.util.ArrayList$Itr.remove (2 samples, 0.12%)</title><rect x="13.757" y="360.000" width="3.757" height="17" fill="hsl(306,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.remove (1 samples, 0.06%)</title><rect x="13.757" y="342.000" width="1.878" height="17" fill="hsl(238,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.transferAllWealthTo (6 samples, 0.35%)</title><rect x="17.513" y="360.000" width="11.270" height="17" fill="hsl(266,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.inheritHouse (5 samples, 0.30%)</title><rect x="17.513" y="342.000" width="9.392" height="17" fill="hsl(349,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.putHouseForSale (3 samples, 0.18%)</title><rect x="17.513" y="324.000" width="5.635" height="17" fill="hsl(80,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseSaleMarket.offer (3 samples, 0.18%)</title><rect x="17.513" y="306.000" width="5.635" height="17" fill="hsl(350,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.offer (3 samples, 0.18%)</title><rect x="17.513" y="288.000" width="5.635" height="17" fill="hsl(16,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (3 samples, 0.18%)</title><rect x="17.513" y="270.000" width="5.635" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (3 samples, 0.18%)</title><rect x="17.513" y="252.000" width="5.635" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (3 samples, 0.18%)</title><rect x="17.513" y="234.000" width="5.635" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (3 samples, 0.18%)</title><rect x="17.513" y="216.000" width="5.635" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (2 samples, 0.12%)</title><rect x="17.513" y="198.000" width="3.757" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (2 samples, 0.12%)</title><rect x="17.513" y="180.000" width="3.757" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.endTenancy (1 samples, 0.06%)</title><rect x="23.148" y="324.000" width="1.878" height="17" fill="hsl(160,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.endOfLettingAgreement (1 samples, 0.06%)</title><rect x="23.148" y="306.000" width="1.878" height="17" fill="hsl(202,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.offer (1 samples, 0.06%)</title><rect x="23.148" y="288.000" width="1.878" height="17" fill="hsl(119,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.offer (1 samples, 0.06%)</title><rect x="23.148" y="270.000" width="1.878" height="17" fill="hsl(16,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (1 samples, 0.06%)</title><rect x="23.148" y="252.000" width="1.878" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (1 samples, 0.06%)</title><rect x="23.148" y="234.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.offer (1 samples, 0.06%)</title><rect x="25.027" y="324.000" width="1.878" height="17" fill="hsl(119,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.offer (1 samples, 0.06%)</title><rect x="25.027" y="306.000" width="1.878" height="17" fill="hsl(16,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (1 samples, 0.06%)</title><rect x="25.027" y="288.000" width="1.878" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (1 samples, 0.06%)</title><rect x="25.027" y="270.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="25.027" y="252.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="25.027" y="234.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (1 samples, 0.06%)</title><rect x="25.027" y="216.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (1 samples, 0.06%)</title><rect x="25.027" y="198.000" width="1.878" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.rotateLeft (1 samples, 0.06%)</title><rect x="25.027" y="180.000" width="1.878" height="17" fill="hsl(78,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.removeOffer (1 samples, 0.06%)</title><rect x="26.905" y="342.000" width="1.878" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.removeOffer (1 samples, 0.06%)</title><rect x="26.905" y="324.000" width="1.878" height="17" fill="hsl(4,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.remove (1 samples, 0.06%)</title><rect x="26.905" y="306.000" width="1.878" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (1 samples, 0.06%)</title><rect x="26.905" y="288.000" width="1.878" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextDouble (6 samples, 0.35%)</title><rect x="28.783" y="360.000" width="11.270" height="17" fill="hsl(126,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (6 samples, 0.35%)</title><rect x="28.783" y="342.000" width="11.270" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Demographics.updateHouseholdsPerAgeBand (12 samples, 0.71%)</title><rect x="79.498" y="378.000" width="22.540" height="17" fill="hsl(324,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.step (747 samples, 44.12%)</title><rect x="102.038" y="396.000" width="1403.107" height="17" fill="hsl(342,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="105.038" y="409.000" font-size="12" fill="#111111">housing.Household.step</text>
+</g>
+<g><title>housing.Household.getMonthlyDisposableIncome (180 samples, 10.63%)</title><rect x="102.038" y="378.000" width="338.098" height="17" fill="hsl(326,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="105.038" y="391.000" font-size="12" fill="#111111">housing.Household.getMonthlyDisposableIncome</text>
+</g>
+<g><title>housing.Household.getMonthlyNetTotalIncome (168 samples, 9.92%)</title><rect x="102.038" y="360.000" width="315.558" height="17" fill="hsl(135,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="105.038" y="373.000" font-size="12" fill="#111111">housing.Household.getMonthlyNetTotalIncome</text>
+</g>
+<g><title>housing.Government.class1NICsDue (1 samples, 0.06%)</title><rect x="102.038" y="342.000" width="1.878" height="17" fill="hsl(228,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Government.bandedPercentage (1 samples, 0.06%)</title><rect x="102.038" y="324.000" width="1.878" height="17" fill="hsl(279,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualFinanceCosts (140 samples, 8.27%)</title><rect x="103.916" y="342.000" width="262.965" height="17" fill="hsl(29,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="106.916" y="355.000" font-size="12" fill="#111111">housing.Household.getAnnualFinanceC…</text>
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (8 samples, 0.47%)</title><rect x="103.916" y="324.000" width="15.027" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (8 samples, 0.47%)</title><rect x="103.916" y="306.000" width="15.027" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (8 samples, 0.47%)</title><rect x="103.916" y="288.000" width="15.027" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (8 samples, 0.47%)</title><rect x="103.916" y="270.000" width="15.027" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.get (2 samples, 0.12%)</title><rect x="118.943" y="324.000" width="3.757" height="17" fill="hsl(26,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (2 samples, 0.12%)</title><rect x="118.943" y="306.000" width="3.757" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (2 samples, 0.12%)</title><rect x="118.943" y="288.000" width="3.757" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (25 samples, 1.48%)</title><rect x="366.881" y="342.000" width="46.958" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="369.881" y="355.000" font-size="12" fill="#111111">housi…</text>
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (25 samples, 1.48%)</title><rect x="366.881" y="324.000" width="46.958" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="369.881" y="337.000" font-size="12" fill="#111111">housi…</text>
+</g>
+<g><title>java.util.TreeMap$Values.iterator (18 samples, 1.06%)</title><rect x="366.881" y="306.000" width="33.810" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="369.881" y="319.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (18 samples, 1.06%)</title><rect x="366.881" y="288.000" width="33.810" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="369.881" y="301.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (6 samples, 0.35%)</title><rect x="400.691" y="306.000" width="11.270" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (6 samples, 0.35%)</title><rect x="400.691" y="288.000" width="11.270" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (6 samples, 0.35%)</title><rect x="400.691" y="270.000" width="11.270" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Government.incomeTaxDue (1 samples, 0.06%)</title><rect x="413.839" y="342.000" width="1.878" height="17" fill="hsl(196,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Government.bandedPercentage (1 samples, 0.06%)</title><rect x="413.839" y="324.000" width="1.878" height="17" fill="hsl(279,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualGrossTotalIncome (1 samples, 0.06%)</title><rect x="415.718" y="342.000" width="1.878" height="17" fill="hsl(359,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (1 samples, 0.06%)</title><rect x="415.718" y="324.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (1 samples, 0.06%)</title><rect x="415.718" y="306.000" width="1.878" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (1 samples, 0.06%)</title><rect x="415.718" y="288.000" width="1.878" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="415.718" y="270.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="415.718" y="252.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$Values.iterator (1 samples, 0.06%)</title><rect x="417.596" y="360.000" width="1.878" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (1 samples, 0.06%)</title><rect x="417.596" y="342.000" width="1.878" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (2 samples, 0.12%)</title><rect x="419.474" y="360.000" width="3.757" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (2 samples, 0.12%)</title><rect x="419.474" y="342.000" width="3.757" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="419.474" y="324.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.manageHouse (172 samples, 10.16%)</title><rect x="440.136" y="378.000" width="323.071" height="17" fill="hsl(271,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="443.136" y="391.000" font-size="12" fill="#111111">housing.Household.manageHouse</text>
+</g>
+<g><title>housing.HousingMarket.updateOffer (16 samples, 0.95%)</title><rect x="440.136" y="360.000" width="30.053" height="17" fill="hsl(307,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (5 samples, 0.30%)</title><rect x="440.136" y="342.000" width="9.392" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (5 samples, 0.30%)</title><rect x="440.136" y="324.000" width="9.392" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (4 samples, 0.24%)</title><rect x="440.136" y="306.000" width="7.513" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (4 samples, 0.24%)</title><rect x="440.136" y="288.000" width="7.513" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.remove (11 samples, 0.65%)</title><rect x="449.527" y="342.000" width="20.662" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (7 samples, 0.41%)</title><rect x="449.527" y="324.000" width="13.148" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.higher (2 samples, 0.12%)</title><rect x="449.527" y="306.000" width="3.757" height="17" fill="hsl(81,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.higherKey (1 samples, 0.06%)</title><rect x="449.527" y="288.000" width="1.878" height="17" fill="hsl(60,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (1 samples, 0.06%)</title><rect x="449.527" y="270.000" width="1.878" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.iterator (2 samples, 0.12%)</title><rect x="453.284" y="306.000" width="3.757" height="17" fill="hsl(90,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeySet.iterator (2 samples, 0.12%)</title><rect x="453.284" y="288.000" width="3.757" height="17" fill="hsl(273,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$AscendingSubMap.keyIterator (2 samples, 0.12%)</title><rect x="453.284" y="270.000" width="3.757" height="17" fill="hsl(284,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap.absLowest (1 samples, 0.06%)</title><rect x="453.284" y="252.000" width="1.878" height="17" fill="hsl(96,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (1 samples, 0.06%)</title><rect x="453.284" y="234.000" width="1.878" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap.absHighFence (1 samples, 0.06%)</title><rect x="455.162" y="252.000" width="1.878" height="17" fill="hsl(331,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getCeilingEntry (1 samples, 0.06%)</title><rect x="455.162" y="234.000" width="1.878" height="17" fill="hsl(256,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (2 samples, 0.12%)</title><rect x="457.041" y="306.000" width="3.757" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (2 samples, 0.12%)</title><rect x="457.041" y="288.000" width="3.757" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (1 samples, 0.06%)</title><rect x="457.041" y="270.000" width="1.878" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterDeletion (1 samples, 0.06%)</title><rect x="457.041" y="252.000" width="1.878" height="17" fill="hsl(185,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.rotateRight (1 samples, 0.06%)</title><rect x="457.041" y="234.000" width="1.878" height="17" fill="hsl(351,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="458.919" y="270.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (1 samples, 0.06%)</title><rect x="458.919" y="252.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (4 samples, 0.24%)</title><rect x="462.676" y="324.000" width="7.513" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (4 samples, 0.24%)</title><rect x="462.676" y="306.000" width="7.513" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (3 samples, 0.18%)</title><rect x="462.676" y="288.000" width="5.635" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (2 samples, 0.12%)</title><rect x="462.676" y="270.000" width="3.757" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (1 samples, 0.06%)</title><rect x="468.311" y="288.000" width="1.878" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterDeletion (1 samples, 0.06%)</title><rect x="468.311" y="270.000" width="1.878" height="17" fill="hsl(185,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseSaleMarket.updateOffer (110 samples, 6.50%)</title><rect x="470.189" y="360.000" width="206.615" height="17" fill="hsl(233,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="473.189" y="373.000" font-size="12" fill="#111111">housing.HouseSaleMarket.upd…</text>
+</g>
+<g><title>housing.HousingMarket.updateOffer (53 samples, 3.13%)</title><rect x="470.189" y="342.000" width="99.551" height="17" fill="hsl(307,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="473.189" y="355.000" font-size="12" fill="#111111">housing.Hous…</text>
+</g>
+<g><title>utilities.PriorityQueue2D.remove (41 samples, 2.42%)</title><rect x="470.189" y="324.000" width="77.011" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="473.189" y="337.000" font-size="12" fill="#111111">utilities…</text>
+</g>
+<g><title>java.util.TreeSet.remove (19 samples, 1.12%)</title><rect x="470.189" y="306.000" width="35.688" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="473.189" y="319.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.TreeMap.remove (19 samples, 1.12%)</title><rect x="470.189" y="288.000" width="35.688" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="473.189" y="301.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.TreeMap.getEntry (11 samples, 0.65%)</title><rect x="470.189" y="270.000" width="20.662" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (9 samples, 0.53%)</title><rect x="470.189" y="252.000" width="16.905" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (8 samples, 0.47%)</title><rect x="490.851" y="270.000" width="15.027" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterDeletion (3 samples, 0.18%)</title><rect x="490.851" y="252.000" width="5.635" height="17" fill="hsl(185,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.rotateLeft (1 samples, 0.06%)</title><rect x="490.851" y="234.000" width="1.878" height="17" fill="hsl(78,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="496.486" y="252.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (22 samples, 1.30%)</title><rect x="505.877" y="306.000" width="41.323" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="508.877" y="319.000" font-size="12" fill="#111111">util…</text>
+</g>
+<g><title>housing.HousingMarketRecord$PQComparator.YCompare (2 samples, 0.12%)</title><rect x="505.877" y="288.000" width="3.757" height="17" fill="hsl(237,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (9 samples, 0.53%)</title><rect x="509.634" y="288.000" width="16.905" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (9 samples, 0.53%)</title><rect x="509.634" y="270.000" width="16.905" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (9 samples, 0.53%)</title><rect x="509.634" y="252.000" width="16.905" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (8 samples, 0.47%)</title><rect x="509.634" y="234.000" width="15.027" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (3 samples, 0.18%)</title><rect x="526.539" y="288.000" width="5.635" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="526.539" y="270.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="526.539" y="252.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (1 samples, 0.06%)</title><rect x="526.539" y="234.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (1 samples, 0.06%)</title><rect x="526.539" y="216.000" width="1.878" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.iterator (1 samples, 0.06%)</title><rect x="532.174" y="288.000" width="1.878" height="17" fill="hsl(90,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeySet.iterator (1 samples, 0.06%)</title><rect x="532.174" y="270.000" width="1.878" height="17" fill="hsl(273,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.keyIterator (1 samples, 0.06%)</title><rect x="532.174" y="252.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (1 samples, 0.06%)</title><rect x="532.174" y="234.000" width="1.878" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapKeyIterator.next (1 samples, 0.06%)</title><rect x="534.052" y="288.000" width="1.878" height="17" fill="hsl(331,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapIterator.nextEntry (1 samples, 0.06%)</title><rect x="534.052" y="270.000" width="1.878" height="17" fill="hsl(216,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="534.052" y="252.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.lower (2 samples, 0.12%)</title><rect x="535.930" y="288.000" width="3.757" height="17" fill="hsl(236,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.lowerKey (2 samples, 0.12%)</title><rect x="535.930" y="270.000" width="3.757" height="17" fill="hsl(195,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getLowerEntry (2 samples, 0.12%)</title><rect x="535.930" y="252.000" width="3.757" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (12 samples, 0.71%)</title><rect x="547.200" y="324.000" width="22.540" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (12 samples, 0.71%)</title><rect x="547.200" y="306.000" width="22.540" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (12 samples, 0.71%)</title><rect x="547.200" y="288.000" width="22.540" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (12 samples, 0.71%)</title><rect x="547.200" y="270.000" width="22.540" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (3 samples, 0.18%)</title><rect x="547.200" y="252.000" width="5.635" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (3 samples, 0.18%)</title><rect x="547.200" y="234.000" width="5.635" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.remove (48 samples, 2.84%)</title><rect x="569.740" y="342.000" width="90.159" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="572.740" y="355.000" font-size="12" fill="#111111">utilities.P…</text>
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (13 samples, 0.77%)</title><rect x="569.740" y="324.000" width="24.418" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarketRecord$PYComparator.YCompare (1 samples, 0.06%)</title><rect x="569.740" y="306.000" width="1.878" height="17" fill="hsl(355,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapKeyIterator.next (2 samples, 0.12%)</title><rect x="571.618" y="306.000" width="3.757" height="17" fill="hsl(331,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapIterator.nextEntry (2 samples, 0.12%)</title><rect x="571.618" y="288.000" width="3.757" height="17" fill="hsl(216,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="571.618" y="270.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.lower (1 samples, 0.06%)</title><rect x="575.375" y="306.000" width="1.878" height="17" fill="hsl(236,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.lowerKey (1 samples, 0.06%)</title><rect x="575.375" y="288.000" width="1.878" height="17" fill="hsl(195,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getLowerEntry (1 samples, 0.06%)</title><rect x="575.375" y="270.000" width="1.878" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.compare (1 samples, 0.06%)</title><rect x="575.375" y="252.000" width="1.878" height="17" fill="hsl(217,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.higher (1 samples, 0.06%)</title><rect x="577.253" y="306.000" width="1.878" height="17" fill="hsl(81,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.higherKey (1 samples, 0.06%)</title><rect x="577.253" y="288.000" width="1.878" height="17" fill="hsl(60,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (1 samples, 0.06%)</title><rect x="577.253" y="270.000" width="1.878" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (3 samples, 0.18%)</title><rect x="579.132" y="306.000" width="5.635" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (3 samples, 0.18%)</title><rect x="579.132" y="288.000" width="5.635" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (2 samples, 0.12%)</title><rect x="579.132" y="270.000" width="3.757" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="579.132" y="252.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="582.888" y="270.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (1 samples, 0.06%)</title><rect x="584.767" y="306.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="584.767" y="288.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="584.767" y="270.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (1 samples, 0.06%)</title><rect x="584.767" y="252.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (1 samples, 0.06%)</title><rect x="584.767" y="234.000" width="1.878" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (35 samples, 2.07%)</title><rect x="594.158" y="324.000" width="65.741" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="597.158" y="337.000" font-size="12" fill="#111111">java.ut…</text>
+</g>
+<g><title>java.util.TreeMap.remove (34 samples, 2.01%)</title><rect x="594.158" y="306.000" width="63.863" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="597.158" y="319.000" font-size="12" fill="#111111">java.ut…</text>
+</g>
+<g><title>java.util.TreeMap.deleteEntry (3 samples, 0.18%)</title><rect x="594.158" y="288.000" width="5.635" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterDeletion (2 samples, 0.12%)</title><rect x="594.158" y="270.000" width="3.757" height="17" fill="hsl(185,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.rotateRight (1 samples, 0.06%)</title><rect x="594.158" y="252.000" width="1.878" height="17" fill="hsl(351,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (31 samples, 1.83%)</title><rect x="599.793" y="288.000" width="58.228" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="602.793" y="301.000" font-size="12" fill="#111111">java.u…</text>
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (22 samples, 1.30%)</title><rect x="599.793" y="270.000" width="41.323" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="602.793" y="283.000" font-size="12" fill="#111111">java…</text>
+</g>
+<g><title>utilities.PriorityQueue2D.add (9 samples, 0.53%)</title><rect x="659.900" y="342.000" width="16.905" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (9 samples, 0.53%)</title><rect x="659.900" y="324.000" width="16.905" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (8 samples, 0.47%)</title><rect x="659.900" y="306.000" width="15.027" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (7 samples, 0.41%)</title><rect x="659.900" y="288.000" width="13.148" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (4 samples, 0.24%)</title><rect x="659.900" y="270.000" width="7.513" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (4 samples, 0.24%)</title><rect x="659.900" y="252.000" width="7.513" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.rotateRight (1 samples, 0.06%)</title><rect x="659.900" y="234.000" width="1.878" height="17" fill="hsl(351,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.putHouseForSale (4 samples, 0.24%)</title><rect x="676.804" y="360.000" width="7.513" height="17" fill="hsl(80,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseSaleMarket.offer (4 samples, 0.24%)</title><rect x="676.804" y="342.000" width="7.513" height="17" fill="hsl(350,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.offer (2 samples, 0.12%)</title><rect x="676.804" y="324.000" width="3.757" height="17" fill="hsl(16,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (2 samples, 0.12%)</title><rect x="676.804" y="306.000" width="3.757" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (2 samples, 0.12%)</title><rect x="676.804" y="288.000" width="3.757" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="676.804" y="270.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="676.804" y="252.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (1 samples, 0.06%)</title><rect x="680.561" y="324.000" width="1.878" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (1 samples, 0.06%)</title><rect x="680.561" y="306.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="680.561" y="288.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="680.561" y="270.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (1 samples, 0.06%)</title><rect x="680.561" y="252.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (1 samples, 0.06%)</title><rect x="680.561" y="234.000" width="1.878" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.mortgageFor (1 samples, 0.06%)</title><rect x="684.318" y="360.000" width="1.878" height="17" fill="hsl(28,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.get (1 samples, 0.06%)</title><rect x="684.318" y="342.000" width="1.878" height="17" fill="hsl(26,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="684.318" y="324.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (1 samples, 0.06%)</title><rect x="684.318" y="306.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseSaleMarket.removeOffer (1 samples, 0.06%)</title><rect x="686.196" y="360.000" width="1.878" height="17" fill="hsl(11,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.remove (1 samples, 0.06%)</title><rect x="686.196" y="342.000" width="1.878" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (1 samples, 0.06%)</title><rect x="686.196" y="324.000" width="1.878" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (1 samples, 0.06%)</title><rect x="686.196" y="306.000" width="1.878" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="686.196" y="288.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (1 samples, 0.06%)</title><rect x="686.196" y="270.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.decideToSellHouse (25 samples, 1.48%)</title><rect x="688.074" y="360.000" width="46.958" height="17" fill="hsl(7,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="691.074" y="373.000" font-size="12" fill="#111111">housi…</text>
+</g>
+<g><title>housing.HouseholdBehaviour.decideToSellInvestmentProperty (11 samples, 0.65%)</title><rect x="688.074" y="342.000" width="20.662" height="17" fill="hsl(19,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getNProperties (9 samples, 0.53%)</title><rect x="688.074" y="324.000" width="16.905" height="17" fill="hsl(234,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (2 samples, 0.12%)</title><rect x="688.074" y="306.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (2 samples, 0.12%)</title><rect x="688.074" y="288.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (2 samples, 0.12%)</title><rect x="688.074" y="270.000" width="3.757" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="688.074" y="252.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntrySet.iterator (2 samples, 0.12%)</title><rect x="691.831" y="306.000" width="3.757" height="17" fill="hsl(180,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (2 samples, 0.12%)</title><rect x="691.831" y="288.000" width="3.757" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.decideToSellHome (13 samples, 0.77%)</title><rect x="708.736" y="342.000" width="24.418" height="17" fill="hsl(188,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextDouble (3 samples, 0.18%)</title><rect x="708.736" y="324.000" width="5.635" height="17" fill="hsl(126,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (3 samples, 0.18%)</title><rect x="708.736" y="306.000" width="5.635" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.rethinkHouseSalePrice (5 samples, 0.30%)</title><rect x="735.032" y="360.000" width="9.392" height="17" fill="hsl(145,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian (2 samples, 0.12%)</title><rect x="735.032" y="342.000" width="3.757" height="17" fill="hsl(50,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextDouble (1 samples, 0.06%)</title><rect x="735.032" y="324.000" width="1.878" height="17" fill="hsl(126,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (1 samples, 0.06%)</title><rect x="735.032" y="306.000" width="1.878" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextDouble (1 samples, 0.06%)</title><rect x="738.789" y="342.000" width="1.878" height="17" fill="hsl(126,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (1 samples, 0.06%)</title><rect x="738.789" y="324.000" width="1.878" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.rethinkHouseRentPrice (1 samples, 0.06%)</title><rect x="744.424" y="360.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.decideToBuyInvestmentProperty (12 samples, 0.71%)</title><rect x="763.207" y="378.000" width="22.540" height="17" fill="hsl(205,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getNProperties (8 samples, 0.47%)</title><rect x="763.207" y="360.000" width="15.027" height="17" fill="hsl(234,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntrySet.iterator (1 samples, 0.06%)</title><rect x="763.207" y="342.000" width="1.878" height="17" fill="hsl(180,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (1 samples, 0.06%)</title><rect x="763.207" y="324.000" width="1.878" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualGrossTotalIncome (3 samples, 0.18%)</title><rect x="778.234" y="360.000" width="5.635" height="17" fill="hsl(359,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (3 samples, 0.18%)</title><rect x="778.234" y="342.000" width="5.635" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (3 samples, 0.18%)</title><rect x="778.234" y="324.000" width="5.635" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (2 samples, 0.12%)</title><rect x="778.234" y="306.000" width="3.757" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (2 samples, 0.12%)</title><rect x="778.234" y="288.000" width="3.757" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="778.234" y="270.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$Values.iterator (1 samples, 0.06%)</title><rect x="781.991" y="306.000" width="1.878" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (1 samples, 0.06%)</title><rect x="781.991" y="288.000" width="1.878" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.getDesiredConsumption (1 samples, 0.06%)</title><rect x="785.747" y="378.000" width="1.878" height="17" fill="hsl(98,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>data.Wealth.getDesiredBankBalance (1 samples, 0.06%)</title><rect x="785.747" y="360.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.bidForAHome (118 samples, 6.97%)</title><rect x="787.626" y="378.000" width="221.642" height="17" fill="hsl(29,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="391.000" font-size="12" fill="#111111">housing.Household.bidForAHome</text>
+</g>
+<g><title>housing.HouseholdBehaviour.decideDownPayment (65 samples, 3.84%)</title><rect x="787.626" y="360.000" width="122.091" height="17" fill="hsl(63,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="373.000" font-size="12" fill="#111111">housing.Househo…</text>
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractRealDistribution.inverseCumulativeProbability (65 samples, 3.84%)</title><rect x="787.626" y="342.000" width="122.091" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="355.000" font-size="12" fill="#111111">org.apache.comm…</text>
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils.solve (63 samples, 3.72%)</title><rect x="787.626" y="324.000" width="118.334" height="17" fill="hsl(107,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="337.000" font-size="12" fill="#111111">org.apache.comm…</text>
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.BaseAbstractUnivariateSolver.solve (63 samples, 3.72%)</title><rect x="787.626" y="306.000" width="118.334" height="17" fill="hsl(7,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="319.000" font-size="12" fill="#111111">org.apache.comm…</text>
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.BaseAbstractUnivariateSolver.solve (63 samples, 3.72%)</title><rect x="787.626" y="288.000" width="118.334" height="17" fill="hsl(7,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="301.000" font-size="12" fill="#111111">org.apache.comm…</text>
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.BrentSolver.doSolve (63 samples, 3.72%)</title><rect x="787.626" y="270.000" width="118.334" height="17" fill="hsl(150,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="283.000" font-size="12" fill="#111111">org.apache.comm…</text>
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.BrentSolver.brent (55 samples, 3.25%)</title><rect x="787.626" y="252.000" width="103.308" height="17" fill="hsl(98,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="265.000" font-size="12" fill="#111111">org.apache.co…</text>
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.BaseAbstractUnivariateSolver.computeObjectiveValue (53 samples, 3.13%)</title><rect x="787.626" y="234.000" width="99.551" height="17" fill="hsl(290,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="247.000" font-size="12" fill="#111111">org.apache.c…</text>
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractRealDistribution$1.value (53 samples, 3.13%)</title><rect x="787.626" y="216.000" width="99.551" height="17" fill="hsl(340,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="229.000" font-size="12" fill="#111111">org.apache.c…</text>
+</g>
+<g><title>org.apache.commons.math3.distribution.LogNormalDistribution.cumulativeProbability (53 samples, 3.13%)</title><rect x="787.626" y="198.000" width="99.551" height="17" fill="hsl(131,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="211.000" font-size="12" fill="#111111">org.apache.c…</text>
+</g>
+<g><title>org.apache.commons.math3.special.Erf.erf (47 samples, 2.78%)</title><rect x="787.626" y="180.000" width="88.281" height="17" fill="hsl(0,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="193.000" font-size="12" fill="#111111">org.apache.…</text>
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.regularizedGammaP (47 samples, 2.78%)</title><rect x="787.626" y="162.000" width="88.281" height="17" fill="hsl(102,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="790.626" y="175.000" font-size="12" fill="#111111">org.apache.…</text>
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.logGamma (17 samples, 1.00%)</title><rect x="787.626" y="144.000" width="31.931" height="17" fill="hsl(320,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.logGamma1p (17 samples, 1.00%)</title><rect x="787.626" y="126.000" width="31.931" height="17" fill="hsl(305,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log1p (14 samples, 0.83%)</title><rect x="787.626" y="108.000" width="26.297" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (11 samples, 0.65%)</title><rect x="787.626" y="90.000" width="20.662" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.invGamma1pm1 (3 samples, 0.18%)</title><rect x="813.922" y="108.000" width="5.635" height="17" fill="hsl(141,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.regularizedGammaQ (3 samples, 0.18%)</title><rect x="819.557" y="144.000" width="5.635" height="17" fill="hsl(163,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (2 samples, 0.12%)</title><rect x="819.557" y="126.000" width="3.757" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.logGamma (1 samples, 0.06%)</title><rect x="823.314" y="126.000" width="1.878" height="17" fill="hsl(320,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.logGamma1p (1 samples, 0.06%)</title><rect x="823.314" y="108.000" width="1.878" height="17" fill="hsl(305,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.invGamma1pm1 (1 samples, 0.06%)</title><rect x="823.314" y="90.000" width="1.878" height="17" fill="hsl(141,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.exp (5 samples, 0.30%)</title><rect x="825.192" y="144.000" width="9.392" height="17" fill="hsl(148,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.exp (5 samples, 0.30%)</title><rect x="825.192" y="126.000" width="9.392" height="17" fill="hsl(148,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (12 samples, 0.71%)</title><rect x="834.584" y="144.000" width="22.540" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (3 samples, 0.18%)</title><rect x="834.584" y="126.000" width="5.635" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (6 samples, 0.35%)</title><rect x="875.907" y="180.000" width="11.270" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (3 samples, 0.18%)</title><rect x="875.907" y="162.000" width="5.635" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.analysis.solvers.BaseAbstractUnivariateSolver.computeObjectiveValue (8 samples, 0.47%)</title><rect x="890.933" y="252.000" width="15.027" height="17" fill="hsl(290,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractRealDistribution$1.value (8 samples, 0.47%)</title><rect x="890.933" y="234.000" width="15.027" height="17" fill="hsl(340,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.LogNormalDistribution.cumulativeProbability (8 samples, 0.47%)</title><rect x="890.933" y="216.000" width="15.027" height="17" fill="hsl(131,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Erf.erf (8 samples, 0.47%)</title><rect x="890.933" y="198.000" width="15.027" height="17" fill="hsl(0,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.regularizedGammaP (8 samples, 0.47%)</title><rect x="890.933" y="180.000" width="15.027" height="17" fill="hsl(102,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.exp (4 samples, 0.24%)</title><rect x="890.933" y="162.000" width="7.513" height="17" fill="hsl(148,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.exp (4 samples, 0.24%)</title><rect x="890.933" y="144.000" width="7.513" height="17" fill="hsl(148,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.logGamma (3 samples, 0.18%)</title><rect x="898.447" y="162.000" width="5.635" height="17" fill="hsl(320,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.logGamma1p (3 samples, 0.18%)</title><rect x="898.447" y="144.000" width="5.635" height="17" fill="hsl(305,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log1p (2 samples, 0.12%)</title><rect x="898.447" y="126.000" width="3.757" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (2 samples, 0.12%)</title><rect x="898.447" y="108.000" width="3.757" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.special.Gamma.invGamma1pm1 (1 samples, 0.06%)</title><rect x="902.203" y="126.000" width="1.878" height="17" fill="hsl(141,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (1 samples, 0.06%)</title><rect x="904.082" y="162.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.LogNormalDistribution.getNumericalMean (1 samples, 0.06%)</title><rect x="905.960" y="324.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.exp (1 samples, 0.06%)</title><rect x="905.960" y="306.000" width="1.878" height="17" fill="hsl(148,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.LogNormalDistribution.getNumericalVariance (1 samples, 0.06%)</title><rect x="907.838" y="324.000" width="1.878" height="17" fill="hsl(300,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.expm1 (1 samples, 0.06%)</title><rect x="907.838" y="306.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.expm1 (1 samples, 0.06%)</title><rect x="907.838" y="288.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyNetTotalIncome (17 samples, 1.00%)</title><rect x="909.716" y="360.000" width="31.931" height="17" fill="hsl(135,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualFinanceCosts (12 samples, 0.71%)</title><rect x="909.716" y="342.000" width="22.540" height="17" fill="hsl(29,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (1 samples, 0.06%)</title><rect x="909.716" y="324.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (1 samples, 0.06%)</title><rect x="909.716" y="306.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="909.716" y="288.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="909.716" y="270.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (5 samples, 0.30%)</title><rect x="932.256" y="342.000" width="9.392" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (5 samples, 0.30%)</title><rect x="932.256" y="324.000" width="9.392" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$Values.iterator (5 samples, 0.30%)</title><rect x="932.256" y="306.000" width="9.392" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (5 samples, 0.30%)</title><rect x="932.256" y="288.000" width="9.392" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.getDesiredRentPrice (10 samples, 0.59%)</title><rect x="941.648" y="360.000" width="18.783" height="17" fill="hsl(234,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian (6 samples, 0.35%)</title><rect x="941.648" y="342.000" width="11.270" height="17" fill="hsl(50,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (2 samples, 0.12%)</title><rect x="941.648" y="324.000" width="3.757" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (2 samples, 0.12%)</title><rect x="941.648" y="306.000" width="3.757" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextDouble (1 samples, 0.06%)</title><rect x="945.405" y="324.000" width="1.878" height="17" fill="hsl(126,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (1 samples, 0.06%)</title><rect x="945.405" y="306.000" width="1.878" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.decideRentOrPurchase (20 samples, 1.18%)</title><rect x="960.431" y="360.000" width="37.566" height="17" fill="hsl(98,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="963.431" y="373.000" font-size="12" fill="#111111">hou…</text>
+</g>
+<g><title>collectors.HousingMarketStats.getMaxQualityForPrice (8 samples, 0.47%)</title><rect x="960.431" y="342.000" width="15.027" height="17" fill="hsl(287,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Bank.requestApproval (1 samples, 0.06%)</title><rect x="975.458" y="342.000" width="1.878" height="17" fill="hsl(298,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.endTenancy (9 samples, 0.53%)</title><rect x="1009.268" y="378.000" width="16.905" height="17" fill="hsl(160,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.endOfLettingAgreement (9 samples, 0.53%)</title><rect x="1009.268" y="360.000" width="16.905" height="17" fill="hsl(202,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.offer (4 samples, 0.24%)</title><rect x="1009.268" y="342.000" width="7.513" height="17" fill="hsl(119,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.offer (4 samples, 0.24%)</title><rect x="1009.268" y="324.000" width="7.513" height="17" fill="hsl(16,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.add (4 samples, 0.24%)</title><rect x="1009.268" y="306.000" width="7.513" height="17" fill="hsl(252,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (4 samples, 0.24%)</title><rect x="1009.268" y="288.000" width="7.513" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (4 samples, 0.24%)</title><rect x="1009.268" y="270.000" width="7.513" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (4 samples, 0.24%)</title><rect x="1009.268" y="252.000" width="7.513" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (1 samples, 0.06%)</title><rect x="1009.268" y="234.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (1 samples, 0.06%)</title><rect x="1009.268" y="216.000" width="1.878" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (3 samples, 0.18%)</title><rect x="1016.781" y="342.000" width="5.635" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (2 samples, 0.12%)</title><rect x="1016.781" y="324.000" width="3.757" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="1020.538" y="324.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (1 samples, 0.06%)</title><rect x="1020.538" y="306.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.containsKey (1 samples, 0.06%)</title><rect x="1022.416" y="342.000" width="1.878" height="17" fill="hsl(194,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="1022.416" y="324.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.Math.min (1 samples, 0.06%)</title><rect x="1026.172" y="378.000" width="1.878" height="17" fill="hsl(94,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.updateDesiredPurchasePrice (145 samples, 8.56%)</title><rect x="1028.051" y="378.000" width="272.357" height="17" fill="hsl(33,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1031.051" y="391.000" font-size="12" fill="#111111">housing.HouseholdBehaviour.updateDesi…</text>
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian (73 samples, 4.31%)</title><rect x="1028.051" y="360.000" width="137.118" height="17" fill="hsl(50,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1031.051" y="373.000" font-size="12" fill="#111111">org.apache.commons…</text>
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (27 samples, 1.59%)</title><rect x="1028.051" y="342.000" width="50.715" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1031.051" y="355.000" font-size="12" fill="#111111">org.a…</text>
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (27 samples, 1.59%)</title><rect x="1028.051" y="324.000" width="50.715" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1031.051" y="337.000" font-size="12" fill="#111111">org.a…</text>
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.cos (16 samples, 0.95%)</title><rect x="1078.766" y="342.000" width="30.053" height="17" fill="hsl(7,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.sinQ (2 samples, 0.12%)</title><rect x="1078.766" y="324.000" width="3.757" height="17" fill="hsl(92,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextDouble (3 samples, 0.18%)</title><rect x="1108.819" y="342.000" width="5.635" height="17" fill="hsl(126,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (3 samples, 0.18%)</title><rect x="1108.819" y="324.000" width="5.635" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualGrossTotalIncome (13 samples, 0.77%)</title><rect x="1300.408" y="378.000" width="24.418" height="17" fill="hsl(359,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (13 samples, 0.77%)</title><rect x="1300.408" y="360.000" width="24.418" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (13 samples, 0.77%)</title><rect x="1300.408" y="342.000" width="24.418" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (4 samples, 0.24%)</title><rect x="1300.408" y="324.000" width="7.513" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (4 samples, 0.24%)</title><rect x="1300.408" y="306.000" width="7.513" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (4 samples, 0.24%)</title><rect x="1300.408" y="288.000" width="7.513" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$Values.iterator (2 samples, 0.12%)</title><rect x="1307.921" y="324.000" width="3.757" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (2 samples, 0.12%)</title><rect x="1307.921" y="306.000" width="3.757" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.bid (1 samples, 0.06%)</title><rect x="1324.826" y="378.000" width="1.878" height="17" fill="hsl(209,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.add (1 samples, 0.06%)</title><rect x="1324.826" y="360.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.add (1 samples, 0.06%)</title><rect x="1324.826" y="342.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.grow (1 samples, 0.06%)</title><rect x="1324.826" y="324.000" width="1.878" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.grow (1 samples, 0.06%)</title><rect x="1324.826" y="306.000" width="1.878" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Arrays.copyOf (1 samples, 0.06%)</title><rect x="1324.826" y="288.000" width="1.878" height="17" fill="hsl(337,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Bank.getMaxMortgagePrice (4 samples, 0.24%)</title><rect x="1326.704" y="378.000" width="7.513" height="17" fill="hsl(54,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Bank.getNPayments (4 samples, 0.24%)</title><rect x="1326.704" y="360.000" width="7.513" height="17" fill="hsl(136,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseholdBehaviour.decideDownPayment (2 samples, 0.12%)</title><rect x="1334.217" y="378.000" width="3.757" height="17" fill="hsl(63,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian (1 samples, 0.06%)</title><rect x="1334.217" y="360.000" width="1.878" height="17" fill="hsl(50,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (1 samples, 0.06%)</title><rect x="1334.217" y="342.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.log (1 samples, 0.06%)</title><rect x="1334.217" y="324.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (1 samples, 0.06%)</title><rect x="1337.974" y="378.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (1 samples, 0.06%)</title><rect x="1337.974" y="360.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="1337.974" y="342.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="1337.974" y="324.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseSaleMarket.clearMarket (79 samples, 4.67%)</title><rect x="1505.145" y="396.000" width="148.387" height="17" fill="hsl(255,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1508.145" y="409.000" font-size="12" fill="#111111">housing.HouseSaleMa…</text>
+</g>
+<g><title>housing.HousingMarket.clearMarket (78 samples, 4.61%)</title><rect x="1505.145" y="378.000" width="146.509" height="17" fill="hsl(39,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1508.145" y="391.000" font-size="12" fill="#111111">housing.HousingMark…</text>
+</g>
+<g><title>housing.HousingMarket.matchBidsWithOffers (2 samples, 0.12%)</title><rect x="1505.145" y="360.000" width="3.757" height="17" fill="hsl(110,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.clearMatches (71 samples, 4.19%)</title><rect x="1508.901" y="360.000" width="133.361" height="17" fill="hsl(17,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1511.901" y="373.000" font-size="12" fill="#111111">housing.HousingMa…</text>
+</g>
+<g><title>housing.HouseSaleMarket.removeOfferFromQueues (24 samples, 1.42%)</title><rect x="1508.901" y="342.000" width="45.080" height="17" fill="hsl(322,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1511.901" y="355.000" font-size="12" fill="#111111">hous…</text>
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.remove (10 samples, 0.59%)</title><rect x="1508.901" y="324.000" width="18.783" height="17" fill="hsl(167,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.access$3 (10 samples, 0.59%)</title><rect x="1508.901" y="306.000" width="18.783" height="17" fill="hsl(174,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (10 samples, 0.59%)</title><rect x="1508.901" y="288.000" width="18.783" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarketRecord$PQComparator.YCompare (1 samples, 0.06%)</title><rect x="1508.901" y="270.000" width="1.878" height="17" fill="hsl(237,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarketRecord$PQComparator.YCompare (1 samples, 0.06%)</title><rect x="1508.901" y="252.000" width="1.878" height="17" fill="hsl(237,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseOfferRecord.getQuality (1 samples, 0.06%)</title><rect x="1508.901" y="234.000" width="1.878" height="17" fill="hsl(257,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.iterator (1 samples, 0.06%)</title><rect x="1510.780" y="270.000" width="1.878" height="17" fill="hsl(90,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeySet.iterator (1 samples, 0.06%)</title><rect x="1510.780" y="252.000" width="1.878" height="17" fill="hsl(273,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$AscendingSubMap.keyIterator (1 samples, 0.06%)</title><rect x="1510.780" y="234.000" width="1.878" height="17" fill="hsl(284,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap.absLowest (1 samples, 0.06%)</title><rect x="1510.780" y="216.000" width="1.878" height="17" fill="hsl(96,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (1 samples, 0.06%)</title><rect x="1510.780" y="198.000" width="1.878" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (1 samples, 0.06%)</title><rect x="1512.658" y="270.000" width="1.878" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (1 samples, 0.06%)</title><rect x="1512.658" y="252.000" width="1.878" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="1512.658" y="234.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (1 samples, 0.06%)</title><rect x="1512.658" y="216.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.lower (1 samples, 0.06%)</title><rect x="1514.536" y="270.000" width="1.878" height="17" fill="hsl(236,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.lowerKey (1 samples, 0.06%)</title><rect x="1514.536" y="252.000" width="1.878" height="17" fill="hsl(195,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getLowerEntry (1 samples, 0.06%)</title><rect x="1514.536" y="234.000" width="1.878" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (2 samples, 0.12%)</title><rect x="1516.415" y="270.000" width="3.757" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="1516.415" y="252.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="1516.415" y="234.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (1 samples, 0.06%)</title><rect x="1516.415" y="216.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (1 samples, 0.06%)</title><rect x="1516.415" y="198.000" width="1.878" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.rotateLeft (1 samples, 0.06%)</title><rect x="1516.415" y="180.000" width="1.878" height="17" fill="hsl(78,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapKeyIterator.next (2 samples, 0.12%)</title><rect x="1520.171" y="270.000" width="3.757" height="17" fill="hsl(331,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapIterator.nextEntry (2 samples, 0.12%)</title><rect x="1520.171" y="252.000" width="3.757" height="17" fill="hsl(216,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="1520.171" y="234.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.remove (14 samples, 0.83%)</title><rect x="1527.685" y="324.000" width="26.297" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (14 samples, 0.83%)</title><rect x="1527.685" y="306.000" width="26.297" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarketRecord$PYComparator.YCompare (1 samples, 0.06%)</title><rect x="1527.685" y="288.000" width="1.878" height="17" fill="hsl(355,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.subSet (1 samples, 0.06%)</title><rect x="1529.563" y="288.000" width="1.878" height="17" fill="hsl(138,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapKeyIterator.next (5 samples, 0.30%)</title><rect x="1531.441" y="288.000" width="9.392" height="17" fill="hsl(331,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapIterator.nextEntry (5 samples, 0.30%)</title><rect x="1531.441" y="270.000" width="9.392" height="17" fill="hsl(216,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (5 samples, 0.30%)</title><rect x="1531.441" y="252.000" width="9.392" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (2 samples, 0.12%)</title><rect x="1540.833" y="288.000" width="3.757" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (2 samples, 0.12%)</title><rect x="1540.833" y="270.000" width="3.757" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="1540.833" y="252.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (1 samples, 0.06%)</title><rect x="1542.711" y="252.000" width="1.878" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterDeletion (1 samples, 0.06%)</title><rect x="1542.711" y="234.000" width="1.878" height="17" fill="hsl(185,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.iterator (3 samples, 0.18%)</title><rect x="1544.589" y="288.000" width="5.635" height="17" fill="hsl(90,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeySet.iterator (3 samples, 0.18%)</title><rect x="1544.589" y="270.000" width="5.635" height="17" fill="hsl(273,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$AscendingSubMap.keyIterator (3 samples, 0.18%)</title><rect x="1544.589" y="252.000" width="5.635" height="17" fill="hsl(284,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap.absLowest (3 samples, 0.18%)</title><rect x="1544.589" y="234.000" width="5.635" height="17" fill="hsl(96,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (3 samples, 0.18%)</title><rect x="1544.589" y="216.000" width="5.635" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseSaleMarket.completeTransaction (19 samples, 1.12%)</title><rect x="1553.981" y="342.000" width="35.688" height="17" fill="hsl(231,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1556.981" y="355.000" font-size="12" fill="#111111">hou…</text>
+</g>
+<g><title>housing.Household.completeHousePurchase (2 samples, 0.12%)</title><rect x="1553.981" y="324.000" width="3.757" height="17" fill="hsl(217,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="1553.981" y="306.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="1553.981" y="288.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Bank.requestLoan (1 samples, 0.06%)</title><rect x="1555.859" y="306.000" width="1.878" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.CreditSupply.recordLoan (1 samples, 0.06%)</title><rect x="1555.859" y="288.000" width="1.878" height="17" fill="hsl(10,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.add (1 samples, 0.06%)</title><rect x="1555.859" y="270.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.add (1 samples, 0.06%)</title><rect x="1555.859" y="252.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.grow (1 samples, 0.06%)</title><rect x="1555.859" y="234.000" width="1.878" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.completeHouseSale (7 samples, 0.41%)</title><rect x="1557.738" y="324.000" width="13.148" height="17" fill="hsl(88,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.MortgageAgreement.payoff (5 samples, 0.30%)</title><rect x="1557.738" y="306.000" width="9.392" height="17" fill="hsl(31,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Bank.endMortgageContract (5 samples, 0.30%)</title><rect x="1557.738" y="288.000" width="9.392" height="17" fill="hsl(160,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashSet.remove (5 samples, 0.30%)</title><rect x="1557.738" y="270.000" width="9.392" height="17" fill="hsl(88,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashMap.remove (5 samples, 0.30%)</title><rect x="1557.738" y="252.000" width="9.392" height="17" fill="hsl(96,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashMap.removeNode (3 samples, 0.18%)</title><rect x="1557.738" y="234.000" width="5.635" height="17" fill="hsl(92,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashMap.hash (2 samples, 0.12%)</title><rect x="1563.373" y="234.000" width="3.757" height="17" fill="hsl(56,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.Object.hashCode (2 samples, 0.12%)</title><rect x="1563.373" y="216.000" width="3.757" height="17" fill="hsl(351,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.removeOffer (2 samples, 0.12%)</title><rect x="1567.129" y="306.000" width="3.757" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.removeOffer (2 samples, 0.12%)</title><rect x="1567.129" y="288.000" width="3.757" height="17" fill="hsl(4,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.remove (2 samples, 0.12%)</title><rect x="1567.129" y="270.000" width="3.757" height="17" fill="hsl(77,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (1 samples, 0.06%)</title><rect x="1567.129" y="252.000" width="1.878" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (1 samples, 0.06%)</title><rect x="1567.129" y="234.000" width="1.878" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (1 samples, 0.06%)</title><rect x="1567.129" y="216.000" width="1.878" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="1567.129" y="198.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntryUsingComparator (1 samples, 0.06%)</title><rect x="1567.129" y="180.000" width="1.878" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.remove (1 samples, 0.06%)</title><rect x="1569.008" y="252.000" width="1.878" height="17" fill="hsl(117,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.remove (1 samples, 0.06%)</title><rect x="1569.008" y="234.000" width="1.878" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.deleteEntry (1 samples, 0.06%)</title><rect x="1569.008" y="216.000" width="1.878" height="17" fill="hsl(314,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.HousingMarketStats.recordTransaction (10 samples, 0.59%)</title><rect x="1570.886" y="324.000" width="18.783" height="17" fill="hsl(47,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.TransactionRecorder.recordTransaction (10 samples, 0.59%)</title><rect x="1570.886" y="306.000" width="18.783" height="17" fill="hsl(169,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.TransactionRecorder.recordSaleTransaction (10 samples, 0.59%)</title><rect x="1570.886" y="288.000" width="18.783" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (10 samples, 0.59%)</title><rect x="1570.886" y="270.000" width="18.783" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (10 samples, 0.59%)</title><rect x="1570.886" y="252.000" width="18.783" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (10 samples, 0.59%)</title><rect x="1570.886" y="234.000" width="18.783" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printInteger (1 samples, 0.06%)</title><rect x="1570.886" y="216.000" width="1.878" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (1 samples, 0.06%)</title><rect x="1570.886" y="198.000" width="1.878" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (1 samples, 0.06%)</title><rect x="1570.886" y="180.000" width="1.878" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (1 samples, 0.06%)</title><rect x="1570.886" y="162.000" width="1.878" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="1570.886" y="144.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="1570.886" y="126.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="1570.886" y="108.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="1570.886" y="90.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (1 samples, 0.06%)</title><rect x="1570.886" y="72.000" width="1.878" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (8 samples, 0.47%)</title><rect x="1572.764" y="216.000" width="15.027" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (8 samples, 0.47%)</title><rect x="1572.764" y="198.000" width="15.027" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (5 samples, 0.30%)</title><rect x="1572.764" y="180.000" width="9.392" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (2 samples, 0.12%)</title><rect x="1572.764" y="162.000" width="3.757" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.charAt (2 samples, 0.12%)</title><rect x="1572.764" y="144.000" width="3.757" height="17" fill="hsl(168,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.charAt (2 samples, 0.12%)</title><rect x="1572.764" y="126.000" width="3.757" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (1 samples, 0.06%)</title><rect x="1576.521" y="162.000" width="1.878" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.split (1 samples, 0.06%)</title><rect x="1576.521" y="144.000" width="1.878" height="17" fill="hsl(281,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.split (1 samples, 0.06%)</title><rect x="1576.521" y="126.000" width="1.878" height="17" fill="hsl(226,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="1576.521" y="108.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="1576.521" y="90.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.MathUtils.flog10threeQuartersPow2 (1 samples, 0.06%)</title><rect x="1576.521" y="72.000" width="1.878" height="17" fill="hsl(338,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (3 samples, 0.18%)</title><rect x="1582.156" y="180.000" width="5.635" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="1582.156" y="162.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="1582.156" y="144.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="1582.156" y="126.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="1582.156" y="108.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (3 samples, 0.18%)</title><rect x="1582.156" y="90.000" width="5.635" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.sort (3 samples, 0.18%)</title><rect x="1589.669" y="342.000" width="5.635" height="17" fill="hsl(263,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.sortRange (3 samples, 0.18%)</title><rect x="1589.669" y="324.000" width="5.635" height="17" fill="hsl(302,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Arrays.sort (3 samples, 0.18%)</title><rect x="1589.669" y="306.000" width="5.635" height="17" fill="hsl(92,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.sort (3 samples, 0.18%)</title><rect x="1589.669" y="288.000" width="5.635" height="17" fill="hsl(82,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.binarySort (3 samples, 0.18%)</title><rect x="1589.669" y="270.000" width="5.635" height="17" fill="hsl(228,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.sample (10 samples, 0.59%)</title><rect x="1595.304" y="342.000" width="18.783" height="17" fill="hsl(338,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.inverseCumulativeProbability (10 samples, 0.59%)</title><rect x="1595.304" y="324.000" width="18.783" height="17" fill="hsl(10,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.solveInverseCumulativeProbability (10 samples, 0.59%)</title><rect x="1595.304" y="306.000" width="18.783" height="17" fill="hsl(157,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.checkedCumulativeProbability (10 samples, 0.59%)</title><rect x="1595.304" y="288.000" width="18.783" height="17" fill="hsl(251,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.GeometricDistribution.cumulativeProbability (10 samples, 0.59%)</title><rect x="1595.304" y="270.000" width="18.783" height="17" fill="hsl(150,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.pow (10 samples, 0.59%)</title><rect x="1595.304" y="252.000" width="18.783" height="17" fill="hsl(112,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.next (3 samples, 0.18%)</title><rect x="1614.087" y="342.000" width="5.635" height="17" fill="hsl(79,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeyIterator.next (3 samples, 0.18%)</title><rect x="1614.087" y="324.000" width="5.635" height="17" fill="hsl(130,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (3 samples, 0.18%)</title><rect x="1614.087" y="306.000" width="5.635" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (3 samples, 0.18%)</title><rect x="1614.087" y="288.000" width="5.635" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.completeTransaction (2 samples, 0.12%)</title><rect x="1619.722" y="342.000" width="3.757" height="17" fill="hsl(276,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.completeHouseRental (2 samples, 0.12%)</title><rect x="1619.722" y="324.000" width="3.757" height="17" fill="hsl(254,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.size (1 samples, 0.06%)</title><rect x="1642.262" y="360.000" width="1.878" height="17" fill="hsl(147,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.size (1 samples, 0.06%)</title><rect x="1642.262" y="342.000" width="1.878" height="17" fill="hsl(6,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.sortPriorities (4 samples, 0.24%)</title><rect x="1644.141" y="360.000" width="7.513" height="17" fill="hsl(322,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.clear (1 samples, 0.06%)</title><rect x="1644.141" y="342.000" width="1.878" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.next (1 samples, 0.06%)</title><rect x="1646.019" y="342.000" width="1.878" height="17" fill="hsl(79,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeyIterator.next (1 samples, 0.06%)</title><rect x="1646.019" y="324.000" width="1.878" height="17" fill="hsl(130,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="1646.019" y="306.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="1646.019" y="288.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (2 samples, 0.12%)</title><rect x="1647.897" y="342.000" width="3.757" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="1647.897" y="324.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="1647.897" y="306.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (2 samples, 0.12%)</title><rect x="1647.897" y="288.000" width="3.757" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (2 samples, 0.12%)</title><rect x="1647.897" y="270.000" width="3.757" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.sortPriorities (1 samples, 0.06%)</title><rect x="1651.654" y="378.000" width="1.878" height="17" fill="hsl(322,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.clearMarket (382 samples, 22.56%)</title><rect x="1653.532" y="396.000" width="717.519" height="17" fill="hsl(39,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="409.000" font-size="12" fill="#111111">housing.HousingMarket.clearMarket</text>
+</g>
+<g><title>housing.HousingMarket.clearMatches (157 samples, 9.27%)</title><rect x="1653.532" y="378.000" width="294.897" height="17" fill="hsl(17,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="391.000" font-size="12" fill="#111111">housing.HousingMarket.clearMatches</text>
+</g>
+<g><title>java.util.ArrayList.sort (54 samples, 3.19%)</title><rect x="1653.532" y="360.000" width="101.429" height="17" fill="hsl(263,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="373.000" font-size="12" fill="#111111">java.util.Ar…</text>
+</g>
+<g><title>java.util.ArrayList.sortRange (54 samples, 3.19%)</title><rect x="1653.532" y="342.000" width="101.429" height="17" fill="hsl(302,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="355.000" font-size="12" fill="#111111">java.util.Ar…</text>
+</g>
+<g><title>java.util.Arrays.sort (54 samples, 3.19%)</title><rect x="1653.532" y="324.000" width="101.429" height="17" fill="hsl(92,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="337.000" font-size="12" fill="#111111">java.util.Ar…</text>
+</g>
+<g><title>java.util.TimSort.sort (54 samples, 3.19%)</title><rect x="1653.532" y="306.000" width="101.429" height="17" fill="hsl(82,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="319.000" font-size="12" fill="#111111">java.util.Ti…</text>
+</g>
+<g><title>java.util.TimSort.countRunAndMakeAscending (26 samples, 1.54%)</title><rect x="1653.532" y="288.000" width="48.836" height="17" fill="hsl(99,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1656.532" y="301.000" font-size="12" fill="#111111">java.…</text>
+</g>
+<g><title>housing.HouseBidderRecord$PComparator.compare (1 samples, 0.06%)</title><rect x="1653.532" y="270.000" width="1.878" height="17" fill="hsl(174,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.minRunLength (1 samples, 0.06%)</title><rect x="1702.369" y="288.000" width="1.878" height="17" fill="hsl(244,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.binarySort (19 samples, 1.12%)</title><rect x="1704.247" y="288.000" width="35.688" height="17" fill="hsl(228,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1707.247" y="301.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.TimSort.mergeForceCollapse (4 samples, 0.24%)</title><rect x="1739.935" y="288.000" width="7.513" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.mergeAt (4 samples, 0.24%)</title><rect x="1739.935" y="270.000" width="7.513" height="17" fill="hsl(258,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.mergeHi (2 samples, 0.12%)</title><rect x="1739.935" y="252.000" width="3.757" height="17" fill="hsl(291,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.gallopRight (1 samples, 0.06%)</title><rect x="1743.692" y="252.000" width="1.878" height="17" fill="hsl(347,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.mergeCollapse (4 samples, 0.24%)</title><rect x="1747.448" y="288.000" width="7.513" height="17" fill="hsl(95,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.mergeAt (4 samples, 0.24%)</title><rect x="1747.448" y="270.000" width="7.513" height="17" fill="hsl(258,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.mergeLo (3 samples, 0.18%)</title><rect x="1747.448" y="252.000" width="5.635" height="17" fill="hsl(146,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TimSort.mergeHi (1 samples, 0.06%)</title><rect x="1753.083" y="252.000" width="1.878" height="17" fill="hsl(291,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.next (7 samples, 0.41%)</title><rect x="1754.962" y="360.000" width="13.148" height="17" fill="hsl(79,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeyIterator.next (6 samples, 0.35%)</title><rect x="1754.962" y="342.000" width="11.270" height="17" fill="hsl(130,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (6 samples, 0.35%)</title><rect x="1754.962" y="324.000" width="11.270" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (6 samples, 0.35%)</title><rect x="1754.962" y="306.000" width="11.270" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.removeOfferFromQueues (13 samples, 0.77%)</title><rect x="1768.110" y="360.000" width="24.418" height="17" fill="hsl(251,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.remove (13 samples, 0.77%)</title><rect x="1768.110" y="342.000" width="24.418" height="17" fill="hsl(167,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.access$3 (13 samples, 0.77%)</title><rect x="1768.110" y="324.000" width="24.418" height="17" fill="hsl(174,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.removeFromUncovered (13 samples, 0.77%)</title><rect x="1768.110" y="306.000" width="24.418" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.add (1 samples, 0.06%)</title><rect x="1768.110" y="288.000" width="1.878" height="17" fill="hsl(35,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.iterator (3 samples, 0.18%)</title><rect x="1769.988" y="288.000" width="5.635" height="17" fill="hsl(90,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeySet.iterator (3 samples, 0.18%)</title><rect x="1769.988" y="270.000" width="5.635" height="17" fill="hsl(273,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$AscendingSubMap.keyIterator (3 samples, 0.18%)</title><rect x="1769.988" y="252.000" width="5.635" height="17" fill="hsl(284,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap.absLowest (3 samples, 0.18%)</title><rect x="1769.988" y="234.000" width="5.635" height="17" fill="hsl(96,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (3 samples, 0.18%)</title><rect x="1769.988" y="216.000" width="5.635" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapKeyIterator.next (2 samples, 0.12%)</title><rect x="1775.623" y="288.000" width="3.757" height="17" fill="hsl(331,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap$SubMapIterator.nextEntry (2 samples, 0.12%)</title><rect x="1775.623" y="270.000" width="3.757" height="17" fill="hsl(216,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (2 samples, 0.12%)</title><rect x="1775.623" y="252.000" width="3.757" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.subSet (1 samples, 0.06%)</title><rect x="1779.380" y="288.000" width="1.878" height="17" fill="hsl(138,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.subMap (1 samples, 0.06%)</title><rect x="1779.380" y="270.000" width="1.878" height="17" fill="hsl(353,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$AscendingSubMap.&lt;init&gt; (1 samples, 0.06%)</title><rect x="1779.380" y="252.000" width="1.878" height="17" fill="hsl(156,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$NavigableSubMap.&lt;init&gt; (1 samples, 0.06%)</title><rect x="1779.380" y="234.000" width="1.878" height="17" fill="hsl(298,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.higher (2 samples, 0.12%)</title><rect x="1781.258" y="288.000" width="3.757" height="17" fill="hsl(81,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.higherKey (2 samples, 0.12%)</title><rect x="1781.258" y="270.000" width="3.757" height="17" fill="hsl(60,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getHigherEntry (2 samples, 0.12%)</title><rect x="1781.258" y="252.000" width="3.757" height="17" fill="hsl(105,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.addAll (3 samples, 0.18%)</title><rect x="1792.528" y="360.000" width="5.635" height="17" fill="hsl(272,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList$SubList.toArray (1 samples, 0.06%)</title><rect x="1792.528" y="342.000" width="1.878" height="17" fill="hsl(32,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Arrays.copyOfRange (1 samples, 0.06%)</title><rect x="1792.528" y="324.000" width="1.878" height="17" fill="hsl(222,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.sample (16 samples, 0.95%)</title><rect x="1798.163" y="360.000" width="30.053" height="17" fill="hsl(338,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.inverseCumulativeProbability (15 samples, 0.89%)</title><rect x="1798.163" y="342.000" width="28.175" height="17" fill="hsl(10,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.solveInverseCumulativeProbability (15 samples, 0.89%)</title><rect x="1798.163" y="324.000" width="28.175" height="17" fill="hsl(157,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.AbstractIntegerDistribution.checkedCumulativeProbability (15 samples, 0.89%)</title><rect x="1798.163" y="306.000" width="28.175" height="17" fill="hsl(251,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.distribution.GeometricDistribution.cumulativeProbability (15 samples, 0.89%)</title><rect x="1798.163" y="288.000" width="28.175" height="17" fill="hsl(150,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.util.FastMath.pow (15 samples, 0.89%)</title><rect x="1798.163" y="270.000" width="28.175" height="17" fill="hsl(112,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HouseRentalMarket.completeTransaction (28 samples, 1.65%)</title><rect x="1828.216" y="360.000" width="52.593" height="17" fill="hsl(276,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1831.216" y="373.000" font-size="12" fill="#111111">housi…</text>
+</g>
+<g><title>housing.Household.completeHouseRental (4 samples, 0.24%)</title><rect x="1828.216" y="342.000" width="7.513" height="17" fill="hsl(254,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="1828.216" y="324.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (1 samples, 0.06%)</title><rect x="1828.216" y="306.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.completeHouseLet (3 samples, 0.18%)</title><rect x="1835.729" y="342.000" width="5.635" height="17" fill="hsl(199,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="1835.729" y="324.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.put (2 samples, 0.12%)</title><rect x="1835.729" y="306.000" width="3.757" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.addEntry (2 samples, 0.12%)</title><rect x="1835.729" y="288.000" width="3.757" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.fixAfterInsertion (2 samples, 0.12%)</title><rect x="1835.729" y="270.000" width="3.757" height="17" fill="hsl(220,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.HousingMarketStats.recordTransaction (21 samples, 1.24%)</title><rect x="1841.364" y="342.000" width="39.445" height="17" fill="hsl(47,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1844.364" y="355.000" font-size="12" fill="#111111">coll…</text>
+</g>
+<g><title>collectors.TransactionRecorder.recordTransaction (21 samples, 1.24%)</title><rect x="1841.364" y="324.000" width="39.445" height="17" fill="hsl(169,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1844.364" y="337.000" font-size="12" fill="#111111">coll…</text>
+</g>
+<g><title>collectors.TransactionRecorder.recordRentalTransaction (21 samples, 1.24%)</title><rect x="1841.364" y="306.000" width="39.445" height="17" fill="hsl(242,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1844.364" y="319.000" font-size="12" fill="#111111">coll…</text>
+</g>
+<g><title>java.io.PrintWriter.format (21 samples, 1.24%)</title><rect x="1841.364" y="288.000" width="39.445" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1844.364" y="301.000" font-size="12" fill="#111111">java…</text>
+</g>
+<g><title>java.util.Formatter.format (20 samples, 1.18%)</title><rect x="1841.364" y="270.000" width="37.566" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1844.364" y="283.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (12 samples, 0.71%)</title><rect x="1841.364" y="252.000" width="22.540" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (10 samples, 0.59%)</title><rect x="1841.364" y="234.000" width="18.783" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (10 samples, 0.59%)</title><rect x="1841.364" y="216.000" width="18.783" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (6 samples, 0.35%)</title><rect x="1841.364" y="198.000" width="11.270" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (3 samples, 0.18%)</title><rect x="1841.364" y="180.000" width="5.635" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.append (2 samples, 0.12%)</title><rect x="1841.364" y="162.000" width="3.757" height="17" fill="hsl(343,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.append (2 samples, 0.12%)</title><rect x="1841.364" y="144.000" width="3.757" height="17" fill="hsl(136,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.charAt (1 samples, 0.06%)</title><rect x="1845.121" y="162.000" width="1.878" height="17" fill="hsl(168,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.charAt (1 samples, 0.06%)</title><rect x="1845.121" y="144.000" width="1.878" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (3 samples, 0.18%)</title><rect x="1846.999" y="180.000" width="5.635" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plain (3 samples, 0.18%)</title><rect x="1846.999" y="162.000" width="5.635" height="17" fill="hsl(40,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plainChars (3 samples, 0.18%)</title><rect x="1846.999" y="144.000" width="5.635" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plainCharsMixed (1 samples, 0.06%)</title><rect x="1846.999" y="126.000" width="1.878" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.fillWithDigits (1 samples, 0.06%)</title><rect x="1846.999" y="108.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (3 samples, 0.18%)</title><rect x="1852.634" y="198.000" width="5.635" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="1852.634" y="180.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="1852.634" y="162.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="1852.634" y="144.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="1852.634" y="126.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (2 samples, 0.12%)</title><rect x="1852.634" y="108.000" width="3.757" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printInteger (2 samples, 0.12%)</title><rect x="1860.148" y="234.000" width="3.757" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (2 samples, 0.12%)</title><rect x="1860.148" y="216.000" width="3.757" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (2 samples, 0.12%)</title><rect x="1860.148" y="198.000" width="3.757" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (2 samples, 0.12%)</title><rect x="1860.148" y="180.000" width="3.757" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="1860.148" y="162.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="1860.148" y="144.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="1860.148" y="126.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="1860.148" y="108.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (2 samples, 0.12%)</title><rect x="1860.148" y="90.000" width="3.757" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.parse (5 samples, 0.30%)</title><rect x="1863.904" y="252.000" width="9.392" height="17" fill="hsl(210,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifierParser.parse (4 samples, 0.24%)</title><rect x="1863.904" y="234.000" width="7.513" height="17" fill="hsl(19,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.&lt;init&gt; (2 samples, 0.12%)</title><rect x="1863.904" y="216.000" width="3.757" height="17" fill="hsl(219,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.conversion (1 samples, 0.06%)</title><rect x="1863.904" y="198.000" width="1.878" height="17" fill="hsl(88,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.check (1 samples, 0.06%)</title><rect x="1865.783" y="198.000" width="1.878" height="17" fill="hsl(179,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.checkFloat (1 samples, 0.06%)</title><rect x="1865.783" y="180.000" width="1.878" height="17" fill="hsl(274,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.checkBadFlags (1 samples, 0.06%)</title><rect x="1865.783" y="162.000" width="1.878" height="17" fill="hsl(221,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifierParser.parsePrecision (2 samples, 0.12%)</title><rect x="1867.661" y="216.000" width="3.757" height="17" fill="hsl(89,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FixedString.print (2 samples, 0.12%)</title><rect x="1873.296" y="252.000" width="3.757" height="17" fill="hsl(104,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="1873.296" y="234.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="1873.296" y="216.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="1873.296" y="198.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="1873.296" y="180.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="1873.296" y="162.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (2 samples, 0.12%)</title><rect x="1873.296" y="144.000" width="3.757" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.BitsStreamGenerator.nextInt (1 samples, 0.06%)</title><rect x="1880.809" y="360.000" width="1.878" height="17" fill="hsl(158,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>org.apache.commons.math3.random.MersenneTwister.next (1 samples, 0.06%)</title><rect x="1880.809" y="342.000" width="1.878" height="17" fill="hsl(93,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarket.matchBidsWithOffers (224 samples, 13.23%)</title><rect x="1948.429" y="378.000" width="420.744" height="17" fill="hsl(110,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="391.000" font-size="12" fill="#111111">housing.HousingMarket.matchBidsWithOffers</text>
+</g>
+<g><title>housing.HousingMarket.getBestOffer (105 samples, 6.20%)</title><rect x="1948.429" y="360.000" width="197.224" height="17" fill="hsl(112,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="373.000" font-size="12" fill="#111111">housing.HousingMarket.getB…</text>
+</g>
+<g><title>utilities.PriorityQueue2D.peek (105 samples, 6.20%)</title><rect x="1948.429" y="342.000" width="197.224" height="17" fill="hsl(0,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="355.000" font-size="12" fill="#111111">utilities.PriorityQueue2D.…</text>
+</g>
+<g><title>java.util.TreeSet.floor (105 samples, 6.20%)</title><rect x="1948.429" y="324.000" width="197.224" height="17" fill="hsl(124,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="337.000" font-size="12" fill="#111111">java.util.TreeSet.floor</text>
+</g>
+<g><title>java.util.TreeMap.floorKey (105 samples, 6.20%)</title><rect x="1948.429" y="306.000" width="197.224" height="17" fill="hsl(157,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="319.000" font-size="12" fill="#111111">java.util.TreeMap.floorKey</text>
+</g>
+<g><title>java.util.TreeMap.getFloorEntry (105 samples, 6.20%)</title><rect x="1948.429" y="288.000" width="197.224" height="17" fill="hsl(140,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="301.000" font-size="12" fill="#111111">java.util.TreeMap.getFloor…</text>
+</g>
+<g><title>java.util.TreeMap.compare (23 samples, 1.36%)</title><rect x="1948.429" y="270.000" width="43.201" height="17" fill="hsl(217,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="1951.429" y="283.000" font-size="12" fill="#111111">java…</text>
+</g>
+<g><title>utilities.PriorityQueue2D$XComparatorClass.compare (2 samples, 0.12%)</title><rect x="1948.429" y="252.000" width="3.757" height="17" fill="hsl(72,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.HousingMarketRecord$PQComparator.XCompare (2 samples, 0.12%)</title><rect x="1948.429" y="234.000" width="3.757" height="17" fill="hsl(68,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.clear (4 samples, 0.24%)</title><rect x="2145.653" y="360.000" width="7.513" height="17" fill="hsl(250,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.sortPriorities (1 samples, 0.06%)</title><rect x="2369.173" y="378.000" width="1.878" height="17" fill="hsl(322,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.HouseholdStats.record (364 samples, 21.50%)</title><rect x="2371.051" y="396.000" width="683.709" height="17" fill="hsl(132,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2374.051" y="409.000" font-size="12" fill="#111111">collectors.HouseholdStats.record</text>
+</g>
+<g><title>housing.Household.getMonthlyNetTotalIncome (147 samples, 8.68%)</title><rect x="2371.051" y="378.000" width="276.113" height="17" fill="hsl(135,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2374.051" y="391.000" font-size="12" fill="#111111">housing.Household.getMonthlyNetTotalI…</text>
+</g>
+<g><title>housing.Government.incomeTaxDue (3 samples, 0.18%)</title><rect x="2371.051" y="360.000" width="5.635" height="17" fill="hsl(196,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Government.bandedPercentage (3 samples, 0.18%)</title><rect x="2371.051" y="342.000" width="5.635" height="17" fill="hsl(279,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualFinanceCosts (109 samples, 6.44%)</title><rect x="2376.686" y="360.000" width="204.737" height="17" fill="hsl(29,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2379.686" y="373.000" font-size="12" fill="#111111">housing.Household.getAnnual…</text>
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (3 samples, 0.18%)</title><rect x="2376.686" y="342.000" width="5.635" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (3 samples, 0.18%)</title><rect x="2376.686" y="324.000" width="5.635" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (3 samples, 0.18%)</title><rect x="2376.686" y="306.000" width="5.635" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (3 samples, 0.18%)</title><rect x="2376.686" y="288.000" width="5.635" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.get (1 samples, 0.06%)</title><rect x="2382.321" y="342.000" width="1.878" height="17" fill="hsl(26,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getEntry (1 samples, 0.06%)</title><rect x="2382.321" y="324.000" width="1.878" height="17" fill="hsl(318,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (34 samples, 2.01%)</title><rect x="2581.424" y="360.000" width="63.863" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2584.424" y="373.000" font-size="12" fill="#111111">housing…</text>
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (34 samples, 2.01%)</title><rect x="2581.424" y="342.000" width="63.863" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2584.424" y="355.000" font-size="12" fill="#111111">housing…</text>
+</g>
+<g><title>java.util.TreeMap$Values.iterator (22 samples, 1.30%)</title><rect x="2581.424" y="324.000" width="41.323" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2584.424" y="337.000" font-size="12" fill="#111111">java…</text>
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (22 samples, 1.30%)</title><rect x="2581.424" y="306.000" width="41.323" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2584.424" y="319.000" font-size="12" fill="#111111">java…</text>
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (8 samples, 0.47%)</title><rect x="2622.747" y="324.000" width="15.027" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (8 samples, 0.47%)</title><rect x="2622.747" y="306.000" width="15.027" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (8 samples, 0.47%)</title><rect x="2622.747" y="288.000" width="15.027" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getAnnualGrossTotalIncome (1 samples, 0.06%)</title><rect x="2645.286" y="360.000" width="1.878" height="17" fill="hsl(359,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossTotalIncome (1 samples, 0.06%)</title><rect x="2645.286" y="342.000" width="1.878" height="17" fill="hsl(143,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (1 samples, 0.06%)</title><rect x="2645.286" y="324.000" width="1.878" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (1 samples, 0.06%)</title><rect x="2645.286" y="306.000" width="1.878" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="2645.286" y="288.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="2645.286" y="270.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getNProperties (42 samples, 2.48%)</title><rect x="2647.165" y="378.000" width="78.890" height="17" fill="hsl(234,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2650.165" y="391.000" font-size="12" fill="#111111">housing.H…</text>
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (15 samples, 0.89%)</title><rect x="2647.165" y="360.000" width="28.175" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (15 samples, 0.89%)</title><rect x="2647.165" y="342.000" width="28.175" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (15 samples, 0.89%)</title><rect x="2647.165" y="324.000" width="28.175" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (15 samples, 0.89%)</title><rect x="2647.165" y="306.000" width="28.175" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntrySet.iterator (14 samples, 0.83%)</title><rect x="2675.340" y="360.000" width="26.297" height="17" fill="hsl(180,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (14 samples, 0.83%)</title><rect x="2675.340" y="342.000" width="26.297" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordNHousesOwned (6 samples, 0.35%)</title><rect x="2726.054" y="378.000" width="11.270" height="17" fill="hsl(108,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (5 samples, 0.30%)</title><rect x="2726.054" y="360.000" width="9.392" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (4 samples, 0.24%)</title><rect x="2726.054" y="342.000" width="7.513" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (1 samples, 0.06%)</title><rect x="2726.054" y="324.000" width="1.878" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FixedString.print (2 samples, 0.12%)</title><rect x="2727.933" y="324.000" width="3.757" height="17" fill="hsl(104,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2727.933" y="306.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2727.933" y="288.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2727.933" y="270.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="2727.933" y="252.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2727.933" y="234.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (1 samples, 0.06%)</title><rect x="2727.933" y="216.000" width="1.878" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.parse (1 samples, 0.06%)</title><rect x="2731.689" y="324.000" width="1.878" height="17" fill="hsl(210,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.&lt;init&gt; (1 samples, 0.06%)</title><rect x="2731.689" y="306.000" width="1.878" height="17" fill="hsl(219,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$Conversion.isText (1 samples, 0.06%)</title><rect x="2731.689" y="288.000" width="1.878" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>housing.Household.getMonthlyGrossRentalIncome (3 samples, 0.18%)</title><rect x="2737.324" y="378.000" width="5.635" height="17" fill="hsl(182,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$Values.iterator (2 samples, 0.12%)</title><rect x="2737.324" y="360.000" width="3.757" height="17" fill="hsl(249,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (2 samples, 0.12%)</title><rect x="2737.324" y="342.000" width="3.757" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$ValueIterator.next (1 samples, 0.06%)</title><rect x="2741.081" y="360.000" width="1.878" height="17" fill="hsl(133,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="2741.081" y="342.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="2741.081" y="324.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (1 samples, 0.06%)</title><rect x="2742.959" y="378.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntryIterator.next (1 samples, 0.06%)</title><rect x="2742.959" y="360.000" width="1.878" height="17" fill="hsl(8,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="2742.959" y="342.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="2742.959" y="324.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordRentalIncome (8 samples, 0.47%)</title><rect x="2744.838" y="378.000" width="15.027" height="17" fill="hsl(23,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (8 samples, 0.47%)</title><rect x="2744.838" y="360.000" width="15.027" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (7 samples, 0.41%)</title><rect x="2744.838" y="342.000" width="13.148" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (5 samples, 0.30%)</title><rect x="2744.838" y="324.000" width="9.392" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (5 samples, 0.30%)</title><rect x="2744.838" y="306.000" width="9.392" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (5 samples, 0.30%)</title><rect x="2744.838" y="288.000" width="9.392" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (2 samples, 0.12%)</title><rect x="2744.838" y="270.000" width="3.757" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2744.838" y="252.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2744.838" y="234.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="2744.838" y="216.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2744.838" y="198.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (1 samples, 0.06%)</title><rect x="2744.838" y="180.000" width="1.878" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (3 samples, 0.18%)</title><rect x="2748.594" y="270.000" width="5.635" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (2 samples, 0.12%)</title><rect x="2748.594" y="252.000" width="3.757" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.split (2 samples, 0.12%)</title><rect x="2748.594" y="234.000" width="3.757" height="17" fill="hsl(281,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.split (2 samples, 0.12%)</title><rect x="2748.594" y="216.000" width="3.757" height="17" fill="hsl(226,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (2 samples, 0.12%)</title><rect x="2748.594" y="198.000" width="3.757" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="2748.594" y="180.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (1 samples, 0.06%)</title><rect x="2752.351" y="252.000" width="1.878" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.append (1 samples, 0.06%)</title><rect x="2752.351" y="234.000" width="1.878" height="17" fill="hsl(343,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.append (1 samples, 0.06%)</title><rect x="2752.351" y="216.000" width="1.878" height="17" fill="hsl(136,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.parse (1 samples, 0.06%)</title><rect x="2754.229" y="324.000" width="1.878" height="17" fill="hsl(210,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifierParser.parse (1 samples, 0.06%)</title><rect x="2754.229" y="306.000" width="1.878" height="17" fill="hsl(19,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.&lt;init&gt; (1 samples, 0.06%)</title><rect x="2754.229" y="288.000" width="1.878" height="17" fill="hsl(219,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.conversion (1 samples, 0.06%)</title><rect x="2754.229" y="270.000" width="1.878" height="17" fill="hsl(88,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordHousingWealth (14 samples, 0.83%)</title><rect x="2759.864" y="378.000" width="26.297" height="17" fill="hsl(241,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (14 samples, 0.83%)</title><rect x="2759.864" y="360.000" width="26.297" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (9 samples, 0.53%)</title><rect x="2759.864" y="342.000" width="16.905" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.parse (1 samples, 0.06%)</title><rect x="2759.864" y="324.000" width="1.878" height="17" fill="hsl(210,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifierParser.parse (1 samples, 0.06%)</title><rect x="2759.864" y="306.000" width="1.878" height="17" fill="hsl(19,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.&lt;init&gt; (1 samples, 0.06%)</title><rect x="2759.864" y="288.000" width="1.878" height="17" fill="hsl(219,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.check (1 samples, 0.06%)</title><rect x="2759.864" y="270.000" width="1.878" height="17" fill="hsl(179,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.checkFloat (1 samples, 0.06%)</title><rect x="2759.864" y="252.000" width="1.878" height="17" fill="hsl(274,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.checkBadFlags (1 samples, 0.06%)</title><rect x="2759.864" y="234.000" width="1.878" height="17" fill="hsl(221,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (5 samples, 0.30%)</title><rect x="2761.742" y="324.000" width="9.392" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (5 samples, 0.30%)</title><rect x="2761.742" y="306.000" width="9.392" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (5 samples, 0.30%)</title><rect x="2761.742" y="288.000" width="9.392" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (3 samples, 0.18%)</title><rect x="2761.742" y="270.000" width="5.635" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="2761.742" y="252.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="2761.742" y="234.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="2761.742" y="216.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="2761.742" y="198.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (3 samples, 0.18%)</title><rect x="2761.742" y="180.000" width="5.635" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (2 samples, 0.12%)</title><rect x="2767.377" y="270.000" width="3.757" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (2 samples, 0.12%)</title><rect x="2767.377" y="252.000" width="3.757" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.split (1 samples, 0.06%)</title><rect x="2767.377" y="234.000" width="1.878" height="17" fill="hsl(281,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.split (1 samples, 0.06%)</title><rect x="2767.377" y="216.000" width="1.878" height="17" fill="hsl(226,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="2767.377" y="198.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="2767.377" y="180.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.scientific (1 samples, 0.06%)</title><rect x="2769.256" y="234.000" width="1.878" height="17" fill="hsl(219,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FixedString.print (2 samples, 0.12%)</title><rect x="2771.134" y="324.000" width="3.757" height="17" fill="hsl(104,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2771.134" y="306.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2771.134" y="288.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2771.134" y="270.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="2771.134" y="252.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2771.134" y="234.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (1 samples, 0.06%)</title><rect x="2771.134" y="216.000" width="1.878" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordBankBalance (13 samples, 0.77%)</title><rect x="2786.161" y="378.000" width="24.418" height="17" fill="hsl(311,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (13 samples, 0.77%)</title><rect x="2786.161" y="360.000" width="24.418" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (10 samples, 0.59%)</title><rect x="2786.161" y="342.000" width="18.783" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (8 samples, 0.47%)</title><rect x="2786.161" y="324.000" width="15.027" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (8 samples, 0.47%)</title><rect x="2786.161" y="306.000" width="15.027" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (8 samples, 0.47%)</title><rect x="2786.161" y="288.000" width="15.027" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (7 samples, 0.41%)</title><rect x="2786.161" y="270.000" width="13.148" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (3 samples, 0.18%)</title><rect x="2786.161" y="252.000" width="5.635" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.split (3 samples, 0.18%)</title><rect x="2786.161" y="234.000" width="5.635" height="17" fill="hsl(281,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.split (3 samples, 0.18%)</title><rect x="2786.161" y="216.000" width="5.635" height="17" fill="hsl(226,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (3 samples, 0.18%)</title><rect x="2786.161" y="198.000" width="5.635" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="2786.161" y="180.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (3 samples, 0.18%)</title><rect x="2791.796" y="252.000" width="5.635" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.append (1 samples, 0.06%)</title><rect x="2791.796" y="234.000" width="1.878" height="17" fill="hsl(343,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.append (1 samples, 0.06%)</title><rect x="2791.796" y="216.000" width="1.878" height="17" fill="hsl(136,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.charAt (2 samples, 0.12%)</title><rect x="2793.674" y="234.000" width="3.757" height="17" fill="hsl(168,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.charAt (2 samples, 0.12%)</title><rect x="2793.674" y="216.000" width="3.757" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (1 samples, 0.06%)</title><rect x="2799.309" y="270.000" width="1.878" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="2799.309" y="252.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="2799.309" y="234.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2799.309" y="216.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2799.309" y="198.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (1 samples, 0.06%)</title><rect x="2799.309" y="180.000" width="1.878" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.parse (2 samples, 0.12%)</title><rect x="2801.187" y="324.000" width="3.757" height="17" fill="hsl(210,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.add (1 samples, 0.06%)</title><rect x="2801.187" y="306.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.add (1 samples, 0.06%)</title><rect x="2801.187" y="288.000" width="1.878" height="17" fill="hsl(269,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.grow (1 samples, 0.06%)</title><rect x="2801.187" y="270.000" width="1.878" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.ArrayList.grow (1 samples, 0.06%)</title><rect x="2801.187" y="252.000" width="1.878" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Arrays.copyOf (1 samples, 0.06%)</title><rect x="2801.187" y="234.000" width="1.878" height="17" fill="hsl(337,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordEmploymentIncome (20 samples, 1.18%)</title><rect x="2810.579" y="378.000" width="37.566" height="17" fill="hsl(246,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2813.579" y="391.000" font-size="12" fill="#111111">col…</text>
+</g>
+<g><title>java.io.PrintWriter.format (20 samples, 1.18%)</title><rect x="2810.579" y="360.000" width="37.566" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2813.579" y="373.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.Formatter.format (19 samples, 1.12%)</title><rect x="2810.579" y="342.000" width="35.688" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="2813.579" y="355.000" font-size="12" fill="#111111">jav…</text>
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (17 samples, 1.00%)</title><rect x="2810.579" y="324.000" width="31.931" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (17 samples, 1.00%)</title><rect x="2810.579" y="306.000" width="31.931" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (17 samples, 1.00%)</title><rect x="2810.579" y="288.000" width="31.931" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (3 samples, 0.18%)</title><rect x="2810.579" y="270.000" width="5.635" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="2810.579" y="252.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="2810.579" y="234.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="2810.579" y="216.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="2810.579" y="198.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (2 samples, 0.12%)</title><rect x="2810.579" y="180.000" width="3.757" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (14 samples, 0.83%)</title><rect x="2816.214" y="270.000" width="26.297" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (7 samples, 0.41%)</title><rect x="2816.214" y="252.000" width="13.148" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.String.charAt (1 samples, 0.06%)</title><rect x="2816.214" y="234.000" width="1.878" height="17" fill="hsl(154,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.append (3 samples, 0.18%)</title><rect x="2818.092" y="234.000" width="5.635" height="17" fill="hsl(343,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.append (3 samples, 0.18%)</title><rect x="2818.092" y="216.000" width="5.635" height="17" fill="hsl(136,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.charAt (3 samples, 0.18%)</title><rect x="2823.727" y="234.000" width="5.635" height="17" fill="hsl(168,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.charAt (3 samples, 0.18%)</title><rect x="2823.727" y="216.000" width="5.635" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (5 samples, 0.30%)</title><rect x="2829.362" y="252.000" width="9.392" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.split (3 samples, 0.18%)</title><rect x="2829.362" y="234.000" width="5.635" height="17" fill="hsl(281,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.split (3 samples, 0.18%)</title><rect x="2829.362" y="216.000" width="5.635" height="17" fill="hsl(226,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (3 samples, 0.18%)</title><rect x="2829.362" y="198.000" width="5.635" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (2 samples, 0.12%)</title><rect x="2829.362" y="180.000" width="3.757" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plain (2 samples, 0.12%)</title><rect x="2834.997" y="234.000" width="3.757" height="17" fill="hsl(40,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plainChars (2 samples, 0.12%)</title><rect x="2834.997" y="216.000" width="3.757" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plainCharsMixed (1 samples, 0.06%)</title><rect x="2834.997" y="198.000" width="1.878" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.fillWithDigits (1 samples, 0.06%)</title><rect x="2834.997" y="180.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FixedString.print (1 samples, 0.06%)</title><rect x="2842.510" y="324.000" width="1.878" height="17" fill="hsl(104,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="2842.510" y="306.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="2842.510" y="288.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (1 samples, 0.06%)</title><rect x="2842.510" y="270.000" width="1.878" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2842.510" y="252.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (1 samples, 0.06%)</title><rect x="2842.510" y="234.000" width="1.878" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (1 samples, 0.06%)</title><rect x="2842.510" y="216.000" width="1.878" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$EntrySet.iterator (2 samples, 0.12%)</title><rect x="2848.145" y="378.000" width="3.757" height="17" fill="hsl(180,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.getFirstEntry (2 samples, 0.12%)</title><rect x="2848.145" y="360.000" width="3.757" height="17" fill="hsl(345,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordHouseholdID (7 samples, 0.41%)</title><rect x="2851.902" y="378.000" width="13.148" height="17" fill="hsl(317,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (7 samples, 0.41%)</title><rect x="2851.902" y="360.000" width="13.148" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (6 samples, 0.35%)</title><rect x="2851.902" y="342.000" width="11.270" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (4 samples, 0.24%)</title><rect x="2851.902" y="324.000" width="7.513" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printInteger (4 samples, 0.24%)</title><rect x="2851.902" y="306.000" width="7.513" height="17" fill="hsl(25,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (4 samples, 0.24%)</title><rect x="2851.902" y="288.000" width="7.513" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (4 samples, 0.24%)</title><rect x="2851.902" y="270.000" width="7.513" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (1 samples, 0.06%)</title><rect x="2851.902" y="252.000" width="1.878" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.charAt (1 samples, 0.06%)</title><rect x="2851.902" y="234.000" width="1.878" height="17" fill="hsl(168,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.charAt (1 samples, 0.06%)</title><rect x="2851.902" y="216.000" width="1.878" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (3 samples, 0.18%)</title><rect x="2853.780" y="252.000" width="5.635" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="2853.780" y="234.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (3 samples, 0.18%)</title><rect x="2853.780" y="216.000" width="5.635" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="2853.780" y="198.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (3 samples, 0.18%)</title><rect x="2853.780" y="180.000" width="5.635" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (3 samples, 0.18%)</title><rect x="2853.780" y="162.000" width="5.635" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.parse (1 samples, 0.06%)</title><rect x="2859.415" y="324.000" width="1.878" height="17" fill="hsl(210,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.MicroDataRecorder.recordAge (10 samples, 0.59%)</title><rect x="2865.050" y="378.000" width="18.783" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.format (10 samples, 0.59%)</title><rect x="2865.050" y="360.000" width="18.783" height="17" fill="hsl(336,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter.format (8 samples, 0.47%)</title><rect x="2865.050" y="342.000" width="15.027" height="17" fill="hsl(144,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (8 samples, 0.47%)</title><rect x="2865.050" y="324.000" width="15.027" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.printFloat (8 samples, 0.47%)</title><rect x="2865.050" y="306.000" width="15.027" height="17" fill="hsl(341,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (8 samples, 0.47%)</title><rect x="2865.050" y="288.000" width="15.027" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.appendJustified (2 samples, 0.12%)</title><rect x="2865.050" y="270.000" width="3.757" height="17" fill="hsl(215,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2865.050" y="252.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.append (2 samples, 0.12%)</title><rect x="2865.050" y="234.000" width="3.757" height="17" fill="hsl(152,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="2865.050" y="216.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.PrintWriter.write (2 samples, 0.12%)</title><rect x="2865.050" y="198.000" width="3.757" height="17" fill="hsl(187,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.io.BufferedWriter.write (2 samples, 0.12%)</title><rect x="2865.050" y="180.000" width="3.757" height="17" fill="hsl(292,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.print (6 samples, 0.35%)</title><rect x="2868.807" y="270.000" width="11.270" height="17" fill="hsl(22,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.valueOf (4 samples, 0.24%)</title><rect x="2868.807" y="252.000" width="7.513" height="17" fill="hsl(332,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.split (3 samples, 0.18%)</title><rect x="2868.807" y="234.000" width="5.635" height="17" fill="hsl(281,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.split (3 samples, 0.18%)</title><rect x="2868.807" y="216.000" width="5.635" height="17" fill="hsl(226,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (3 samples, 0.18%)</title><rect x="2868.807" y="198.000" width="5.635" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.DoubleToDecimal.toDecimal (1 samples, 0.06%)</title><rect x="2868.807" y="180.000" width="1.878" height="17" fill="hsl(106,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plain (1 samples, 0.06%)</title><rect x="2874.442" y="234.000" width="1.878" height="17" fill="hsl(40,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>jdk.internal.math.FormattedFPDecimal.plainChars (1 samples, 0.06%)</title><rect x="2874.442" y="216.000" width="1.878" height="17" fill="hsl(166,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.Formatter$FormatSpecifier.localizedMagnitude (2 samples, 0.12%)</title><rect x="2876.320" y="252.000" width="3.757" height="17" fill="hsl(184,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.charAt (1 samples, 0.06%)</title><rect x="2876.320" y="234.000" width="1.878" height="17" fill="hsl(168,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.charAt (1 samples, 0.06%)</title><rect x="2876.320" y="216.000" width="1.878" height="17" fill="hsl(193,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.StringBuilder.append (1 samples, 0.06%)</title><rect x="2878.198" y="234.000" width="1.878" height="17" fill="hsl(343,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.lang.AbstractStringBuilder.append (1 samples, 0.06%)</title><rect x="2878.198" y="216.000" width="1.878" height="17" fill="hsl(136,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.HousingMarketStats.preClearingRecord (24 samples, 1.42%)</title><rect x="3054.761" y="396.000" width="45.080" height="17" fill="hsl(66,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="3057.761" y="409.000" font-size="12" fill="#111111">coll…</text>
+</g>
+<g><title>java.util.ArrayList$Itr.next (1 samples, 0.06%)</title><rect x="3054.761" y="378.000" width="1.878" height="17" fill="hsl(81,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.size (1 samples, 0.06%)</title><rect x="3056.639" y="378.000" width="1.878" height="17" fill="hsl(147,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeSet.size (1 samples, 0.06%)</title><rect x="3056.639" y="360.000" width="1.878" height="17" fill="hsl(6,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.next (7 samples, 0.41%)</title><rect x="3058.517" y="378.000" width="13.148" height="17" fill="hsl(79,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeyIterator.next (5 samples, 0.30%)</title><rect x="3058.517" y="360.000" width="9.392" height="17" fill="hsl(130,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (5 samples, 0.30%)</title><rect x="3058.517" y="342.000" width="9.392" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (5 samples, 0.30%)</title><rect x="3058.517" y="324.000" width="9.392" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.HousingMarketStats.postClearingRecord (4 samples, 0.24%)</title><rect x="3099.841" y="396.000" width="7.513" height="17" fill="hsl(212,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.next (1 samples, 0.06%)</title><rect x="3099.841" y="378.000" width="1.878" height="17" fill="hsl(79,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$KeyIterator.next (1 samples, 0.06%)</title><rect x="3099.841" y="360.000" width="1.878" height="17" fill="hsl(130,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap$PrivateEntryIterator.nextEntry (1 samples, 0.06%)</title><rect x="3099.841" y="342.000" width="1.878" height="17" fill="hsl(229,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.TreeMap.successor (1 samples, 0.06%)</title><rect x="3099.841" y="324.000" width="1.878" height="17" fill="hsl(85,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.iterator (1 samples, 0.06%)</title><rect x="3101.719" y="378.000" width="1.878" height="17" fill="hsl(178,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D.iterator (1 samples, 0.06%)</title><rect x="3101.719" y="360.000" width="1.878" height="17" fill="hsl(178,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>utilities.PriorityQueue2D$Iter.&lt;init&gt; (1 samples, 0.06%)</title><rect x="3101.719" y="342.000" width="1.878" height="17" fill="hsl(46,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>collectors.CreditSupply.postClearingRecord (23 samples, 1.36%)</title><rect x="3107.354" y="396.000" width="43.201" height="17" fill="hsl(284,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+<text x="3110.354" y="409.000" font-size="12" fill="#111111">coll…</text>
+</g>
+<g><title>java.util.HashMap$KeyIterator.next (12 samples, 0.71%)</title><rect x="3107.354" y="378.000" width="22.540" height="17" fill="hsl(285,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashMap$HashIterator.nextNode (12 samples, 0.71%)</title><rect x="3107.354" y="360.000" width="22.540" height="17" fill="hsl(235,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashSet.iterator (1 samples, 0.06%)</title><rect x="3129.894" y="378.000" width="1.878" height="17" fill="hsl(46,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashMap$KeySet.iterator (1 samples, 0.06%)</title><rect x="3129.894" y="360.000" width="1.878" height="17" fill="hsl(333,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+<g><title>java.util.HashMap$KeyIterator.&lt;init&gt; (1 samples, 0.06%)</title><rect x="3129.894" y="342.000" width="1.878" height="17" fill="hsl(89,70%,70%)" stroke="#ffffff" stroke-width="0.5" />
+</g>
+</svg>

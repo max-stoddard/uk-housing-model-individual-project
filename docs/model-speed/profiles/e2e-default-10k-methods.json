@@ -1,0 +1,1578 @@
+{
+  "profile_id": "e2e-default-10k",
+  "jfr_path": "tmp/model-speed/benchmarks-smoke/v4.1/e2e-default-10k/20260307T020626Z/median-jfr/profile.jfr",
+  "total_samples": 1705,
+  "modelstep_samples": 1693,
+  "whole_run_methods": [
+    {
+      "rank": 1,
+      "method": "housing.Household.getAnnualFinanceCosts",
+      "samples": 246,
+      "percent": 14.428152
+    },
+    {
+      "rank": 2,
+      "method": "housing.HousingMarket.matchBidsWithOffers",
+      "samples": 117,
+      "percent": 6.86217
+    },
+    {
+      "rank": 3,
+      "method": "collectors.HouseholdStats.record",
+      "samples": 91,
+      "percent": 5.337243
+    },
+    {
+      "rank": 4,
+      "method": "housing.Household.step",
+      "samples": 88,
+      "percent": 5.16129
+    },
+    {
+      "rank": 5,
+      "method": "java.util.TreeMap.successor",
+      "samples": 87,
+      "percent": 5.102639
+    },
+    {
+      "rank": 6,
+      "method": "java.util.TreeMap.getFloorEntry",
+      "samples": 82,
+      "percent": 4.809384
+    },
+    {
+      "rank": 7,
+      "method": "housing.HouseholdBehaviour.updateDesiredPurchasePrice",
+      "samples": 72,
+      "percent": 4.222874
+    },
+    {
+      "rank": 8,
+      "method": "java.util.TreeMap.getFirstEntry",
+      "samples": 71,
+      "percent": 4.164223
+    },
+    {
+      "rank": 9,
+      "method": "org.apache.commons.math3.util.FastMath.log",
+      "samples": 64,
+      "percent": 3.753666
+    },
+    {
+      "rank": 10,
+      "method": "java.util.TreeMap.getEntryUsingComparator",
+      "samples": 49,
+      "percent": 2.8739
+    },
+    {
+      "rank": 11,
+      "method": "housing.HousingMarket.clearMatches",
+      "samples": 45,
+      "percent": 2.639296
+    },
+    {
+      "rank": 12,
+      "method": "org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian",
+      "samples": 31,
+      "percent": 1.818182
+    },
+    {
+      "rank": 13,
+      "method": "java.util.TreeMap.put",
+      "samples": 26,
+      "percent": 1.524927
+    },
+    {
+      "rank": 14,
+      "method": "housing.Household.getNProperties",
+      "samples": 25,
+      "percent": 1.466276
+    },
+    {
+      "rank": 15,
+      "method": "java.io.BufferedWriter.write",
+      "samples": 25,
+      "percent": 1.466276
+    },
+    {
+      "rank": 16,
+      "method": "java.util.TimSort.countRunAndMakeAscending",
+      "samples": 25,
+      "percent": 1.466276
+    },
+    {
+      "rank": 17,
+      "method": "org.apache.commons.math3.util.FastMath.pow",
+      "samples": 25,
+      "percent": 1.466276
+    },
+    {
+      "rank": 18,
+      "method": "java.util.TimSort.binarySort",
+      "samples": 22,
+      "percent": 1.290323
+    },
+    {
+      "rank": 19,
+      "method": "java.util.TreeMap.compare",
+      "samples": 22,
+      "percent": 1.290323
+    },
+    {
+      "rank": 20,
+      "method": "housing.Demographics.implementDeaths",
+      "samples": 21,
+      "percent": 1.231672
+    },
+    {
+      "rank": 21,
+      "method": "housing.Model.modelStep",
+      "samples": 21,
+      "percent": 1.231672
+    },
+    {
+      "rank": 22,
+      "method": "utilities.PriorityQueue2D.removeFromUncovered",
+      "samples": 18,
+      "percent": 1.055718
+    },
+    {
+      "rank": 23,
+      "method": "java.util.TreeMap.getEntry",
+      "samples": 17,
+      "percent": 0.997067
+    },
+    {
+      "rank": 24,
+      "method": "java.util.TreeMap.fixAfterInsertion",
+      "samples": 16,
+      "percent": 0.938416
+    },
+    {
+      "rank": 25,
+      "method": "org.apache.commons.math3.random.MersenneTwister.next",
+      "samples": 16,
+      "percent": 0.938416
+    },
+    {
+      "rank": 26,
+      "method": "collectors.HousingMarketStats.preClearingRecord",
+      "samples": 15,
+      "percent": 0.879765
+    },
+    {
+      "rank": 27,
+      "method": "java.io.PrintWriter.format",
+      "samples": 15,
+      "percent": 0.879765
+    },
+    {
+      "rank": 28,
+      "method": "org.apache.commons.math3.util.FastMath.cos",
+      "samples": 14,
+      "percent": 0.821114
+    },
+    {
+      "rank": 29,
+      "method": "housing.Demographics.updateHouseholdsPerAgeBand",
+      "samples": 12,
+      "percent": 0.703812
+    },
+    {
+      "rank": 30,
+      "method": "housing.Household.getMonthlyGrossRentalIncome",
+      "samples": 12,
+      "percent": 0.703812
+    },
+    {
+      "rank": 31,
+      "method": "java.util.HashMap$HashIterator.nextNode",
+      "samples": 12,
+      "percent": 0.703812
+    },
+    {
+      "rank": 32,
+      "method": "java.util.TreeMap.getHigherEntry",
+      "samples": 12,
+      "percent": 0.703812
+    },
+    {
+      "rank": 33,
+      "method": "jdk.internal.math.DoubleToDecimal.toDecimal",
+      "samples": 12,
+      "percent": 0.703812
+    },
+    {
+      "rank": 34,
+      "method": "housing.HouseholdBehaviour.decideRentOrPurchase",
+      "samples": 11,
+      "percent": 0.645161
+    },
+    {
+      "rank": 35,
+      "method": "collectors.CreditSupply.postClearingRecord",
+      "samples": 10,
+      "percent": 0.58651
+    },
+    {
+      "rank": 36,
+      "method": "housing.HouseholdBehaviour.decideToSellHome",
+      "samples": 10,
+      "percent": 0.58651
+    },
+    {
+      "rank": 37,
+      "method": "java.lang.AbstractStringBuilder.charAt",
+      "samples": 10,
+      "percent": 0.58651
+    },
+    {
+      "rank": 38,
+      "method": "org.apache.commons.math3.special.Gamma.regularizedGammaP",
+      "samples": 10,
+      "percent": 0.58651
+    },
+    {
+      "rank": 39,
+      "method": "org.apache.commons.math3.util.FastMath.exp",
+      "samples": 10,
+      "percent": 0.58651
+    },
+    {
+      "rank": 40,
+      "method": "housing.Household.getMonthlyDisposableIncome",
+      "samples": 9,
+      "percent": 0.527859
+    },
+    {
+      "rank": 41,
+      "method": "housing.Household.manageHouse",
+      "samples": 9,
+      "percent": 0.527859
+    },
+    {
+      "rank": 42,
+      "method": "java.util.Formatter$FormatSpecifier.print",
+      "samples": 9,
+      "percent": 0.527859
+    },
+    {
+      "rank": 43,
+      "method": "collectors.HousingMarketStats.getMaxQualityForPrice",
+      "samples": 8,
+      "percent": 0.469208
+    },
+    {
+      "rank": 44,
+      "method": "java.lang.AbstractStringBuilder.append",
+      "samples": 8,
+      "percent": 0.469208
+    },
+    {
+      "rank": 45,
+      "method": "java.util.TreeMap.deleteEntry",
+      "samples": 8,
+      "percent": 0.469208
+    },
+    {
+      "rank": 46,
+      "method": "housing.Household.bidForAHome",
+      "samples": 6,
+      "percent": 0.351906
+    },
+    {
+      "rank": 47,
+      "method": "java.util.TreeSet.add",
+      "samples": 6,
+      "percent": 0.351906
+    },
+    {
+      "rank": 48,
+      "method": "org.apache.commons.math3.special.Gamma.invGamma1pm1",
+      "samples": 6,
+      "percent": 0.351906
+    },
+    {
+      "rank": 49,
+      "method": "housing.Government.bandedPercentage",
+      "samples": 5,
+      "percent": 0.293255
+    },
+    {
+      "rank": 50,
+      "method": "housing.Household.completeHouseRental",
+      "samples": 5,
+      "percent": 0.293255
+    },
+    {
+      "rank": 51,
+      "method": "java.io.PrintWriter.write",
+      "samples": 5,
+      "percent": 0.293255
+    },
+    {
+      "rank": 52,
+      "method": "java.util.Formatter.format",
+      "samples": 5,
+      "percent": 0.293255
+    },
+    {
+      "rank": 53,
+      "method": "java.util.TreeMap.fixAfterDeletion",
+      "samples": 5,
+      "percent": 0.293255
+    },
+    {
+      "rank": 54,
+      "method": "housing.Bank.getNPayments",
+      "samples": 4,
+      "percent": 0.234604
+    },
+    {
+      "rank": 55,
+      "method": "housing.HouseholdBehaviour.getDesiredRentPrice",
+      "samples": 4,
+      "percent": 0.234604
+    },
+    {
+      "rank": 56,
+      "method": "java.util.ArrayList.clear",
+      "samples": 4,
+      "percent": 0.234604
+    },
+    {
+      "rank": 57,
+      "method": "jdk.internal.math.FormattedFPDecimal.plainChars",
+      "samples": 4,
+      "percent": 0.234604
+    },
+    {
+      "rank": 58,
+      "method": "java.util.ComparableTimSort.binarySort",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 59,
+      "method": "java.util.Formatter.parse",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 60,
+      "method": "java.util.HashMap.removeNode",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 61,
+      "method": "java.util.TimSort.mergeHi",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 62,
+      "method": "java.util.TimSort.mergeLo",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 63,
+      "method": "java.util.TreeMap.getLowerEntry",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 64,
+      "method": "java.util.TreeMap.rotateLeft",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 65,
+      "method": "java.util.TreeMap.rotateRight",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 66,
+      "method": "org.apache.commons.math3.util.FastMath.log1p",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 67,
+      "method": "utilities.PriorityQueue2D$Iter.next",
+      "samples": 3,
+      "percent": 0.175953
+    },
+    {
+      "rank": 68,
+      "method": "collectors.HousingMarketStats.postClearingRecord",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 69,
+      "method": "housing.HouseholdBehaviour.decideToSellInvestmentProperty",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 70,
+      "method": "housing.HouseholdBehaviour.rethinkHouseSalePrice",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 71,
+      "method": "housing.HousingMarketRecord$PQComparator.XCompare",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 72,
+      "method": "housing.HousingMarketRecord$PQComparator.YCompare",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 73,
+      "method": "housing.HousingMarketRecord$PYComparator.YCompare",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 74,
+      "method": "java.lang.Object.hashCode",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 75,
+      "method": "java.util.ArrayList.addAll",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 76,
+      "method": "java.util.Arrays.copyOf",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 77,
+      "method": "java.util.Formatter$Conversion.isText",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 78,
+      "method": "java.util.Formatter$FormatSpecifier.checkBadFlags",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 79,
+      "method": "java.util.Formatter$FormatSpecifier.conversion",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 80,
+      "method": "java.util.Formatter$FormatSpecifierParser.parsePrecision",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 81,
+      "method": "java.util.TreeSet.size",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 82,
+      "method": "jdk.internal.math.FormattedFPDecimal.fillWithDigits",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 83,
+      "method": "org.apache.commons.math3.analysis.solvers.BrentSolver.brent",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 84,
+      "method": "org.apache.commons.math3.util.FastMath.sinQ",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 85,
+      "method": "utilities.PriorityQueue2D.sortPriorities",
+      "samples": 2,
+      "percent": 0.117302
+    },
+    {
+      "rank": 86,
+      "method": "collectors.CoreIndicators.getOwnerOccupierLTVMeanAboveMedian",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 87,
+      "method": "collectors.MicroDataRecorder.recordNHousesOwned",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 88,
+      "method": "collectors.Recorder.writeTimeStampResults",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 89,
+      "method": "data.Wealth.getDesiredBankBalance",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 90,
+      "method": "housing.Bank.requestApproval",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 91,
+      "method": "housing.HouseBidderRecord$PComparator.compare",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 92,
+      "method": "housing.HouseOfferRecord.getQuality",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 93,
+      "method": "housing.HouseSaleMarket.offer",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 94,
+      "method": "housing.Household.completeHouseLet",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 95,
+      "method": "housing.Household.decideToSellHouse",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 96,
+      "method": "housing.Household.endOfLettingAgreement",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 97,
+      "method": "housing.HouseholdBehaviour.decideDownPayment",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 98,
+      "method": "housing.HouseholdBehaviour.decideToBuyInvestmentProperty",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 99,
+      "method": "housing.HouseholdBehaviour.rethinkHouseRentPrice",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 100,
+      "method": "housing.Model.main",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 101,
+      "method": "java.lang.Double.compareTo",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 102,
+      "method": "java.lang.Math.min",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 103,
+      "method": "java.lang.String.charAt",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 104,
+      "method": "java.lang.StringBuilder.append",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 105,
+      "method": "java.util.ArrayList$Itr.next",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 106,
+      "method": "java.util.ArrayList$Itr.remove",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 107,
+      "method": "java.util.ArrayList.grow",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 108,
+      "method": "java.util.ArrayList.remove",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 109,
+      "method": "java.util.Arrays.copyOfRange",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 110,
+      "method": "java.util.ComparableTimSort.mergeLo",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 111,
+      "method": "java.util.HashMap$KeyIterator.<init>",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 112,
+      "method": "java.util.TimSort.gallopRight",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 113,
+      "method": "java.util.TimSort.mergeAt",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 114,
+      "method": "java.util.TimSort.minRunLength",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 115,
+      "method": "java.util.TreeMap$NavigableSubMap.<init>",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 116,
+      "method": "java.util.TreeMap.getCeilingEntry",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 117,
+      "method": "java.util.TreeMap.values",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 118,
+      "method": "java.util.TreeSet.clear",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 119,
+      "method": "java.util.TreeSet.higher",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 120,
+      "method": "java.util.TreeSet.remove",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 121,
+      "method": "java.util.TreeSet.subSet",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 122,
+      "method": "jdk.internal.math.FormattedFPDecimal.scientific",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 123,
+      "method": "jdk.internal.math.MathUtils.flog10threeQuartersPow2",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 124,
+      "method": "org.apache.commons.csv.CSVParser.addRecordValue",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 125,
+      "method": "org.apache.commons.math3.distribution.AbstractIntegerDistribution.sample",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 126,
+      "method": "org.apache.commons.math3.util.FastMath.expm1",
+      "samples": 1,
+      "percent": 0.058651
+    },
+    {
+      "rank": 127,
+      "method": "utilities.PriorityQueue2D$Iter.<init>",
+      "samples": 1,
+      "percent": 0.058651
+    }
+  ],
+  "modelstep_methods": [
+    {
+      "rank": 1,
+      "method": "housing.Household.getAnnualFinanceCosts",
+      "samples": 246,
+      "percent": 14.530419
+    },
+    {
+      "rank": 2,
+      "method": "housing.HousingMarket.matchBidsWithOffers",
+      "samples": 117,
+      "percent": 6.910809
+    },
+    {
+      "rank": 3,
+      "method": "collectors.HouseholdStats.record",
+      "samples": 91,
+      "percent": 5.375074
+    },
+    {
+      "rank": 4,
+      "method": "housing.Household.step",
+      "samples": 88,
+      "percent": 5.197874
+    },
+    {
+      "rank": 5,
+      "method": "java.util.TreeMap.successor",
+      "samples": 87,
+      "percent": 5.138807
+    },
+    {
+      "rank": 6,
+      "method": "java.util.TreeMap.getFloorEntry",
+      "samples": 82,
+      "percent": 4.843473
+    },
+    {
+      "rank": 7,
+      "method": "housing.HouseholdBehaviour.updateDesiredPurchasePrice",
+      "samples": 72,
+      "percent": 4.252806
+    },
+    {
+      "rank": 8,
+      "method": "java.util.TreeMap.getFirstEntry",
+      "samples": 71,
+      "percent": 4.193739
+    },
+    {
+      "rank": 9,
+      "method": "org.apache.commons.math3.util.FastMath.log",
+      "samples": 64,
+      "percent": 3.780272
+    },
+    {
+      "rank": 10,
+      "method": "java.util.TreeMap.getEntryUsingComparator",
+      "samples": 49,
+      "percent": 2.894271
+    },
+    {
+      "rank": 11,
+      "method": "housing.HousingMarket.clearMatches",
+      "samples": 45,
+      "percent": 2.658004
+    },
+    {
+      "rank": 12,
+      "method": "org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian",
+      "samples": 31,
+      "percent": 1.831069
+    },
+    {
+      "rank": 13,
+      "method": "java.util.TreeMap.put",
+      "samples": 26,
+      "percent": 1.535735
+    },
+    {
+      "rank": 14,
+      "method": "housing.Household.getNProperties",
+      "samples": 25,
+      "percent": 1.476669
+    },
+    {
+      "rank": 15,
+      "method": "java.io.BufferedWriter.write",
+      "samples": 25,
+      "percent": 1.476669
+    },
+    {
+      "rank": 16,
+      "method": "java.util.TimSort.countRunAndMakeAscending",
+      "samples": 25,
+      "percent": 1.476669
+    },
+    {
+      "rank": 17,
+      "method": "org.apache.commons.math3.util.FastMath.pow",
+      "samples": 25,
+      "percent": 1.476669
+    },
+    {
+      "rank": 18,
+      "method": "java.util.TimSort.binarySort",
+      "samples": 22,
+      "percent": 1.299468
+    },
+    {
+      "rank": 19,
+      "method": "java.util.TreeMap.compare",
+      "samples": 22,
+      "percent": 1.299468
+    },
+    {
+      "rank": 20,
+      "method": "housing.Demographics.implementDeaths",
+      "samples": 21,
+      "percent": 1.240402
+    },
+    {
+      "rank": 21,
+      "method": "housing.Model.modelStep",
+      "samples": 21,
+      "percent": 1.240402
+    },
+    {
+      "rank": 22,
+      "method": "utilities.PriorityQueue2D.removeFromUncovered",
+      "samples": 18,
+      "percent": 1.063201
+    },
+    {
+      "rank": 23,
+      "method": "java.util.TreeMap.getEntry",
+      "samples": 17,
+      "percent": 1.004135
+    },
+    {
+      "rank": 24,
+      "method": "java.util.TreeMap.fixAfterInsertion",
+      "samples": 16,
+      "percent": 0.945068
+    },
+    {
+      "rank": 25,
+      "method": "org.apache.commons.math3.random.MersenneTwister.next",
+      "samples": 16,
+      "percent": 0.945068
+    },
+    {
+      "rank": 26,
+      "method": "collectors.HousingMarketStats.preClearingRecord",
+      "samples": 15,
+      "percent": 0.886001
+    },
+    {
+      "rank": 27,
+      "method": "java.io.PrintWriter.format",
+      "samples": 15,
+      "percent": 0.886001
+    },
+    {
+      "rank": 28,
+      "method": "org.apache.commons.math3.util.FastMath.cos",
+      "samples": 14,
+      "percent": 0.826934
+    },
+    {
+      "rank": 29,
+      "method": "housing.Demographics.updateHouseholdsPerAgeBand",
+      "samples": 12,
+      "percent": 0.708801
+    },
+    {
+      "rank": 30,
+      "method": "housing.Household.getMonthlyGrossRentalIncome",
+      "samples": 12,
+      "percent": 0.708801
+    },
+    {
+      "rank": 31,
+      "method": "java.util.HashMap$HashIterator.nextNode",
+      "samples": 12,
+      "percent": 0.708801
+    },
+    {
+      "rank": 32,
+      "method": "java.util.TreeMap.getHigherEntry",
+      "samples": 12,
+      "percent": 0.708801
+    },
+    {
+      "rank": 33,
+      "method": "jdk.internal.math.DoubleToDecimal.toDecimal",
+      "samples": 12,
+      "percent": 0.708801
+    },
+    {
+      "rank": 34,
+      "method": "housing.HouseholdBehaviour.decideRentOrPurchase",
+      "samples": 11,
+      "percent": 0.649734
+    },
+    {
+      "rank": 35,
+      "method": "collectors.CreditSupply.postClearingRecord",
+      "samples": 10,
+      "percent": 0.590667
+    },
+    {
+      "rank": 36,
+      "method": "housing.HouseholdBehaviour.decideToSellHome",
+      "samples": 10,
+      "percent": 0.590667
+    },
+    {
+      "rank": 37,
+      "method": "java.lang.AbstractStringBuilder.charAt",
+      "samples": 10,
+      "percent": 0.590667
+    },
+    {
+      "rank": 38,
+      "method": "org.apache.commons.math3.special.Gamma.regularizedGammaP",
+      "samples": 10,
+      "percent": 0.590667
+    },
+    {
+      "rank": 39,
+      "method": "org.apache.commons.math3.util.FastMath.exp",
+      "samples": 10,
+      "percent": 0.590667
+    },
+    {
+      "rank": 40,
+      "method": "housing.Household.getMonthlyDisposableIncome",
+      "samples": 9,
+      "percent": 0.531601
+    },
+    {
+      "rank": 41,
+      "method": "housing.Household.manageHouse",
+      "samples": 9,
+      "percent": 0.531601
+    },
+    {
+      "rank": 42,
+      "method": "collectors.HousingMarketStats.getMaxQualityForPrice",
+      "samples": 8,
+      "percent": 0.472534
+    },
+    {
+      "rank": 43,
+      "method": "java.lang.AbstractStringBuilder.append",
+      "samples": 8,
+      "percent": 0.472534
+    },
+    {
+      "rank": 44,
+      "method": "java.util.Formatter$FormatSpecifier.print",
+      "samples": 8,
+      "percent": 0.472534
+    },
+    {
+      "rank": 45,
+      "method": "java.util.TreeMap.deleteEntry",
+      "samples": 8,
+      "percent": 0.472534
+    },
+    {
+      "rank": 46,
+      "method": "housing.Household.bidForAHome",
+      "samples": 6,
+      "percent": 0.3544
+    },
+    {
+      "rank": 47,
+      "method": "java.util.TreeSet.add",
+      "samples": 6,
+      "percent": 0.3544
+    },
+    {
+      "rank": 48,
+      "method": "housing.Government.bandedPercentage",
+      "samples": 5,
+      "percent": 0.295334
+    },
+    {
+      "rank": 49,
+      "method": "housing.Household.completeHouseRental",
+      "samples": 5,
+      "percent": 0.295334
+    },
+    {
+      "rank": 50,
+      "method": "java.io.PrintWriter.write",
+      "samples": 5,
+      "percent": 0.295334
+    },
+    {
+      "rank": 51,
+      "method": "java.util.Formatter.format",
+      "samples": 5,
+      "percent": 0.295334
+    },
+    {
+      "rank": 52,
+      "method": "java.util.TreeMap.fixAfterDeletion",
+      "samples": 5,
+      "percent": 0.295334
+    },
+    {
+      "rank": 53,
+      "method": "org.apache.commons.math3.special.Gamma.invGamma1pm1",
+      "samples": 5,
+      "percent": 0.295334
+    },
+    {
+      "rank": 54,
+      "method": "housing.Bank.getNPayments",
+      "samples": 4,
+      "percent": 0.236267
+    },
+    {
+      "rank": 55,
+      "method": "housing.HouseholdBehaviour.getDesiredRentPrice",
+      "samples": 4,
+      "percent": 0.236267
+    },
+    {
+      "rank": 56,
+      "method": "java.util.ArrayList.clear",
+      "samples": 4,
+      "percent": 0.236267
+    },
+    {
+      "rank": 57,
+      "method": "jdk.internal.math.FormattedFPDecimal.plainChars",
+      "samples": 4,
+      "percent": 0.236267
+    },
+    {
+      "rank": 58,
+      "method": "java.util.Formatter.parse",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 59,
+      "method": "java.util.HashMap.removeNode",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 60,
+      "method": "java.util.TimSort.mergeHi",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 61,
+      "method": "java.util.TimSort.mergeLo",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 62,
+      "method": "java.util.TreeMap.getLowerEntry",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 63,
+      "method": "java.util.TreeMap.rotateLeft",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 64,
+      "method": "java.util.TreeMap.rotateRight",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 65,
+      "method": "org.apache.commons.math3.util.FastMath.log1p",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 66,
+      "method": "utilities.PriorityQueue2D$Iter.next",
+      "samples": 3,
+      "percent": 0.1772
+    },
+    {
+      "rank": 67,
+      "method": "collectors.HousingMarketStats.postClearingRecord",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 68,
+      "method": "housing.HouseholdBehaviour.decideToSellInvestmentProperty",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 69,
+      "method": "housing.HouseholdBehaviour.rethinkHouseSalePrice",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 70,
+      "method": "housing.HousingMarketRecord$PQComparator.XCompare",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 71,
+      "method": "housing.HousingMarketRecord$PQComparator.YCompare",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 72,
+      "method": "housing.HousingMarketRecord$PYComparator.YCompare",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 73,
+      "method": "java.lang.Object.hashCode",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 74,
+      "method": "java.util.ArrayList.addAll",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 75,
+      "method": "java.util.Arrays.copyOf",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 76,
+      "method": "java.util.Formatter$FormatSpecifier.checkBadFlags",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 77,
+      "method": "java.util.Formatter$FormatSpecifier.conversion",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 78,
+      "method": "java.util.Formatter$FormatSpecifierParser.parsePrecision",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 79,
+      "method": "java.util.TreeSet.size",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 80,
+      "method": "jdk.internal.math.FormattedFPDecimal.fillWithDigits",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 81,
+      "method": "org.apache.commons.math3.analysis.solvers.BrentSolver.brent",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 82,
+      "method": "org.apache.commons.math3.util.FastMath.sinQ",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 83,
+      "method": "utilities.PriorityQueue2D.sortPriorities",
+      "samples": 2,
+      "percent": 0.118133
+    },
+    {
+      "rank": 84,
+      "method": "collectors.MicroDataRecorder.recordNHousesOwned",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 85,
+      "method": "data.Wealth.getDesiredBankBalance",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 86,
+      "method": "housing.Bank.requestApproval",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 87,
+      "method": "housing.HouseBidderRecord$PComparator.compare",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 88,
+      "method": "housing.HouseOfferRecord.getQuality",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 89,
+      "method": "housing.HouseSaleMarket.offer",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 90,
+      "method": "housing.Household.completeHouseLet",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 91,
+      "method": "housing.Household.decideToSellHouse",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 92,
+      "method": "housing.Household.endOfLettingAgreement",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 93,
+      "method": "housing.HouseholdBehaviour.decideDownPayment",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 94,
+      "method": "housing.HouseholdBehaviour.decideToBuyInvestmentProperty",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 95,
+      "method": "housing.HouseholdBehaviour.rethinkHouseRentPrice",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 96,
+      "method": "java.lang.Math.min",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 97,
+      "method": "java.lang.String.charAt",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 98,
+      "method": "java.util.ArrayList$Itr.next",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 99,
+      "method": "java.util.ArrayList$Itr.remove",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 100,
+      "method": "java.util.ArrayList.grow",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 101,
+      "method": "java.util.ArrayList.remove",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 102,
+      "method": "java.util.Arrays.copyOfRange",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 103,
+      "method": "java.util.Formatter$Conversion.isText",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 104,
+      "method": "java.util.HashMap$KeyIterator.<init>",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 105,
+      "method": "java.util.TimSort.gallopRight",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 106,
+      "method": "java.util.TimSort.mergeAt",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 107,
+      "method": "java.util.TimSort.minRunLength",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 108,
+      "method": "java.util.TreeMap$NavigableSubMap.<init>",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 109,
+      "method": "java.util.TreeMap.getCeilingEntry",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 110,
+      "method": "java.util.TreeMap.values",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 111,
+      "method": "java.util.TreeSet.clear",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 112,
+      "method": "java.util.TreeSet.higher",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 113,
+      "method": "java.util.TreeSet.remove",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 114,
+      "method": "java.util.TreeSet.subSet",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 115,
+      "method": "jdk.internal.math.FormattedFPDecimal.scientific",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 116,
+      "method": "jdk.internal.math.MathUtils.flog10threeQuartersPow2",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 117,
+      "method": "org.apache.commons.csv.CSVParser.addRecordValue",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 118,
+      "method": "org.apache.commons.math3.distribution.AbstractIntegerDistribution.sample",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 119,
+      "method": "org.apache.commons.math3.util.FastMath.expm1",
+      "samples": 1,
+      "percent": 0.059067
+    },
+    {
+      "rank": 120,
+      "method": "utilities.PriorityQueue2D$Iter.<init>",
+      "samples": 1,
+      "percent": 0.059067
+    }
+  ],
+  "modelstep_phases": [
+    {
+      "line_number": 185,
+      "phase": "demographics.step()",
+      "samples": 49,
+      "percent": 2.894271
+    },
+    {
+      "line_number": 187,
+      "phase": "construction.step()",
+      "samples": 0,
+      "percent": 0.0
+    },
+    {
+      "line_number": 189,
+      "phase": "household loop",
+      "samples": 768,
+      "percent": 45.36326
+    },
+    {
+      "line_number": 191,
+      "phase": "creditSupply.preClearingResetCounters()",
+      "samples": 0,
+      "percent": 0.0
+    },
+    {
+      "line_number": 193,
+      "phase": "housingMarketStats.preClearingRecord()",
+      "samples": 13,
+      "percent": 0.767868
+    },
+    {
+      "line_number": 195,
+      "phase": "houseSaleMarket.clearMarket()",
+      "samples": 79,
+      "percent": 4.666273
+    },
+    {
+      "line_number": 197,
+      "phase": "housingMarketStats.postClearingRecord()",
+      "samples": 4,
+      "percent": 0.236267
+    },
+    {
+      "line_number": 199,
+      "phase": "rentalMarketStats.preClearingRecord()",
+      "samples": 11,
+      "percent": 0.649734
+    },
+    {
+      "line_number": 201,
+      "phase": "houseRentalMarket.clearMarket()",
+      "samples": 382,
+      "percent": 22.563497
+    },
+    {
+      "line_number": 203,
+      "phase": "rentalMarketStats.postClearingRecord()",
+      "samples": 0,
+      "percent": 0.0
+    },
+    {
+      "line_number": 205,
+      "phase": "householdStats.record()",
+      "samples": 364,
+      "percent": 21.500295
+    },
+    {
+      "line_number": 207,
+      "phase": "creditSupply.postClearingRecord()",
+      "samples": 23,
+      "percent": 1.358535
+    },
+    {
+      "line_number": 209,
+      "phase": "bank.step()",
+      "samples": 0,
+      "percent": 0.0
+    },
+    {
+      "line_number": 211,
+      "phase": "centralBank.step()",
+      "samples": 0,
+      "percent": 0.0
+    }
+  ]
+}
