@@ -64,6 +64,54 @@ function formatDatasetAttribution(dataset: DatasetAttribution): string {
   return `${dataset.fullName} (${parts.join(', ')})`;
 }
 
+function isWithinDomain(value: number, domain: { min: number; max: number }): boolean {
+  return Number.isFinite(value) && value >= domain.min && value <= domain.max;
+}
+
+function buildSingleMedianLegendMarkers(
+  value: number,
+  domain?: { min: number; max: number }
+): Array<{ x: number; name: string; color: string }> {
+  const shouldRender = domain ? isWithinDomain(value, domain) : Number.isFinite(value);
+  return shouldRender
+    ? [
+        {
+          x: value,
+          name: 'Median',
+          color: '#495057'
+        }
+      ]
+    : [];
+}
+
+function buildCompareMedianLegendMarkers(
+  leftValue: number,
+  rightValue: number,
+  leftLabel: string,
+  rightLabel: string,
+  domain?: { min: number; max: number }
+): Array<{ x: number; name: string; color: string }> {
+  const markers: Array<{ x: number; name: string; color: string }> = [];
+
+  if (domain ? isWithinDomain(leftValue, domain) : Number.isFinite(leftValue)) {
+    markers.push({
+      x: leftValue,
+      name: `${leftLabel} median`,
+      color: '#0b7285'
+    });
+  }
+
+  if (domain ? isWithinDomain(rightValue, domain) : Number.isFinite(rightValue)) {
+    markers.push({
+      x: rightValue,
+      name: `${rightLabel} median`,
+      color: '#18958b'
+    });
+  }
+
+  return markers;
+}
+
 function renderScalarTable(values: ScalarDatum[], mode: 'single' | 'compare') {
   if (mode === 'single') {
     return (
@@ -382,7 +430,11 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.curveRight,
                         axisSpec.curve.xTitle,
                         axisSpec.curve.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        undefined,
+                        buildSingleMedianLegendMarkers(item.visualPayload.median.right)
                       )
                     : curveOption(
                         leftVersionLabel,
@@ -391,7 +443,16 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.curveRight,
                         axisSpec.curve.xTitle,
                         axisSpec.curve.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        undefined,
+                        buildCompareMedianLegendMarkers(
+                          item.visualPayload.median.left,
+                          item.visualPayload.median.right,
+                          leftVersionLabel,
+                          rightVersionLabel
+                        )
                       )
                 }
                 className="chart"
@@ -439,7 +500,11 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.logCurveRight,
                         axisSpec.curve.xTitle,
                         axisSpec.curve.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        undefined,
+                        buildSingleMedianLegendMarkers(item.visualPayload.logMedian.right)
                       )
                     : curveOption(
                         leftVersionLabel,
@@ -448,7 +513,16 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         item.visualPayload.logCurveRight,
                         axisSpec.curve.xTitle,
                         axisSpec.curve.yTitle,
-                        (value) => formatNumber(value)
+                        (value) => formatNumber(value),
+                        undefined,
+                        undefined,
+                        undefined,
+                        buildCompareMedianLegendMarkers(
+                          item.visualPayload.logMedian.left,
+                          item.visualPayload.logMedian.right,
+                          leftVersionLabel,
+                          rightVersionLabel
+                        )
                       )
                 }
                 className="chart"
@@ -487,7 +561,12 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         axisSpec.buyMultiplier.yTitle,
                         (value) => formatNumber(value),
                         item.visualPayload.percentCap,
-                        `${item.visualPayload.percentCap}% cap`
+                        `${item.visualPayload.percentCap}% cap`,
+                        undefined,
+                        buildSingleMedianLegendMarkers(
+                          item.visualPayload.percentMedian.right,
+                          item.visualPayload.percentDomain
+                        )
                       )
                     : curveOption(
                         leftVersionLabel,
@@ -498,7 +577,15 @@ export function CompareCard({ item, mode, inProgressVersions, defaultExpanded = 
                         axisSpec.buyMultiplier.yTitle,
                         (value) => formatNumber(value),
                         item.visualPayload.percentCap,
-                        `${item.visualPayload.percentCap}% cap`
+                        `${item.visualPayload.percentCap}% cap`,
+                        undefined,
+                        buildCompareMedianLegendMarkers(
+                          item.visualPayload.percentMedian.left,
+                          item.visualPayload.percentMedian.right,
+                          leftVersionLabel,
+                          rightVersionLabel,
+                          item.visualPayload.percentDomain
+                        )
                       )
                 }
                 className="chart"

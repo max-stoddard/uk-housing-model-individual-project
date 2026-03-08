@@ -130,6 +130,11 @@ export type VisualPayload =
       parameters: ScalarDatum[];
       curveLeft: CurvePoint[];
       curveRight: CurvePoint[];
+      median: {
+        left: number;
+        right: number;
+        delta: DeltaStat;
+      };
       domain: { min: number; max: number };
     }
   | {
@@ -151,6 +156,16 @@ export type VisualPayload =
       percentCap: number;
       percentCapMassLeft: number;
       percentCapMassRight: number;
+      logMedian: {
+        left: number;
+        right: number;
+        delta: DeltaStat;
+      };
+      percentMedian: {
+        left: number;
+        right: number;
+        delta: DeltaStat;
+      };
     }
   | {
       type: 'hpa_expectation_line';

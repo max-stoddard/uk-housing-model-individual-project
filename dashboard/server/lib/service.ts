@@ -67,6 +67,14 @@ function deltaStat(left: number, right: number) {
   return { absolute, percent };
 }
 
+function pairStat(left: number, right: number) {
+  return {
+    left,
+    right,
+    delta: deltaStat(left, right)
+  };
+}
+
 function isNearlyZero(value: number): boolean {
   return Math.abs(value) < EPSILON;
 }
@@ -602,6 +610,8 @@ function buildGaussianCurves(muLeft: number, sigmaLeft: number, muRight: number,
   };
   const percentCapMassLeft = clamp01(1 - normalCdf(logPercentCap, muLeft, safeSigmaLeft));
   const percentCapMassRight = clamp01(1 - normalCdf(logPercentCap, muRight, safeSigmaRight));
+  const logMedian = pairStat(muLeft, muRight);
+  const percentMedian = pairStat(Math.exp(muLeft), Math.exp(muRight));
 
   return {
     logDomain: { min, max },
@@ -609,6 +619,8 @@ function buildGaussianCurves(muLeft: number, sigmaLeft: number, muRight: number,
     percentCap,
     percentCapMassLeft,
     percentCapMassRight,
+    logMedian,
+    percentMedian,
     logCurveLeft,
     logCurveRight,
     percentCurveLeft,
@@ -674,9 +686,11 @@ function buildLognormalCurves(muLeft: number, sigmaLeft: number, muRight: number
 
   const curveLeft: CurvePoint[] = xs.map((x) => ({ x, y: lognormalPdf(x, muLeft, sigmaLeft) }));
   const curveRight: CurvePoint[] = xs.map((x) => ({ x, y: lognormalPdf(x, muRight, sigmaRight) }));
+  const median = pairStat(Math.exp(muLeft), Math.exp(muRight));
 
   return {
     domain: { min, max },
+    median,
     curveLeft,
     curveRight
   };
@@ -857,6 +871,7 @@ function buildVisualComparison(
           parameters: values,
           curveLeft: curves.curveLeft,
           curveRight: curves.curveRight,
+          median: curves.median,
           domain: curves.domain
         }
       };
@@ -910,7 +925,9 @@ function buildVisualComparison(
           percentDomain: curves.percentDomain,
           percentCap: curves.percentCap,
           percentCapMassLeft: curves.percentCapMassLeft,
-          percentCapMassRight: curves.percentCapMassRight
+          percentCapMassRight: curves.percentCapMassRight,
+          logMedian: curves.logMedian,
+          percentMedian: curves.percentMedian
         }
       };
     }
@@ -969,16 +986,8 @@ function buildVisualComparison(
           budgetRight,
           multiplierLeft,
           multiplierRight,
-          medianMultiplier: {
-            left: medianLeft,
-            right: medianRight,
-            delta: deltaStat(medianLeft, medianRight)
-          },
-          expectedMultiplier: {
-            left: expectedLeft,
-            right: expectedRight,
-            delta: deltaStat(expectedLeft, expectedRight)
-          },
+          medianMultiplier: pairStat(medianLeft, medianRight),
+          expectedMultiplier: pairStat(expectedLeft, expectedRight),
           domain
         }
       };

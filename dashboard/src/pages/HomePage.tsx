@@ -31,6 +31,18 @@ const BUY_QUAD_CURVE_LAYOUT_OVERRIDES = { gridLeft: 108, gridRight: 30, yAxisNam
 
 type HomeLoadState = 'loading' | 'waiting' | 'ready' | 'error';
 
+function buildSingleMedianLegendMarkers(value: number): Array<{ x: number; name: string; color: string }> {
+  return Number.isFinite(value)
+    ? [
+        {
+          x: value,
+          name: 'Median',
+          color: '#495057'
+        }
+      ]
+    : [];
+}
+
 function buildPreviewOption(item: HomePreviewItem): EChartsOption {
   const axisSpec = getAxisSpec(item.id);
 
@@ -69,6 +81,18 @@ function buildPreviewOption(item: HomePreviewItem): EChartsOption {
     }
 
     case 'lognormal_pair':
+      return curveSingleOption(
+        item.rightVersion,
+        item.visualPayload.curveRight,
+        axisSpec.curve.xTitle,
+        axisSpec.curve.yTitle,
+        (value) => formatChartNumber(value),
+        undefined,
+        undefined,
+        undefined,
+        buildSingleMedianLegendMarkers(item.visualPayload.median.right)
+      );
+
     case 'power_law_pair':
       return curveSingleOption(
         item.rightVersion,
