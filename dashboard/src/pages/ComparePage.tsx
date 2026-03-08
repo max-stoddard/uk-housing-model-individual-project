@@ -4,6 +4,12 @@ import type { CompareResponse, ParameterCardMeta, ParameterGroup } from '../../s
 import { API_RETRY_DELAY_MS, fetchCatalog, fetchCompare, fetchVersions, isRetryableApiError } from '../lib/api';
 import { CompareCard } from '../components/CompareCard';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../components/LoadingSkeleton';
+import {
+  buildVersionLabelState,
+  formatVersionOptionLabel,
+  getLatestStableVersion,
+  type VersionLabelKind
+} from '../lib/versionLabels';
 
 const GROUP_ORDER: ParameterGroup[] = [
   'Household Demographics & Wealth',
@@ -18,14 +24,29 @@ type ChangeFilter = 'all' | 'updated' | 'unchanged';
 type ViewMode = 'single' | 'compare';
 
 function getDefaultDisplayVersion(versions: string[], inProgressVersions: string[]): string {
-  const inProgressSet = new Set(inProgressVersions);
-  for (let index = versions.length - 1; index >= 0; index -= 1) {
-    const version = versions[index];
-    if (!inProgressSet.has(version)) {
-      return version;
-    }
+  return getLatestStableVersion(versions, inProgressVersions) || (versions[versions.length - 1] ?? '');
+}
+
+function getVersionTagClassName(kind: VersionLabelKind): string {
+  switch (kind) {
+    case 'in_progress':
+      return 'status-pill-in-progress';
+    case 'latest':
+      return 'status-pill status-pill-latest';
+    case 'original':
+      return 'status-pill status-pill-original';
   }
-  return versions[versions.length - 1] ?? '';
+}
+
+function getVersionTagText(prefix: string, version: string, kind: VersionLabelKind): string {
+  switch (kind) {
+    case 'in_progress':
+      return `${prefix} ${version} in progress`;
+    case 'latest':
+      return `${prefix} ${version} latest`;
+    case 'original':
+      return `${prefix} ${version} original`;
+  }
 }
 
 function groupCatalog(catalog: ParameterCardMeta[]) {
@@ -360,9 +381,19 @@ export function ComparePage() {
   const isLoadingWithoutData = isBootstrapping || (isLoading && !hasComparedItems);
   const isRefreshingComparedItems = isLoading && hasComparedItems;
   const inProgressSet = useMemo(() => new Set(inProgressVersions), [inProgressVersions]);
-  const isInProgressVersion = (version: string) => inProgressSet.has(version);
-  const withInProgressLabel = (version: string) =>
-    isInProgressVersion(version) ? `${version} (In progress)` : version;
+  const latestStableVersion = useMemo(() => getLatestStableVersion(versions, inProgressVersions), [versions, inProgressVersions]);
+  const getVersionLabelState = (version: string) => buildVersionLabelState(version, latestStableVersion, inProgressSet);
+  const formatSelectLabel = (version: string) => formatVersionOptionLabel(version, getVersionLabelState(version));
+  const renderVersionTags = (prefix: string, version: string) =>
+    getVersionLabelState(version).kinds.map((kind) => (
+      <span key={`${prefix}-${version}-${kind}`} className={getVersionTagClassName(kind)}>
+        {getVersionTagText(prefix, version, kind)}
+      </span>
+    ));
+  const selectedVersionTags =
+    mode === 'single'
+      ? renderVersionTags('Version', selectedVersion)
+      : [...renderVersionTags('Left', left), ...renderVersionTags('Right', right)];
 
   return (
     <section className={`compare-layout ${isSetupOpen ? '' : 'setup-collapsed'}`}>
@@ -408,7 +439,7 @@ export function ComparePage() {
               <select id="single-version" value={selectedVersion} onChange={(event) => setSelectedVersion(event.target.value)}>
                 {versions.map((version) => (
                   <option key={version} value={version}>
-                    {withInProgressLabel(version)}
+                    {formatSelectLabel(version)}
                   </option>
                 ))}
               </select>
@@ -419,7 +450,7 @@ export function ComparePage() {
               <select id="left-version" value={left} onChange={(event) => setLeft(event.target.value)}>
                 {versions.map((version) => (
                   <option key={version} value={version}>
-                    {withInProgressLabel(version)}
+                    {formatSelectLabel(version)}
                   </option>
                 ))}
               </select>
@@ -428,7 +459,7 @@ export function ComparePage() {
               <select id="right-version" value={right} onChange={(event) => setRight(event.target.value)}>
                 {versions.map((version) => (
                   <option key={version} value={version}>
-                    {withInProgressLabel(version)}
+                    {formatSelectLabel(version)}
                   </option>
                 ))}
               </select>
@@ -495,17 +526,9 @@ export function ComparePage() {
               titleText
             )}
           </h2>
-          {(mode === 'single' ? isInProgressVersion(selectedVersion) : isInProgressVersion(left) || isInProgressVersion(right)) && (
+          {selectedVersionTags.length > 0 && (
             <div className="results-version-tags">
-              {mode === 'single' && isInProgressVersion(selectedVersion) && (
-                <span className="status-pill-in-progress">Version {selectedVersion} in progress</span>
-              )}
-              {mode === 'compare' && isInProgressVersion(left) && (
-                <span className="status-pill-in-progress">Left {left} in progress</span>
-              )}
-              {mode === 'compare' && isInProgressVersion(right) && (
-                <span className="status-pill-in-progress">Right {right} in progress</span>
-              )}
+              {selectedVersionTags}
             </div>
           )}
           <p>

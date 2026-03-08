@@ -652,6 +652,18 @@ code {
   border: 1px solid rgba(201, 42, 42, 0.24);
 }
 
+.status-pill-latest {
+  color: #2b8a3e;
+  background: #ebfbee;
+  border: 1px solid rgba(43, 138, 62, 0.22);
+}
+
+.status-pill-original {
+  color: #495057;
+  background: #f1f3f5;
+  border: 1px solid rgba(73, 80, 87, 0.2);
+}
+
 .coverage-pill.unsupported {
   color: #495057;
   background: #f1f3f5;
