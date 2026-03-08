@@ -26,6 +26,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 RESOURCE_PATH_PATTERN = re.compile(r'"src/main/resources/([^"]+)"')
 NUMERIC_PATTERN = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
 PAUSE_PATTERN = re.compile(r"Pause.*? ([0-9]+(?:\.[0-9]+)?)(us|ms|s)\b")
+OUTPUT_FILE_NAME = "Output-run1.csv"
+RESULTS_SUMMARY_DEFAULT_RUN_DIR = REPO_ROOT / "Results" / "v4.1-output"
+RESULTS_SUMMARY_WINDOW_START_INDEX = 200
+RESULTS_SUMMARY_WINDOW_END_INDEX = 2000
+RESULTS_SUMMARY_WINDOW_LENGTH = RESULTS_SUMMARY_WINDOW_END_INDEX - RESULTS_SUMMARY_WINDOW_START_INDEX
 
 MODELSTEP_PHASE_LINES: tuple[tuple[int, str], ...] = (
     (185, "demographics.step()"),
@@ -97,6 +102,41 @@ class JfrAnalysis:
     modelstep_stacks: tuple[tuple[str, ...], ...]
 
 
+@dataclass(frozen=True)
+class ResultsSummarySeries:
+    """One fixed series emitted by the results-summary CLI."""
+
+    label: str
+    file_name: str
+    scale: float
+    output_column: str | None = None
+
+
+RESULTS_SUMMARY_SERIES: tuple[ResultsSummarySeries, ...] = (
+    ResultsSummarySeries(
+        label="Average house prices (£1,000)",
+        file_name=OUTPUT_FILE_NAME,
+        output_column="Sale AvSalePrice",
+        scale=0.001,
+    ),
+    ResultsSummarySeries(
+        label="Housing transactions (1,000)",
+        file_name="coreIndicator-housingTransactions.csv",
+        scale=0.001,
+    ),
+    ResultsSummarySeries(
+        label="Mortgage approvals (1,000)",
+        file_name="coreIndicator-mortgageApprovals.csv",
+        scale=0.001,
+    ),
+    ResultsSummarySeries(
+        label="Mortgage debt-to-income ratio (%)",
+        file_name="coreIndicator-debtToIncome.csv",
+        scale=1.0,
+    ),
+)
+
+
 def parse_properties(path: Path) -> dict[str, str]:
     overrides: dict[str, str] = {}
     for raw_line in path.read_text(encoding="utf-8").splitlines():
@@ -106,6 +146,69 @@ def parse_properties(path: Path) -> dict[str, str]:
         key, value = raw_line.split("=", 1)
         overrides[key.strip()] = value.strip().strip('"').strip("'")
     return overrides
+
+
+def load_results_summary_core_values(path: Path) -> list[float]:
+    if not path.exists():
+        raise SystemExit(f"Missing required file: {path}")
+    flattened = path.read_text(encoding="utf-8").replace("\r", "\n").replace("\n", ";")
+    values: list[float] = []
+    for token in flattened.split(";"):
+        stripped = token.strip()
+        if not stripped:
+            continue
+        try:
+            values.append(float(stripped))
+        except ValueError as error:
+            raise SystemExit(f"Non-numeric value in core indicator file {path}: {stripped!r}") from error
+    if not values:
+        raise SystemExit(f"No numeric values found in core indicator file: {path}")
+    return values
+
+
+def load_results_summary_output_column(path: Path, column_name: str) -> list[float]:
+    if not path.exists():
+        raise SystemExit(f"Missing required file: {path}")
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.reader(handle, delimiter=";")
+        rows = [[cell.strip() for cell in row] for row in reader if any(cell.strip() for cell in row)]
+    if not rows:
+        raise SystemExit(f"Output file is empty: {path}")
+    header = rows[0]
+    if column_name not in header:
+        raise SystemExit(f"Missing required output column '{column_name}' in {path}")
+    column_index = header.index(column_name)
+    values: list[float] = []
+    for row_number, row in enumerate(rows[1:], start=2):
+        if column_index >= len(row):
+            raise SystemExit(
+                f"Missing value for output column '{column_name}' at row {row_number} in {path}"
+            )
+        token = row[column_index].strip()
+        if not token:
+            raise SystemExit(
+                f"Blank value for output column '{column_name}' at row {row_number} in {path}"
+            )
+        try:
+            values.append(float(token))
+        except ValueError as error:
+            raise SystemExit(
+                f"Non-numeric value for output column '{column_name}' at row {row_number} in {path}: {token!r}"
+            ) from error
+    if not values:
+        raise SystemExit(f"No data rows found in output file: {path}")
+    return values
+
+
+def select_results_summary_window(values: list[float], label: str, source_path: Path) -> list[float]:
+    window = values[RESULTS_SUMMARY_WINDOW_START_INDEX:RESULTS_SUMMARY_WINDOW_END_INDEX]
+    if len(window) != RESULTS_SUMMARY_WINDOW_LENGTH:
+        raise SystemExit(
+            f"{label}: expected {RESULTS_SUMMARY_WINDOW_LENGTH} values in indices "
+            f"{RESULTS_SUMMARY_WINDOW_START_INDEX}:{RESULTS_SUMMARY_WINDOW_END_INDEX}, "
+            f"found {len(window)} from {source_path} (raw_count={len(values)})"
+        )
+    return window
 
 
 def format_method_name(method: dict[str, object]) -> str:
@@ -835,6 +938,33 @@ def benchmark_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def results_summary(args: argparse.Namespace) -> int:
+    run_dir = (
+        RESULTS_SUMMARY_DEFAULT_RUN_DIR
+        if args.run_dir is None
+        else Path(args.run_dir).expanduser()
+    ).resolve()
+    if not run_dir.exists() or not run_dir.is_dir():
+        raise SystemExit(f"Results run directory not found: {run_dir}")
+
+    lines = [
+        f"Run directory: {run_dir}",
+        "Window: indices 200:2000 (periods 200..1999 inclusive, 1800 values)",
+    ]
+    for series in RESULTS_SUMMARY_SERIES:
+        source_path = run_dir / series.file_name
+        if series.output_column is None:
+            raw_values = load_results_summary_core_values(source_path)
+        else:
+            raw_values = load_results_summary_output_column(source_path, series.output_column)
+        window_values = select_results_summary_window(raw_values, series.label, source_path)
+        mean_value = statistics.mean(value * series.scale for value in window_values)
+        lines.append(f"{series.label}: {mean_value:.6f}")
+
+    print("\n".join(lines))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Model-speed helper CLI.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -872,6 +1002,16 @@ def build_parser() -> argparse.ArgumentParser:
     summary.add_argument("--runs-tsv", required=True)
     summary.add_argument("--output", required=True)
     summary.set_defaults(func=benchmark_summary)
+
+    results = subparsers.add_parser(
+        "results-summary",
+        help="Print post-200 simulation means from Results/v4.1-output or an overridden run directory.",
+    )
+    results.add_argument(
+        "--run-dir",
+        help="Results run directory to summarise (default: repo-root Results/v4.1-output).",
+    )
+    results.set_defaults(func=results_summary)
 
     flamegraph = subparsers.add_parser("jfr-flamegraph", help="Render a modelStep-focused flame graph SVG from JFR.")
     flamegraph.add_argument("--profile-id", required=True)
