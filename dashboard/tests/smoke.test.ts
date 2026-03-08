@@ -54,6 +54,7 @@ import {
   normaliseExperimentRouteState,
   parseExperimentRouteState
 } from '../src/pages/experiments/routeState.js';
+import { buildVersionLabelState, formatVersionOptionLabel, getLatestStableVersion } from '../src/lib/versionLabels.js';
 import { computeKpiFromValues } from '../server/lib/stats/kpi.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -551,6 +552,38 @@ assert.ok(
   'In-progress versions should resolve to discovered snapshot folders'
 );
 assert.ok(!inProgressVersions.includes('v4.0'), 'Expected v4.0 to be reported as a stable snapshot');
+const latestStableVersion = getLatestStableVersion(versions, inProgressVersions);
+const expectedLatestStableVersion = [...versions].reverse().find((version) => !inProgressVersions.includes(version)) ?? '';
+assert.equal(latestStableVersion, expectedLatestStableVersion, 'Expected latest stable version helper to return newest non-progress snapshot');
+assert.notEqual(latestStableVersion, '', 'Expected at least one stable version to exist');
+const originalVersionState = buildVersionLabelState('v0', latestStableVersion, new Set(inProgressVersions));
+assert.ok(originalVersionState.isOriginal, 'Expected v0 to be labelled as original');
+assert.equal(formatVersionOptionLabel('v0', originalVersionState), 'v0 (Original)', 'Expected v0 select label to include Original');
+const combinedLabelState = buildVersionLabelState('v0', 'v0', new Set<string>());
+assert.equal(
+  formatVersionOptionLabel('v0', combinedLabelState),
+  'v0 (Latest, Original)',
+  'Expected combined labels to preserve Latest then Original ordering'
+);
+const latestVersionState = buildVersionLabelState(latestStableVersion, latestStableVersion, new Set(inProgressVersions));
+assert.ok(latestVersionState.isLatest, 'Expected latest stable version to be labelled as latest');
+assert.ok(!latestVersionState.isInProgress, 'Expected latest stable version to exclude the in-progress label');
+assert.equal(
+  formatVersionOptionLabel(latestStableVersion, latestVersionState),
+  `${latestStableVersion} (Latest)`,
+  'Expected latest stable select label to include Latest'
+);
+const inProgressVersion = inProgressVersions.find((version) => version !== 'v0');
+if (inProgressVersion) {
+  const inProgressState = buildVersionLabelState(inProgressVersion, latestStableVersion, new Set(inProgressVersions));
+  assert.ok(inProgressState.isInProgress, 'Expected in-progress snapshot to be labelled in progress');
+  assert.ok(!inProgressState.isLatest, 'Expected in-progress snapshot not to be labelled latest');
+  assert.equal(
+    formatVersionOptionLabel(inProgressVersion, inProgressState),
+    `${inProgressVersion} (In progress)`,
+    'Expected in-progress select label to exclude Latest'
+  );
+}
 const latestVersion = versions[versions.length - 1];
 
 const homePreview = getHomePreview(repoRoot, latestVersion, [
@@ -570,6 +603,22 @@ assert.ok(
   homePreview.items.every((item) => !('sourceInfo' in item) && !('changeOriginsInRange' in item)),
   'Expected home preview payload to exclude compare-page provenance and source metadata'
 );
+const homePreviewLognormal = homePreview.items.find((item) => item.id === 'house_price_lognormal');
+assert.ok(homePreviewLognormal, 'Expected house_price_lognormal in home preview payload');
+assert.ok(
+  homePreviewLognormal?.visualPayload.type === 'lognormal_pair',
+  'Expected house_price_lognormal preview payload to use lognormal_pair type'
+);
+if (homePreviewLognormal?.visualPayload.type === 'lognormal_pair') {
+  const scaleRight = homePreviewLognormal.visualPayload.parameters.find((row) => row.key === 'HOUSE_PRICES_SCALE')?.right;
+  assert.ok(scaleRight !== undefined, 'Expected house-price scale parameter in preview payload');
+  assertClose(
+    homePreviewLognormal.visualPayload.median.right,
+    Math.exp(Number(scaleRight)),
+    1e-12,
+    'Expected lognormal preview median.right to equal exp(HOUSE_PRICES_SCALE)'
+  );
+}
 
 const notes = loadVersionNotes(repoRoot);
 assert.ok(notes.length > 0, 'Expected at least one version note entry');
@@ -844,10 +893,36 @@ if (saleReductionGaussian?.visualPayload.type === 'gaussian_pair') {
     'Sale gaussian percent curve should contain finite non-negative densities within (0, 50]'
   );
 
+  const muLeft = saleReductionGaussian.visualPayload.parameters.find((row) => row.key === 'REDUCTION_MU')?.left;
   const muRight = saleReductionGaussian.visualPayload.parameters.find((row) => row.key === 'REDUCTION_MU')?.right;
   const sigmaRight = saleReductionGaussian.visualPayload.parameters.find((row) => row.key === 'REDUCTION_SIGMA')?.right;
+  assert.ok(muLeft !== undefined, 'Expected sale reduction mu in left parameters');
   assert.ok(muRight !== undefined, 'Expected sale reduction mu in parameters');
   assert.ok(sigmaRight !== undefined && sigmaRight > 0, 'Expected positive sale reduction sigma in parameters');
+  assertClose(
+    saleReductionGaussian.visualPayload.logMedian.left,
+    Number(muLeft),
+    1e-12,
+    'Expected sale gaussian logMedian.left to match REDUCTION_MU'
+  );
+  assertClose(
+    saleReductionGaussian.visualPayload.logMedian.right,
+    Number(muRight),
+    1e-12,
+    'Expected sale gaussian logMedian.right to match REDUCTION_MU'
+  );
+  assertClose(
+    saleReductionGaussian.visualPayload.percentMedian.left,
+    Math.exp(Number(muLeft)),
+    1e-12,
+    'Expected sale gaussian percentMedian.left to equal exp(REDUCTION_MU)'
+  );
+  assertClose(
+    saleReductionGaussian.visualPayload.percentMedian.right,
+    Math.exp(Number(muRight)),
+    1e-12,
+    'Expected sale gaussian percentMedian.right to equal exp(REDUCTION_MU)'
+  );
   const sample = saleReductionGaussian.visualPayload.percentCurveRight[
     Math.floor(saleReductionGaussian.visualPayload.percentCurveRight.length / 2)
   ];
@@ -890,10 +965,36 @@ if (rentReductionGaussian?.visualPayload.type === 'gaussian_pair') {
     'Rent gaussian percent curve should contain finite non-negative densities within (0, 50]'
   );
 
+  const muLeft = rentReductionGaussian.visualPayload.parameters.find((row) => row.key === 'RENT_REDUCTION_MU')?.left;
   const muRight = rentReductionGaussian.visualPayload.parameters.find((row) => row.key === 'RENT_REDUCTION_MU')?.right;
   const sigmaRight = rentReductionGaussian.visualPayload.parameters.find((row) => row.key === 'RENT_REDUCTION_SIGMA')?.right;
+  assert.ok(muLeft !== undefined, 'Expected rent reduction mu in left parameters');
   assert.ok(muRight !== undefined, 'Expected rent reduction mu in parameters');
   assert.ok(sigmaRight !== undefined && sigmaRight > 0, 'Expected positive rent reduction sigma in parameters');
+  assertClose(
+    rentReductionGaussian.visualPayload.logMedian.left,
+    Number(muLeft),
+    1e-12,
+    'Expected rent gaussian logMedian.left to match RENT_REDUCTION_MU'
+  );
+  assertClose(
+    rentReductionGaussian.visualPayload.logMedian.right,
+    Number(muRight),
+    1e-12,
+    'Expected rent gaussian logMedian.right to match RENT_REDUCTION_MU'
+  );
+  assertClose(
+    rentReductionGaussian.visualPayload.percentMedian.left,
+    Math.exp(Number(muLeft)),
+    1e-12,
+    'Expected rent gaussian percentMedian.left to equal exp(RENT_REDUCTION_MU)'
+  );
+  assertClose(
+    rentReductionGaussian.visualPayload.percentMedian.right,
+    Math.exp(Number(muRight)),
+    1e-12,
+    'Expected rent gaussian percentMedian.right to equal exp(RENT_REDUCTION_MU)'
+  );
   const sample = rentReductionGaussian.visualPayload.percentCurveRight[
     Math.floor(rentReductionGaussian.visualPayload.percentCurveRight.length / 2)
   ];
