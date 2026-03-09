@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
-  KpiMetricSummary,
   ResultsCompareIndicator,
   ResultsComparePayload,
   ResultsFileManifestEntry,
@@ -12,6 +11,7 @@ import type {
 } from '../../../../shared/types';
 import type { EChartsOption } from 'echarts';
 import { EChart } from '../../../components/EChart';
+import { GroupedCheckboxSections } from '../../../components/GroupedCheckboxSections';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../../../components/LoadingSkeleton';
 import { StorageUsageBar } from '../../../components/StorageUsageBar';
 import {
@@ -24,12 +24,17 @@ import {
   fetchResultsStorageSummary,
   isRetryableApiError
 } from '../../../lib/api';
+import {
+  groupIndicatorsBySource,
+  resolveActiveIndicatorId,
+  resolveSelectedIndicatorIds,
+  sortKpis
+} from '../../../lib/manualResultsView';
 import { buildExperimentsPath } from '../routeState';
 import { DEFAULT_EXPERIMENT_ROUTE_STATE } from '../types';
 
 const RUN_LIMIT = 5;
 const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.0-output', 'v4.0-output']);
-const SPIN_UP_CUTOFF_TICKS = 200;
 
 type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;
@@ -140,20 +145,6 @@ function buildOverlayOption(indicatorPayload: ResultsCompareIndicator): EChartsO
   };
 }
 
-function sortKpis(kpis: KpiMetricSummary[]): KpiMetricSummary[] {
-  return [...kpis].sort((left, right) => left.title.localeCompare(right.title));
-}
-
-function compareWindowLabel(window: CompareWindow): string {
-  if (window === 'tail120') {
-    return 'Tail 120 months';
-  }
-  if (window === 'full') {
-    return 'Full history';
-  }
-  return `Post spin-up (t >= ${SPIN_UP_CUTOFF_TICKS})`;
-}
-
 export function ManualResultsView({
   canWrite,
   requestedRunId,
@@ -166,6 +157,8 @@ export function ManualResultsView({
   const [detail, setDetail] = useState<ResultsRunDetail | null>(null);
   const [manifest, setManifest] = useState<ResultsFileManifestEntry[]>([]);
   const [selectedIndicatorIds, setSelectedIndicatorIds] = useState<string[]>([]);
+  const [activeIndicatorId, setActiveIndicatorId] = useState<string>('');
+  const [expandedKpiIds, setExpandedKpiIds] = useState<string[]>([]);
   const [comparePayload, setComparePayload] = useState<ResultsComparePayload | null>(null);
   const [compareWindow, setCompareWindow] = useState<CompareWindow>('post200');
   const [smoothWindow, setSmoothWindow] = useState<SmoothWindow>(0);
@@ -176,6 +169,7 @@ export function ManualResultsView({
   const [isLoadingCompare, setIsLoadingCompare] = useState<boolean>(false);
   const [isDeletingRunId, setIsDeletingRunId] = useState<string>('');
   const [storageSummary, setStorageSummary] = useState<ResultsStorageSummary | null>(null);
+  const [isIndicatorSettingsOpen, setIsIndicatorSettingsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     onFocusedRunIdChange(focusedRunId);
@@ -309,26 +303,14 @@ export function ManualResultsView({
   useEffect(() => {
     if (!detail) {
       setSelectedIndicatorIds([]);
+      setExpandedKpiIds([]);
       return;
     }
 
-    const availableIds = detail.indicators.filter((indicator) => indicator.available).map((indicator) => indicator.id);
-    const availableSet = new Set(availableIds);
-    const defaultCore = detail.indicators
-      .filter((indicator) => indicator.available && indicator.source === 'core_indicator')
-      .map((indicator) => indicator.id);
-    const defaultAny = availableIds.slice(0, 8);
-
-    setSelectedIndicatorIds((current) => {
-      const filtered = current.filter((id) => availableSet.has(id));
-      if (filtered.length > 0) {
-        return filtered;
-      }
-      if (defaultCore.length > 0) {
-        return defaultCore;
-      }
-      return defaultAny;
-    });
+    setSelectedIndicatorIds((current) => resolveSelectedIndicatorIds(detail.indicators, current));
+    setExpandedKpiIds((current) =>
+      current.filter((indicatorId) => detail.kpiSummary.some((kpi) => kpi.indicatorId === indicatorId))
+    );
   }, [detail]);
 
   useEffect(() => {
@@ -368,17 +350,54 @@ export function ManualResultsView({
   const availableIndicators = useMemo(() => detail?.indicators ?? [], [detail]);
   const sortedKpis = useMemo(() => sortKpis(detail?.kpiSummary ?? []), [detail]);
   const selectedRunSet = useMemo(() => new Set(selectedRunIds), [selectedRunIds]);
+  const groupedIndicatorSections = useMemo(
+    () =>
+      groupIndicatorsBySource(availableIndicators).map((section) => ({
+        id: section.id,
+        title: section.title,
+        items: section.items.map((indicator) => ({
+          id: indicator.id,
+          label: indicator.title,
+          description: `${indicator.units} · ${indicator.source}${indicator.note ? ` · ${indicator.note}` : ''}`,
+          checked: selectedIndicatorIds.includes(indicator.id),
+          disabled: !indicator.available
+        }))
+      })),
+    [availableIndicators, selectedIndicatorIds]
+  );
   const overlayIndicators = comparePayload?.indicators ?? [];
+  const activeIndicatorOptions = useMemo(() => {
+    if (overlayIndicators.length > 0) {
+      return overlayIndicators.map((indicatorPayload) => ({
+        id: indicatorPayload.indicator.id,
+        title: indicatorPayload.indicator.title
+      }));
+    }
+
+    const titleById = new Map(availableIndicators.map((indicator) => [indicator.id, indicator.title]));
+    return selectedIndicatorIds.map((indicatorId) => ({
+      id: indicatorId,
+      title: titleById.get(indicatorId) ?? indicatorId
+    }));
+  }, [availableIndicators, overlayIndicators, selectedIndicatorIds]);
+  const activeIndicatorPayload = useMemo(
+    () => overlayIndicators.find((indicatorPayload) => indicatorPayload.indicator.id === activeIndicatorId) ?? null,
+    [activeIndicatorId, overlayIndicators]
+  );
   const showRunsSkeleton = isLoadingRuns && runs.length === 0;
   const showRunsRefreshing = isLoadingRuns && runs.length > 0;
   const showIndicatorsSkeleton = isLoadingDetail && availableIndicators.length === 0;
   const showIndicatorsRefreshing = isLoadingDetail && availableIndicators.length > 0;
   const showKpiSkeleton = isLoadingDetail && sortedKpis.length === 0;
   const showKpiRefreshing = isLoadingDetail && sortedKpis.length > 0;
-  const showOverlaySkeleton = isLoadingCompare && overlayIndicators.length === 0;
+  const showOverlaySkeleton = isLoadingCompare && overlayIndicators.length === 0 && selectedIndicatorIds.length > 0;
   const showOverlayRefreshing = isLoadingCompare && overlayIndicators.length > 0;
   const showManifestSkeleton = isLoadingDetail && manifest.length === 0;
   const showManifestRefreshing = isLoadingDetail && manifest.length > 0;
+
+  useEffect(() => {
+    setActiveIndicatorId((current) => resolveActiveIndicatorId(selectedIndicatorIds, overlayIndicators, current));
+  }, [overlayIndicators, selectedIndicatorIds]);
 
   const toggleRunSelection = (runId: string) => {
     setSelectionError('');
@@ -401,16 +420,15 @@ export function ManualResultsView({
 
   const toggleIndicatorSelection = (indicatorId: string) => {
     setSelectionError('');
-    setSelectedIndicatorIds((current) => {
-      if (current.includes(indicatorId)) {
-        if (current.length === 1) {
-          setSelectionError('Select at least one indicator.');
-          return current;
-        }
-        return current.filter((id) => id !== indicatorId);
-      }
-      return [...current, indicatorId];
-    });
+    setSelectedIndicatorIds((current) =>
+      current.includes(indicatorId) ? current.filter((id) => id !== indicatorId) : [...current, indicatorId]
+    );
+  };
+
+  const toggleKpiDetails = (indicatorId: string) => {
+    setExpandedKpiIds((current) =>
+      current.includes(indicatorId) ? current.filter((id) => id !== indicatorId) : [...current, indicatorId]
+    );
   };
 
   const deleteRun = async (runId: string) => {
@@ -446,96 +464,79 @@ export function ManualResultsView({
       {storageSummary && <StorageUsageBar usedBytes={storageSummary.usedBytes} capBytes={storageSummary.capBytes} />}
 
       <div className="results-grid">
-        <aside className="results-panel">
-          <div className="results-panel-header">
-            <h2>Runs</h2>
-            <p>{sidebarSubtitle}</p>
-          </div>
-          {showRunsRefreshing && (
-            <LoadingSkeleton
-              as="span"
-              className="loading-skeleton-pill section-loading-row"
-              ariaLabel="Refreshing runs"
-            />
-          )}
-          {showRunsSkeleton ? (
-            <LoadingSkeletonGroup
-              className="run-list-skeleton"
-              count={4}
-              itemClassName="loading-skeleton-card run-item-skeleton"
-              ariaLabel="Loading runs"
-            />
-          ) : (
-            <ul className="run-list">
-              {runs.map((run) => (
-                <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
-                  <label className="run-select">
-                    <input
-                      type="checkbox"
-                      checked={selectedRunSet.has(run.runId)}
-                      onChange={() => toggleRunSelection(run.runId)}
-                    />
-                    <span>{run.runId}</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="run-focus-btn"
-                    onClick={() => setFocusedRunId(run.runId)}
-                  >
-                    Focus
-                  </button>
-                  <div className="run-meta">
-                    <span className={statusClass(run.status)}>{run.status}</span>
-                    <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
-                  </div>
-                  <p>
-                    Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
-                  </p>
-                  {canWrite && (
+        <aside className="results-sidebar">
+          <div className="results-panel">
+            <div className="results-panel-header">
+              <h2>Runs</h2>
+              <p>{sidebarSubtitle}</p>
+            </div>
+            {showRunsRefreshing && (
+              <LoadingSkeleton
+                as="span"
+                className="loading-skeleton-pill section-loading-row"
+                ariaLabel="Refreshing runs"
+              />
+            )}
+            {showRunsSkeleton ? (
+              <LoadingSkeletonGroup
+                className="run-list-skeleton"
+                count={4}
+                itemClassName="loading-skeleton-card run-item-skeleton"
+                ariaLabel="Loading runs"
+              />
+            ) : (
+              <ul className="run-list">
+                {runs.map((run) => (
+                  <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
+                    <label className="run-select">
+                      <input
+                        type="checkbox"
+                        checked={selectedRunSet.has(run.runId)}
+                        onChange={() => toggleRunSelection(run.runId)}
+                      />
+                      <span>{run.runId}</span>
+                    </label>
                     <button
                       type="button"
-                      className="danger-button"
-                      disabled={isDeletingRunId === run.runId || isProtectedResultsRun(run.runId)}
-                      onClick={() => void deleteRun(run.runId)}
-                      title={isProtectedResultsRun(run.runId) ? 'Protected run cannot be deleted.' : undefined}
+                      className="run-focus-btn"
+                      onClick={() => setFocusedRunId(run.runId)}
                     >
-                      {isProtectedResultsRun(run.runId)
-                        ? 'Protected'
-                        : isDeletingRunId === run.runId
-                          ? 'Deleting...'
-                          : 'Delete'}
+                      Focus
                     </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </aside>
+                    <div className="run-meta">
+                      <span className={statusClass(run.status)}>{run.status}</span>
+                      <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                    <p>
+                      Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
+                    </p>
+                    {canWrite && (
+                      <button
+                        type="button"
+                        className="danger-button"
+                        disabled={isDeletingRunId === run.runId || isProtectedResultsRun(run.runId)}
+                        onClick={() => void deleteRun(run.runId)}
+                        title={isProtectedResultsRun(run.runId) ? 'Protected run cannot be deleted.' : undefined}
+                      >
+                        {isProtectedResultsRun(run.runId)
+                          ? 'Protected'
+                          : isDeletingRunId === run.runId
+                            ? 'Deleting...'
+                            : 'Delete'}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-        <div className="results-main">
-          <article className="results-card">
-            <div className="results-card-head">
-              <h2>Run Explorer</h2>
-              {detail && <span className={statusClass(detail.status)}>{detail.status}</span>}
+          <div className="results-panel">
+            <div className="results-panel-header">
+              <h2>Settings</h2>
+              <p>{selectedIndicatorIds.length} indicators enabled</p>
             </div>
-            <Link
-              className="summary-link-inline"
-              to={buildExperimentsPath({
-                ...DEFAULT_EXPERIMENT_ROUTE_STATE,
-                type: 'sensitivity',
-                mode: 'view'
-              })}
-            >
-              Open Sensitivity Results
-            </Link>
-            <p>
-              Selected runs: <strong>{selectedRunIds.join(', ') || 'none'}</strong>
-            </p>
-            <p>
-              Window: <strong>{compareWindowLabel(compareWindow)}</strong> | Smoothing:{' '}
-              <strong>{smoothWindow === 0 ? 'Off' : `${smoothWindow}-month moving average`}</strong>
-            </p>
-            <div className="results-controls">
+            <div className="results-controls results-controls-sidebar">
               <label>
                 Window
                 <select
@@ -559,55 +560,82 @@ export function ManualResultsView({
                 </select>
               </label>
             </div>
-          </article>
 
-          <article className="results-card">
-            <h3>Indicators</h3>
-            <p>Select indicators for overlay charts.</p>
-            {showIndicatorsRefreshing && (
-              <LoadingSkeleton
-                as="span"
-                className="loading-skeleton-pill section-loading-row"
-                ariaLabel="Refreshing indicators"
-              />
-            )}
-            {showIndicatorsSkeleton ? (
-              <LoadingSkeletonGroup
-                className="indicator-grid"
-                count={6}
-                itemClassName="loading-skeleton-card indicator-item-skeleton"
-                ariaLabel="Loading indicators"
-              />
-            ) : (
-              <div className="indicator-grid">
-                {availableIndicators.map((indicator) => (
-                  <label
-                    key={indicator.id}
-                    className={`indicator-item ${indicator.available ? '' : 'disabled'}`}
-                  >
-                    <input
-                      type="checkbox"
-                      disabled={!indicator.available}
-                      checked={selectedIndicatorIds.includes(indicator.id)}
-                      onChange={() => toggleIndicatorSelection(indicator.id)}
+            <div className="settings-disclosure">
+              <button
+                type="button"
+                className="result-group-header settings-disclosure-toggle"
+                onClick={() => setIsIndicatorSettingsOpen((current) => !current)}
+              >
+                <span className="result-group-title">{isIndicatorSettingsOpen ? '▾' : '▸'} Indicators</span>
+                <span className="result-group-counts">
+                  <span className="unchanged">{selectedIndicatorIds.length} selected</span>
+                </span>
+              </button>
+              {isIndicatorSettingsOpen && (
+                <div className="settings-disclosure-body">
+                  <p>Select indicators for overlay charts.</p>
+                  {showIndicatorsRefreshing && (
+                    <LoadingSkeleton
+                      as="span"
+                      className="loading-skeleton-pill section-loading-row"
+                      ariaLabel="Refreshing indicators"
                     />
-                    <span>{indicator.title}</span>
-                    <small>
-                      {indicator.units} · {indicator.source}
-                    </small>
-                  </label>
-                ))}
-              </div>
-            )}
+                  )}
+                  {showIndicatorsSkeleton ? (
+                    <LoadingSkeletonGroup
+                      className="indicator-grid"
+                      count={6}
+                      itemClassName="loading-skeleton-card indicator-item-skeleton"
+                      ariaLabel="Loading indicators"
+                    />
+                  ) : (
+                    <GroupedCheckboxSections
+                      sections={groupedIndicatorSections}
+                      onToggle={toggleIndicatorSelection}
+                      className="param-groups indicator-settings-groups"
+                      sectionClassName="indicator-settings-section"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
+
+        <div className="results-main">
+          <article className="results-card">
+            <div className="results-card-head">
+              <h2>Run Explorer</h2>
+              {detail && <span className={statusClass(detail.status)}>{detail.status}</span>}
+            </div>
+            <Link
+              className="summary-link-inline"
+              to={buildExperimentsPath({
+                ...DEFAULT_EXPERIMENT_ROUTE_STATE,
+                type: 'sensitivity',
+                mode: 'view'
+              })}
+            >
+              Open Sensitivity Results
+            </Link>
+            <p>
+              Focused run: <strong>{focusedRunId || 'none'}</strong>
+            </p>
+            <p>
+              Selected runs: <strong>{selectedRunIds.join(', ') || 'none'}</strong>
+            </p>
+            <p>Compare window and indicator controls are available in the Settings panel.</p>
           </article>
 
           <article className="results-card">
-            <h3>KPI Summary (tail_120, monthly unless marked annualised)</h3>
+            <h3>Aggregate Results</h3>
+            <p>Mean is shown by default. Open more details for additional aggregate metrics.</p>
             {showKpiRefreshing && (
               <LoadingSkeleton
                 as="span"
                 className="loading-skeleton-pill section-loading-row"
-                ariaLabel="Refreshing KPI summary"
+                ariaLabel="Refreshing aggregate results"
               />
             )}
             {showKpiSkeleton ? (
@@ -615,25 +643,55 @@ export function ManualResultsView({
                 className="kpi-grid"
                 count={4}
                 itemClassName="loading-skeleton-card kpi-card-skeleton"
-                ariaLabel="Loading KPI summary"
+                ariaLabel="Loading aggregate results"
               />
             ) : (
               <div className="kpi-grid">
-                {sortedKpis.map((kpi) => (
-                  <div key={kpi.indicatorId} className="kpi-card">
-                    <p className="kpi-title">{kpi.title}</p>
-                    <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
-                    <p>CV (month): {formatNumber(kpi.cv, 'ratio')}</p>
-                    <p>Trend (annual): {formatNumber(kpi.annualisedTrend, kpi.units)}</p>
-                    <p>Month Range (month): {formatNumber(kpi.range, kpi.units)}</p>
-                  </div>
-                ))}
+                {sortedKpis.map((kpi) => {
+                  const isExpanded = expandedKpiIds.includes(kpi.indicatorId);
+                  return (
+                    <div key={kpi.indicatorId} className="kpi-card">
+                      <p className="kpi-title">{kpi.title}</p>
+                      <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
+                      <button
+                        type="button"
+                        className="table-toggle"
+                        onClick={() => toggleKpiDetails(kpi.indicatorId)}
+                      >
+                        {isExpanded ? 'Hide details' : 'More details'}
+                      </button>
+                      {isExpanded && (
+                        <div className="kpi-details">
+                          <p>CV (month): {formatNumber(kpi.cv, 'ratio')}</p>
+                          <p>Trend (annual): {formatNumber(kpi.annualisedTrend, kpi.units)}</p>
+                          <p>Month Range (month): {formatNumber(kpi.range, kpi.units)}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </article>
 
           <article className="results-card">
-            <h3>Indicator Overlays</h3>
+            <div className="overlay-card-head">
+              <h3>Indicator Overlays</h3>
+              <label>
+                Indicator
+                <select
+                  value={activeIndicatorId}
+                  disabled={activeIndicatorOptions.length === 0}
+                  onChange={(event) => setActiveIndicatorId(event.target.value)}
+                >
+                  {activeIndicatorOptions.map((indicator) => (
+                    <option key={indicator.id} value={indicator.id}>
+                      {indicator.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             {showOverlayRefreshing && (
               <LoadingSkeleton
                 as="span"
@@ -641,21 +699,23 @@ export function ManualResultsView({
                 ariaLabel="Refreshing indicator overlays"
               />
             )}
-            {showOverlaySkeleton ? (
+            {selectedIndicatorIds.length === 0 ? (
+              <p className="info-banner">Enable at least one indicator in Settings to view an overlay chart.</p>
+            ) : showOverlaySkeleton ? (
               <LoadingSkeletonGroup
                 className="overlay-grid"
-                count={2}
+                count={1}
                 itemClassName="loading-skeleton-card overlay-card-skeleton"
                 ariaLabel="Loading indicator overlays"
               />
+            ) : !activeIndicatorPayload ? (
+              <p className="info-banner">No overlay data is available for the current indicator selection yet.</p>
             ) : (
               <div className="overlay-grid">
-                {overlayIndicators.map((indicatorPayload) => (
-                  <div key={indicatorPayload.indicator.id} className="overlay-card">
-                    <h4>{indicatorPayload.indicator.title}</h4>
-                    <EChart option={buildOverlayOption(indicatorPayload)} className="chart" />
-                  </div>
-                ))}
+                <div key={activeIndicatorPayload.indicator.id} className="overlay-card">
+                  <h4>{activeIndicatorPayload.indicator.title}</h4>
+                  <EChart option={buildOverlayOption(activeIndicatorPayload)} className="chart" />
+                </div>
               </div>
             )}
           </article>

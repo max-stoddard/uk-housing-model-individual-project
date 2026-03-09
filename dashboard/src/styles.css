@@ -292,6 +292,12 @@ code {
   align-items: start;
 }
 
+.results-sidebar {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
 .results-panel {
   background: var(--panel);
   border: 1px solid rgba(17, 32, 24, 0.08);
@@ -526,32 +532,36 @@ code {
   background: #fff;
 }
 
+.results-controls-sidebar {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.settings-disclosure {
+  margin-top: 0.25rem;
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  border-radius: 0.8rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.settings-disclosure-toggle {
+  padding: 0.7rem 0.8rem;
+}
+
+.settings-disclosure-body {
+  padding: 0 0.8rem 0.8rem;
+}
+
+.settings-disclosure-body p {
+  margin-top: 0;
+}
+
 .indicator-grid {
   margin-top: 0.7rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.42rem;
-}
-
-.indicator-item {
-  border: 1px solid rgba(17, 32, 24, 0.11);
-  border-radius: 0.6rem;
-  padding: 0.45rem;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 0.36rem;
-  font-size: 0.84rem;
-}
-
-.indicator-item small {
-  grid-column: 2;
-  color: var(--muted);
-  font-size: 0.74rem;
-}
-
-.indicator-item.disabled {
-  opacity: 0.6;
 }
 
 .kpi-grid {
@@ -582,6 +592,39 @@ code {
 
 .kpi-value {
   font-weight: 700;
+}
+
+.kpi-details {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.overlay-card-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.overlay-card-head h3 {
+  margin: 0;
+}
+
+.overlay-card-head label {
+  display: grid;
+  gap: 0.26rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.overlay-card-head select {
+  min-width: 220px;
+  border: 1px solid rgba(17, 32, 24, 0.16);
+  border-radius: 0.56rem;
+  padding: 0.38rem 0.5rem;
+  font: inherit;
+  background: #fff;
 }
 
 .overlay-grid {
@@ -1512,6 +1555,32 @@ code {
   font-weight: 500;
 }
 
+.checkbox-row-text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.checkbox-row-description {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.checkbox-row-disabled {
+  opacity: 0.6;
+}
+
+.indicator-settings-groups {
+  margin-top: 0.7rem;
+}
+
+.indicator-settings-section {
+  border: 1px solid rgba(17, 32, 24, 0.08);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--panel);
+}
+
 .compare-results {
   display: grid;
   align-content: start;
@@ -2139,5 +2208,10 @@ code {
 
   .indicator-grid {
     grid-template-columns: 1fr;
+  }
+
+  .overlay-card-head select {
+    min-width: 0;
+    width: 100%;
   }
 }
