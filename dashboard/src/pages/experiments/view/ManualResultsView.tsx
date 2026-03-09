@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
-  KpiMetricSummary,
   ResultsCompareIndicator,
   ResultsComparePayload,
   ResultsFileManifestEntry,
@@ -24,7 +23,9 @@ import {
   isRetryableApiError
 } from '../../../lib/api';
 import {
+  KPI_DETAIL_ROWS,
   computeKpiPercentDelta,
+  getKpiMetricValue,
   groupIndicatorsBySource,
   resolveActiveIndicatorId,
   resolveManualRunSelection,
@@ -53,12 +54,6 @@ interface InlineInfoTipProps {
   label: string;
   description: string;
 }
-
-const KPI_DETAIL_ROWS = [
-  { key: 'cv', label: 'CV (month)', units: 'ratio' },
-  { key: 'annualisedTrend', label: 'Trend (annual)', units: 'dynamic' },
-  { key: 'range', label: 'Month Range (month)', units: 'dynamic' }
-] as const;
 
 function isProtectedResultsRun(runId: string): boolean {
   return PROTECTED_RESULTS_RUN_IDS.has(runId.trim());
@@ -205,24 +200,6 @@ function buildOverlayOption(
   };
 }
 
-function getMetricValue(
-  kpi: KpiMetricSummary | null,
-  key: (typeof KPI_DETAIL_ROWS)[number]['key']
-): number | null {
-  if (!kpi) {
-    return null;
-  }
-
-  switch (key) {
-    case 'cv':
-      return kpi.cv;
-    case 'annualisedTrend':
-      return kpi.annualisedTrend;
-    case 'range':
-      return kpi.range;
-  }
-}
-
 export function ManualResultsView({
   canWrite,
   requestedBaselineRunId,
@@ -236,7 +213,7 @@ export function ManualResultsView({
   const [manifest, setManifest] = useState<ResultsFileManifestEntry[]>([]);
   const [selectedIndicatorIds, setSelectedIndicatorIds] = useState<string[]>([]);
   const [activeIndicatorId, setActiveIndicatorId] = useState<string>('');
-  const [expandedKpiIds, setExpandedKpiIds] = useState<string[]>([]);
+  const [showAllKpiDetails, setShowAllKpiDetails] = useState<boolean>(false);
   const [comparePayload, setComparePayload] = useState<ResultsComparePayload | null>(null);
   const [compareWindow, setCompareWindow] = useState<CompareWindow>('post200');
   const [smoothWindow, setSmoothWindow] = useState<SmoothWindow>(12);
@@ -406,14 +383,10 @@ export function ManualResultsView({
   useEffect(() => {
     if (!baselineDetail) {
       setSelectedIndicatorIds([]);
-      setExpandedKpiIds([]);
       return;
     }
 
     setSelectedIndicatorIds((current) => resolveSelectedIndicatorIds(baselineDetail.indicators, current));
-    setExpandedKpiIds((current) =>
-      current.filter((indicatorId) => baselineDetail.kpiSummary.some((kpi) => kpi.indicatorId === indicatorId))
-    );
   }, [baselineDetail]);
 
   useEffect(() => {
@@ -531,12 +504,6 @@ export function ManualResultsView({
 
   const toggleIndicatorSelection = (indicatorId: string) => {
     setSelectedIndicatorIds((current) =>
-      current.includes(indicatorId) ? current.filter((id) => id !== indicatorId) : [...current, indicatorId]
-    );
-  };
-
-  const toggleKpiDetails = (indicatorId: string) => {
-    setExpandedKpiIds((current) =>
       current.includes(indicatorId) ? current.filter((id) => id !== indicatorId) : [...current, indicatorId]
     );
   };
@@ -788,8 +755,24 @@ export function ManualResultsView({
           </article>
 
           <article className="results-card">
-            <h3>Aggregate Results</h3>
-            <p>Mean is shown by default. Open more details for additional aggregate metrics.</p>
+            <div className="aggregate-results-head">
+              <div>
+                <h3>Aggregate Results</h3>
+                <p>
+                  {showAllKpiDetails
+                    ? 'Detailed tables show mean plus all aggregate metrics for every KPI.'
+                    : 'Mean is shown by default. Use More details to switch every KPI card to a detailed table.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="table-toggle aggregate-results-toggle"
+                aria-pressed={showAllKpiDetails}
+                onClick={() => setShowAllKpiDetails((current) => !current)}
+              >
+                {showAllKpiDetails ? 'Hide details' : 'More details'}
+              </button>
+            </div>
             {showKpiRefreshing && (
               <LoadingSkeleton
                 as="span"
@@ -805,74 +788,88 @@ export function ManualResultsView({
                 ariaLabel="Loading aggregate results"
               />
             ) : (
-              <div className="kpi-grid">
+              <div
+                id="aggregate-results-grid"
+                className={['kpi-grid', showAllKpiDetails ? 'kpi-grid-detailed' : ''].filter(Boolean).join(' ')}
+              >
                 {sortedKpis.map((kpi) => {
-                  const isExpanded = expandedKpiIds.includes(kpi.indicatorId);
                   const comparisonKpi = comparisonKpiById.get(kpi.indicatorId) ?? null;
                   const meanDelta = computeKpiPercentDelta(kpi.mean, comparisonKpi?.mean ?? null);
                   return (
                     <div key={kpi.indicatorId} className="kpi-card">
                       <p className="kpi-title">{kpi.title}</p>
-                      {mode === 'single' ? (
-                        <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
+                      {!showAllKpiDetails ? (
+                        mode === 'single' ? (
+                          <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
+                        ) : (
+                          <div className="manual-kpi-compare-grid">
+                            <p>
+                              <span>Baseline</span>
+                              {formatNumber(kpi.mean, kpi.units)}
+                            </p>
+                            <p>
+                              <span>Comparison</span>
+                              {formatNumber(comparisonKpi?.mean ?? null, kpi.units)}
+                            </p>
+                            <p className={`manual-kpi-delta ${deltaClassName(meanDelta)}`}>
+                              <span>% delta</span>
+                              {formatSignedPercent(meanDelta)}
+                            </p>
+                          </div>
+                        )
                       ) : (
-                        <div className="manual-kpi-compare-grid">
-                          <p>
-                            <span>Baseline</span>
-                            {formatNumber(kpi.mean, kpi.units)}
-                          </p>
-                          <p>
-                            <span>Comparison</span>
-                            {formatNumber(comparisonKpi?.mean ?? null, kpi.units)}
-                          </p>
-                          <p className={`manual-kpi-delta ${deltaClassName(meanDelta)}`}>
-                            <span>% delta</span>
-                            {formatSignedPercent(meanDelta)}
-                          </p>
+                        <div className="manual-kpi-detail-table-wrap">
+                          {mode === 'single' ? (
+                            <table className="manual-kpi-detail-table single">
+                              <thead>
+                                <tr>
+                                  <th>Metric</th>
+                                  <th>Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {KPI_DETAIL_ROWS.map((row) => {
+                                  const value = getKpiMetricValue(kpi, row.key);
+                                  const units = row.units === 'dynamic' ? kpi.units : row.units;
+                                  return (
+                                    <tr key={row.key}>
+                                      <td>{row.label}</td>
+                                      <td>{formatNumber(value, units)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <table className="manual-kpi-detail-table compare">
+                              <thead>
+                                <tr>
+                                  <th>Metric</th>
+                                  <th>Baseline</th>
+                                  <th>Comparison</th>
+                                  <th>% delta</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {KPI_DETAIL_ROWS.map((row) => {
+                                  const baselineValue = getKpiMetricValue(kpi, row.key);
+                                  const comparisonValue = getKpiMetricValue(comparisonKpi, row.key);
+                                  const delta = computeKpiPercentDelta(baselineValue, comparisonValue);
+                                  const units = row.units === 'dynamic' ? kpi.units : row.units;
+                                  return (
+                                    <tr key={row.key}>
+                                      <td>{row.label}</td>
+                                      <td>{formatNumber(baselineValue, units)}</td>
+                                      <td>{formatNumber(comparisonValue, units)}</td>
+                                      <td className={deltaClassName(delta)}>{formatSignedPercent(delta)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          )}
                         </div>
                       )}
-                      <button
-                        type="button"
-                        className="table-toggle"
-                        onClick={() => toggleKpiDetails(kpi.indicatorId)}
-                      >
-                        {isExpanded ? 'Hide details' : 'More details'}
-                      </button>
-                      {isExpanded &&
-                        (mode === 'single' ? (
-                          <div className="kpi-details">
-                            <p>CV (month): {formatNumber(kpi.cv, 'ratio')}</p>
-                            <p>Trend (annual): {formatNumber(kpi.annualisedTrend, kpi.units)}</p>
-                            <p>Month Range (month): {formatNumber(kpi.range, kpi.units)}</p>
-                          </div>
-                        ) : (
-                          <table className="manual-kpi-detail-table">
-                            <thead>
-                              <tr>
-                                <th>Metric</th>
-                                <th>Baseline</th>
-                                <th>Comparison</th>
-                                <th>% delta</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {KPI_DETAIL_ROWS.map((row) => {
-                                const baselineValue = getMetricValue(kpi, row.key);
-                                const comparisonValue = getMetricValue(comparisonKpi, row.key);
-                                const delta = computeKpiPercentDelta(baselineValue, comparisonValue);
-                                const units = row.units === 'dynamic' ? kpi.units : row.units;
-                                return (
-                                  <tr key={row.key}>
-                                    <td>{row.label}</td>
-                                    <td>{formatNumber(baselineValue, units)}</td>
-                                    <td>{formatNumber(comparisonValue, units)}</td>
-                                    <td className={deltaClassName(delta)}>{formatSignedPercent(delta)}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        ))}
                     </div>
                   );
                 })}

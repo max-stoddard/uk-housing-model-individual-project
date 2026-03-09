@@ -55,7 +55,9 @@ import {
   parseExperimentRouteState
 } from '../src/pages/experiments/routeState.js';
 import {
+  KPI_DETAIL_ROWS,
   computeKpiPercentDelta,
+  getKpiMetricValue,
   groupIndicatorsBySource,
   resolveActiveIndicatorId,
   resolveManualRunSelection,
@@ -314,6 +316,30 @@ assert.equal(
   computeKpiPercentDelta(100, null),
   null,
   'Expected KPI percent deltas to be null when either side is missing'
+);
+
+assert.deepEqual(
+  KPI_DETAIL_ROWS.map((row) => row.key),
+  ['mean', 'cv', 'annualisedTrend', 'range'],
+  'Expected manual results KPI detail tables to include mean first followed by the remaining aggregate metrics'
+);
+
+assert.equal(
+  getKpiMetricValue(
+    {
+      indicatorId: 'house-price',
+      title: 'Average house price',
+      units: 'GBP',
+      windowType: 'tail_120',
+      mean: 200000,
+      cv: 0.12,
+      annualisedTrend: 3500,
+      range: 50000
+    },
+    'mean'
+  ),
+  200000,
+  'Expected KPI metric lookup to expose mean values for the manual results detail tables'
 );
 
 const defaultExperimentRouteState = parseExperimentRouteState(new URLSearchParams(''));

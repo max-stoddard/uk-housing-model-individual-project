@@ -1,4 +1,5 @@
 import type {
+  KpiMetricKey,
   KpiMetricSummary,
   ResultsCompareIndicator,
   ResultsIndicatorAvailability,
@@ -19,6 +20,19 @@ export interface ManualRunSelection {
   baselineRunId: string;
   comparisonRunId: string;
 }
+
+export interface KpiDetailRow {
+  key: KpiMetricKey;
+  label: string;
+  units: 'dynamic' | 'ratio';
+}
+
+export const KPI_DETAIL_ROWS: KpiDetailRow[] = [
+  { key: 'mean', label: 'Mean (month)', units: 'dynamic' },
+  { key: 'cv', label: 'CV (month)', units: 'ratio' },
+  { key: 'annualisedTrend', label: 'Trend (annual)', units: 'dynamic' },
+  { key: 'range', label: 'Month Range (month)', units: 'dynamic' }
+];
 
 export function groupIndicatorsBySource(
   indicators: ResultsIndicatorAvailability[]
@@ -138,4 +152,8 @@ export function computeKpiPercentDelta(
   }
 
   return ((comparisonValue - baselineValue) / baselineValue) * 100;
+}
+
+export function getKpiMetricValue(kpi: KpiMetricSummary | null, key: KpiMetricKey): number | null {
+  return kpi ? kpi[key] : null;
 }
