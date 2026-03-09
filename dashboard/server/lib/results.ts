@@ -938,7 +938,7 @@ function buildRunDiagnostics(repoRoot: string, runId: string): RunDiagnostics {
     };
   });
 
-  const kpiSummary: KpiMetricSummary[] = CORE_INDICATORS.map((indicator) => {
+  const kpiSummary: KpiMetricSummary[] = ALL_INDICATORS.map((indicator) => {
     const series = getRawSeriesForIndicator(runPath, indicator.id);
     if (series.coverageStatus !== 'supported') {
       return {
