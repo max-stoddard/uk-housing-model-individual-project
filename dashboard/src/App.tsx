@@ -75,6 +75,7 @@ export function App() {
   const [authLoaded, setAuthLoaded] = useState(false);
   const [authError, setAuthError] = useState('');
   const experimentsVisible = isDevEnv && !isProdPreviewEnabled;
+  const validationVisible = !isDevEnv || isProdPreviewEnabled;
 
   const loginPath = `/login?next=${encodeURIComponent(EXPERIMENTS_VIEW_PATH)}`;
 
@@ -160,7 +161,7 @@ export function App() {
               Home
             </NavLink>
             <NavLink to="/compare">Calibration Versions</NavLink>
-            <NavLink to="/validation">Validation</NavLink>
+            {validationVisible && <NavLink to="/validation">Validation</NavLink>}
             {experimentsVisible && <NavLink to="/experiments">Experiments</NavLink>}
             {experimentsVisible && authStatus.authEnabled && !authStatus.canWrite && (
               <NavLink className="main-nav-auth-control main-nav-auth-link" to={loginPath}>
@@ -205,7 +206,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/compare" element={<ComparePage />} />
-            <Route path="/validation" element={<ValidationPage />} />
+            {validationVisible && <Route path="/validation" element={<ValidationPage />} />}
             {experimentsVisible && (
               <Route
                 path="/experiments"

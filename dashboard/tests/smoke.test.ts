@@ -2671,6 +2671,18 @@ assert.ok(
   'App should gate experiments behind the dev-only visibility condition'
 );
 assert.ok(
+  appSource.includes('const validationVisible = !isDevEnv || isProdPreviewEnabled;'),
+  'App should gate validation behind non-dev visibility or preview mode'
+);
+assert.ok(
+  appSource.includes('{validationVisible && <NavLink to="/validation">Validation</NavLink>}'),
+  'App should hide the validation nav in dev mode'
+);
+assert.ok(
+  appSource.includes('{validationVisible && <Route path="/validation" element={<ValidationPage />} />}'),
+  'App should only register the validation route when validation is visible'
+);
+assert.ok(
   appSource.includes("{experimentsVisible && <NavLink to=\"/experiments\">Experiments</NavLink>}"),
   'App should hide the experiments nav when experiments are not visible'
 );
