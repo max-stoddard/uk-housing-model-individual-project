@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
   compareParameters,
   getHomePreview,
@@ -67,7 +69,14 @@ import {
   resolveManualRunSelection,
   resolveSelectedIndicatorIds
 } from '../src/lib/manualResultsView.js';
-import { buildVersionLabelState, formatVersionOptionLabel, getLatestStableVersion } from '../src/lib/versionLabels.js';
+import { ManualSelectionStatusPills } from '../src/components/ManualSelectionStatusPills.js';
+import {
+  buildResultsRunVersionLabelState,
+  buildVersionLabelState,
+  extractVersionFromResultsRunId,
+  formatVersionOptionLabel,
+  getLatestStableVersion
+} from '../src/lib/versionLabels.js';
 import { computeKpiFromValues } from '../server/lib/stats/kpi.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -302,6 +311,85 @@ assert.deepEqual(
     comparisonRunId: ''
   },
   'Expected invalid explicit baseline selection to fall back to the preferred baseline and clear comparison'
+);
+
+assert.equal(
+  extractVersionFromResultsRunId('v4.0-output'),
+  'v4.0',
+  'Expected canonical results run ids to map back to their calibration version'
+);
+
+assert.equal(
+  extractVersionFromResultsRunId('policy-demo-v4.0-output'),
+  '',
+  'Expected non-canonical results run ids not to resolve to calibration versions'
+);
+
+const manualRunVersions = ['v0', 'v4.0', 'v4.1'];
+const manualRunInProgressVersions = ['v4.1'];
+
+const originalRunLabelState = buildResultsRunVersionLabelState(
+  'v0-output',
+  manualRunVersions,
+  manualRunInProgressVersions
+);
+assert.equal(originalRunLabelState?.isOriginal, true, 'Expected v0-output to resolve to the Original label state');
+
+const latestRunLabelState = buildResultsRunVersionLabelState(
+  'v4.0-output',
+  manualRunVersions,
+  manualRunInProgressVersions
+);
+assert.equal(
+  latestRunLabelState?.isLatest,
+  true,
+  'Expected v4.0-output to resolve to Latest when the newer v4.1 snapshot is still in progress'
+);
+
+const inProgressRunLabelState = buildResultsRunVersionLabelState(
+  'v4.1-output',
+  manualRunVersions,
+  manualRunInProgressVersions
+);
+assert.equal(
+  inProgressRunLabelState?.isLatest,
+  false,
+  'Expected in-progress v4.1-output not to resolve to the Latest label state'
+);
+
+assert.equal(
+  buildResultsRunVersionLabelState('fixture-complete-output', manualRunVersions, manualRunInProgressVersions),
+  null,
+  'Expected custom run ids not to render Original/Latest labels'
+);
+
+const latestManualStatusMarkup = renderToStaticMarkup(
+  createElement(ManualSelectionStatusPills, {
+    status: 'complete',
+    versionLabelState: latestRunLabelState
+  })
+);
+
+assert.ok(
+  latestManualStatusMarkup.includes('manual-selection-status-pills'),
+  'Expected manual results summary status pills to render in a grouped container'
+);
+
+assert.ok(
+  latestManualStatusMarkup.includes('>complete<') && latestManualStatusMarkup.includes('>Latest<'),
+  'Expected the manual results summary status pills to render the Latest tag alongside the completion status'
+);
+
+const originalManualStatusMarkup = renderToStaticMarkup(
+  createElement(ManualSelectionStatusPills, {
+    status: 'complete',
+    versionLabelState: originalRunLabelState
+  })
+);
+
+assert.ok(
+  originalManualStatusMarkup.includes('>complete<') && originalManualStatusMarkup.includes('>Original<'),
+  'Expected the manual results summary status pills to render the Original tag alongside the completion status'
 );
 
 assert.equal(

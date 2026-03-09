@@ -9,6 +9,8 @@ export interface VersionLabelState {
   kinds: VersionLabelKind[];
 }
 
+const RESULTS_RUN_VERSION_PATTERN = /^(v\d+(?:\.\d+)*)-output$/;
+
 export function getLatestStableVersion(versions: readonly string[], inProgressVersions: readonly string[]): string {
   const inProgressSet = new Set(inProgressVersions);
   for (let index = versions.length - 1; index >= 0; index -= 1) {
@@ -47,6 +49,24 @@ export function buildVersionLabelState(
     isOriginal,
     kinds
   };
+}
+
+export function extractVersionFromResultsRunId(runId: string): string {
+  const match = RESULTS_RUN_VERSION_PATTERN.exec(runId.trim());
+  return match?.[1] ?? '';
+}
+
+export function buildResultsRunVersionLabelState(
+  runId: string,
+  versions: readonly string[],
+  inProgressVersions: readonly string[]
+): VersionLabelState | null {
+  const version = extractVersionFromResultsRunId(runId);
+  if (!version || versions.length === 0 || !versions.includes(version)) {
+    return null;
+  }
+
+  return buildVersionLabelState(version, getLatestStableVersion(versions, inProgressVersions), new Set(inProgressVersions));
 }
 
 function formatKind(kind: VersionLabelKind): string {

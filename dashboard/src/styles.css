@@ -794,6 +794,13 @@ code {
   gap: 0.45rem;
 }
 
+.manual-selection-status-pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .manual-selection-summary-label {
   min-width: 84px;
   color: var(--muted);

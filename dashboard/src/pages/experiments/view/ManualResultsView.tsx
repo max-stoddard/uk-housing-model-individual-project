@@ -13,6 +13,7 @@ import { CollapsibleSection } from '../../../components/CollapsibleSection';
 import { EChart } from '../../../components/EChart';
 import { GroupedCheckboxSections } from '../../../components/GroupedCheckboxSections';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../../../components/LoadingSkeleton';
+import { ManualSelectionStatusPills } from '../../../components/ManualSelectionStatusPills';
 import {
   API_RETRY_DELAY_MS,
   deleteResultsRun,
@@ -20,6 +21,7 @@ import {
   fetchResultsRunDetail,
   fetchResultsRunFiles,
   fetchResultsRuns,
+  fetchVersions,
   isRetryableApiError
 } from '../../../lib/api';
 import {
@@ -35,6 +37,7 @@ import {
   resolveSelectedIndicatorIds,
   sortKpis
 } from '../../../lib/manualResultsView';
+import { buildResultsRunVersionLabelState } from '../../../lib/versionLabels';
 import { buildExperimentsPath } from '../routeState';
 import { DEFAULT_EXPERIMENT_ROUTE_STATE } from '../types';
 
@@ -211,6 +214,8 @@ export function ManualResultsView({
   const [isDeletingRunId, setIsDeletingRunId] = useState<string>('');
   const [isIndicatorSettingsOpen, setIsIndicatorSettingsOpen] = useState<boolean>(false);
   const [manifestTarget, setManifestTarget] = useState<ManifestTarget>('baseline');
+  const [versions, setVersions] = useState<string[]>([]);
+  const [inProgressVersions, setInProgressVersions] = useState<string[]>([]);
 
   const resolvedSelection = useMemo(
     () => resolveManualRunSelection(runs, requestedBaselineRunId, requestedComparisonRunId),
@@ -225,6 +230,14 @@ export function ManualResultsView({
   );
   const manifestRunId = manifestTarget === 'comparison' && comparisonRunId ? comparisonRunId : baselineRunId;
   const manifestTargetLabel = manifestTarget === 'comparison' && comparisonRunId ? 'Comparison' : 'Baseline';
+  const baselineVersionLabelState = useMemo(
+    () => buildResultsRunVersionLabelState(baselineRunId, versions, inProgressVersions),
+    [baselineRunId, inProgressVersions, versions]
+  );
+  const comparisonVersionLabelState = useMemo(
+    () => buildResultsRunVersionLabelState(comparisonRunId, versions, inProgressVersions),
+    [comparisonRunId, inProgressVersions, versions]
+  );
 
   useEffect(() => {
     if (
@@ -288,6 +301,40 @@ export function ManualResultsView({
       }
     };
   }, [loadRuns]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimer: number | undefined;
+
+    const loadVersions = async () => {
+      try {
+        const payload = await fetchVersions();
+        if (cancelled) {
+          return;
+        }
+        setVersions(payload.versions);
+        setInProgressVersions(payload.inProgressVersions);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        if (isRetryableApiError(error)) {
+          retryTimer = window.setTimeout(() => {
+            void loadVersions();
+          }, API_RETRY_DELAY_MS);
+        }
+      }
+    };
+
+    void loadVersions();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!comparisonRunId && manifestTarget === 'comparison') {
@@ -720,7 +767,12 @@ export function ManualResultsView({
               <div className="manual-selection-summary-row">
                 <span className="manual-selection-summary-label">Baseline</span>
                 <strong>{baselineRunId || 'none'}</strong>
-                {baselineSummary && <span className={statusClass(baselineSummary.status)}>{baselineSummary.status}</span>}
+                {baselineSummary && (
+                  <ManualSelectionStatusPills
+                    status={baselineSummary.status}
+                    versionLabelState={baselineVersionLabelState}
+                  />
+                )}
               </div>
               <div className="manual-selection-summary-row">
                 <span className="manual-selection-summary-label">Comparison</span>
@@ -728,7 +780,10 @@ export function ManualResultsView({
                   <>
                     <strong>{comparisonRunId}</strong>
                     {comparisonSummary && (
-                      <span className={statusClass(comparisonSummary.status)}>{comparisonSummary.status}</span>
+                      <ManualSelectionStatusPills
+                        status={comparisonSummary.status}
+                        versionLabelState={comparisonVersionLabelState}
+                      />
                     )}
                   </>
                 ) : (
