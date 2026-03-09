@@ -78,7 +78,7 @@ export function ExperimentQueueCard({
               {job.type === 'manual' && job.status === 'succeeded' && job.runId && (
                 <Link
                   className="summary-link-inline"
-                  to={`/experiments?type=manual&mode=view&runId=${encodeURIComponent(job.runId)}`}
+                  to={`/experiments?type=manual&mode=view&baselineRunId=${encodeURIComponent(job.runId)}`}
                 >
                   View Experiment Results
                 </Link>

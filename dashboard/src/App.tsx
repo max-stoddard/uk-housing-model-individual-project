@@ -15,7 +15,7 @@ import { ValidationPage } from './pages/ValidationPage';
 
 const AUTH_TOKEN_STORAGE_KEY = 'dashboard.writeAuthToken';
 const PREVIEW_MODE_STORAGE_KEY = 'dashboard.prodPreviewEnabled';
-const EXPERIMENTS_RUN_PATH = '/experiments?mode=run&type=manual';
+const EXPERIMENTS_VIEW_PATH = '/experiments?mode=view&type=manual';
 
 const DEFAULT_AUTH_STATUS: AuthStatusPayload = {
   authEnabled: false,
@@ -76,7 +76,7 @@ export function App() {
   const [authError, setAuthError] = useState('');
   const experimentsVisible = isDevEnv && !isProdPreviewEnabled;
 
-  const loginPath = `/login?next=${encodeURIComponent(EXPERIMENTS_RUN_PATH)}`;
+  const loginPath = `/login?next=${encodeURIComponent(EXPERIMENTS_VIEW_PATH)}`;
 
   const refreshAuthStatus = useCallback(async () => {
     try {
