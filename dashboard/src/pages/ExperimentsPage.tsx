@@ -88,7 +88,9 @@ export function ExperimentsPage({ canWrite, authEnabled }: ExperimentsPageProps)
           authEnabled={authEnabled}
           selectedJobRef={routeState.jobRef}
           onSelectedJobRefChange={(jobRef) => updateRouteState({ jobRef }, true)}
-          onOpenManualResults={(runId) => updateRouteState({ mode: 'view', type: 'manual', runId })}
+          onOpenManualResults={(runId) =>
+            updateRouteState({ mode: 'view', type: 'manual', baselineRunId: runId, comparisonRunId: '' })
+          }
           onOpenSensitivityResults={(experimentId) =>
             updateRouteState({ mode: 'view', type: 'sensitivity', experimentId })
           }
@@ -96,9 +98,12 @@ export function ExperimentsPage({ canWrite, authEnabled }: ExperimentsPageProps)
       ) : (
         <activeConfig.ViewComponent
           canWrite={canWrite}
-          requestedRunId={routeState.runId}
+          requestedBaselineRunId={routeState.baselineRunId}
+          requestedComparisonRunId={routeState.comparisonRunId}
           requestedExperimentId={routeState.experimentId}
-          onFocusedRunIdChange={(runId) => updateRouteState({ runId }, true)}
+          onManualSelectionChange={({ baselineRunId, comparisonRunId }) =>
+            updateRouteState({ baselineRunId, comparisonRunId }, true)
+          }
           onSelectedExperimentIdChange={(experimentId) => updateRouteState({ experimentId }, true)}
           sidebarSubtitle={activeConfig.viewSidebarSubtitle}
         />

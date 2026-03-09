@@ -10,6 +10,8 @@ import {
 interface ExperimentRouteStateInput {
   type?: string;
   mode?: string;
+  baselineRunId?: string;
+  comparisonRunId?: string;
   runId?: string;
   experimentId?: string;
   jobRef?: string;
@@ -37,10 +39,14 @@ export function normaliseExperimentRouteState(
     ? (clean(partial.mode) as ExperimentMode)
     : DEFAULT_EXPERIMENT_ROUTE_STATE.mode;
 
+  const baselineRunId = clean(partial.baselineRunId) || clean(partial.runId);
+  const comparisonRunIdRaw = clean(partial.comparisonRunId);
   const base: ExperimentRouteState = {
     type,
     mode,
-    runId: clean(partial.runId),
+    baselineRunId,
+    comparisonRunId:
+      baselineRunId && comparisonRunIdRaw && comparisonRunIdRaw !== baselineRunId ? comparisonRunIdRaw : '',
     experimentId: clean(partial.experimentId),
     jobRef: clean(partial.jobRef)
   };
@@ -48,7 +54,8 @@ export function normaliseExperimentRouteState(
   if (base.mode === 'run') {
     return {
       ...base,
-      runId: '',
+      baselineRunId: '',
+      comparisonRunId: '',
       experimentId: ''
     };
   }
@@ -63,7 +70,8 @@ export function normaliseExperimentRouteState(
 
   return {
     ...base,
-    runId: '',
+    baselineRunId: '',
+    comparisonRunId: '',
     jobRef: ''
   };
 }
@@ -72,7 +80,8 @@ export function parseExperimentRouteState(searchParams: URLSearchParams): Experi
   return normaliseExperimentRouteState({
     type: clean(searchParams.get('type')),
     mode: clean(searchParams.get('mode')),
-    runId: clean(searchParams.get('runId')),
+    baselineRunId: clean(searchParams.get('baselineRunId')) || clean(searchParams.get('runId')),
+    comparisonRunId: clean(searchParams.get('comparisonRunId')),
     experimentId: clean(searchParams.get('experimentId')),
     jobRef: clean(searchParams.get('jobRef'))
   });
@@ -88,8 +97,11 @@ export function buildExperimentSearchParams(state: ExperimentRouteState): URLSea
     params.set('jobRef', normalised.jobRef);
   }
 
-  if (normalised.mode === 'view' && normalised.type === 'manual' && normalised.runId) {
-    params.set('runId', normalised.runId);
+  if (normalised.mode === 'view' && normalised.type === 'manual' && normalised.baselineRunId) {
+    params.set('baselineRunId', normalised.baselineRunId);
+    if (normalised.comparisonRunId) {
+      params.set('comparisonRunId', normalised.comparisonRunId);
+    }
   }
 
   if (normalised.mode === 'view' && normalised.type === 'sensitivity' && normalised.experimentId) {

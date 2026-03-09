@@ -7,15 +7,17 @@ export type ExperimentMode = (typeof EXPERIMENT_MODES)[number];
 export interface ExperimentRouteState {
   type: ExperimentType;
   mode: ExperimentMode;
-  runId: string;
+  baselineRunId: string;
+  comparisonRunId: string;
   experimentId: string;
   jobRef: string;
 }
 
 export const DEFAULT_EXPERIMENT_ROUTE_STATE: ExperimentRouteState = {
   type: 'manual',
-  mode: 'run',
-  runId: '',
+  mode: 'view',
+  baselineRunId: '',
+  comparisonRunId: '',
   experimentId: '',
   jobRef: ''
 };

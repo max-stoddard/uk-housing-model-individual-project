@@ -4,15 +4,13 @@ import type {
   ModelRunOptionsPayload,
   ModelRunParameterDefinition,
   ModelRunSubmitRequest,
-  ModelRunWarning,
-  ResultsStorageSummary
+  ModelRunWarning
 } from '../../../../shared/types';
 import {
   API_RETRY_DELAY_MS,
   cancelExperimentJob,
   fetchExperimentJobs,
   fetchModelRunOptions,
-  fetchResultsStorageSummary,
   isRetryableApiError,
   submitModelRun,
   submitSensitivityExperiment
@@ -56,7 +54,6 @@ export interface ExperimentRunController {
   pageError: string;
   pendingRunId: string;
   pendingSensitivityExperimentId: string;
-  storageSummary: ResultsStorageSummary | null;
   executionDisabled: boolean;
   manualSubmissionLockedBySensitivity: boolean;
   sensitivitySubmissionLockedByManual: boolean;
@@ -194,8 +191,6 @@ export function useExperimentRunController({
   const [pendingManualJobRef, setPendingManualJobRef] = useState<string>('');
   const [pendingSensitivityJobRef, setPendingSensitivityJobRef] = useState<string>('');
 
-  const [storageSummary, setStorageSummary] = useState<ResultsStorageSummary | null>(null);
-
   const selectedJob = useMemo(
     () => jobs.find((job) => job.jobRef === selectedJobRef) ?? null,
     [jobs, selectedJobRef]
@@ -281,17 +276,6 @@ export function useExperimentRunController({
     }
   };
 
-  const refreshStorageSummary = async () => {
-    try {
-      const payload = await fetchResultsStorageSummary();
-      setStorageSummary(payload);
-    } catch (error) {
-      if (!isRetryableApiError(error)) {
-        setPageError((error as Error).message);
-      }
-    }
-  };
-
   useEffect(() => {
     let cancelled = false;
     let retryTimer: number | undefined;
@@ -305,14 +289,13 @@ export function useExperimentRunController({
       if (!loadedOptions || !loadedOptions.executionEnabled) {
         setIsLoadingJobs(false);
         setJobs([]);
-        setStorageSummary(null);
         if (selectedJobRef) {
           onSelectedJobRefChange('');
         }
         return;
       }
 
-      await Promise.all([refreshJobs(), refreshStorageSummary()]);
+      await refreshJobs();
     };
 
     void load().catch((error: unknown) => {
@@ -349,20 +332,6 @@ export function useExperimentRunController({
       window.clearInterval(interval);
     };
   }, [options?.executionEnabled, selectedJobRef]);
-
-  useEffect(() => {
-    if (!options?.executionEnabled) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      void refreshStorageSummary();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [options?.executionEnabled]);
 
   useEffect(() => {
     const firstNumeric = numericSensitivityParameters[0];
@@ -519,7 +488,7 @@ export function useExperimentRunController({
         setPendingManualJobRef(jobRef);
         onSelectedJobRefChange(jobRef);
       }
-      await Promise.all([refreshJobs(), refreshStorageSummary()]);
+      await refreshJobs();
     } catch (error) {
       setPageError((error as Error).message);
     } finally {
@@ -646,7 +615,6 @@ export function useExperimentRunController({
     pageError,
     pendingRunId,
     pendingSensitivityExperimentId,
-    storageSummary,
     executionDisabled,
     manualSubmissionLockedBySensitivity,
     sensitivitySubmissionLockedByManual,

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { StorageUsageBar } from '../../../components/StorageUsageBar';
 import { buildExperimentsPath } from '../routeState';
 import { DEFAULT_EXPERIMENT_ROUTE_STATE, type ExperimentType } from '../types';
 import { experimentTypeRegistry } from '../registry';
@@ -49,7 +48,7 @@ export function ExperimentRunMode({
               ...DEFAULT_EXPERIMENT_ROUTE_STATE,
               mode: 'view',
               type: 'manual',
-              runId: controller.pendingRunId
+              baselineRunId: controller.pendingRunId
             })}
           >
             View Experiment Results
@@ -71,10 +70,6 @@ export function ExperimentRunMode({
             View Experiment Results
           </Link>
         </p>
-      )}
-
-      {controller.storageSummary && (
-        <StorageUsageBar usedBytes={controller.storageSummary.usedBytes} capBytes={controller.storageSummary.capBytes} />
       )}
 
       {controller.executionDisabled && (

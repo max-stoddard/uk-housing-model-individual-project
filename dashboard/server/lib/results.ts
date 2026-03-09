@@ -1045,8 +1045,8 @@ export function getResultsCompare(
   if (runIds.length === 0) {
     throw new Error('At least one runId is required.');
   }
-  if (runIds.length > 5) {
-    throw new Error('A maximum of 5 runIds can be compared at once.');
+  if (runIds.length > 2) {
+    throw new Error('A maximum of 2 runIds can be compared at once.');
   }
 
   const window = normalizeWindow(requestedWindow);

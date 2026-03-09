@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
+  KpiMetricSummary,
   ResultsCompareIndicator,
   ResultsComparePayload,
   ResultsFileManifestEntry,
   ResultsRunDetail,
   ResultsRunStatus,
-  ResultsRunSummary,
-  ResultsStorageSummary
+  ResultsRunSummary
 } from '../../../../shared/types';
 import type { EChartsOption } from 'echarts';
+import { CollapsibleSection } from '../../../components/CollapsibleSection';
 import { EChart } from '../../../components/EChart';
 import { GroupedCheckboxSections } from '../../../components/GroupedCheckboxSections';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../../../components/LoadingSkeleton';
-import { StorageUsageBar } from '../../../components/StorageUsageBar';
 import {
   API_RETRY_DELAY_MS,
   deleteResultsRun,
@@ -21,30 +21,44 @@ import {
   fetchResultsRunDetail,
   fetchResultsRunFiles,
   fetchResultsRuns,
-  fetchResultsStorageSummary,
   isRetryableApiError
 } from '../../../lib/api';
 import {
+  computeKpiPercentDelta,
   groupIndicatorsBySource,
   resolveActiveIndicatorId,
+  resolveManualRunSelection,
   resolveSelectedIndicatorIds,
   sortKpis
 } from '../../../lib/manualResultsView';
 import { buildExperimentsPath } from '../routeState';
 import { DEFAULT_EXPERIMENT_ROUTE_STATE } from '../types';
 
-const RUN_LIMIT = 5;
 const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.0-output', 'v4.0-output']);
 
 type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;
+type ManifestTarget = 'baseline' | 'comparison';
+type ManualResultsMode = 'single' | 'compare';
 
 interface ManualResultsViewProps {
   canWrite: boolean;
-  requestedRunId: string;
-  onFocusedRunIdChange: (runId: string) => void;
+  requestedBaselineRunId: string;
+  requestedComparisonRunId: string;
+  onManualSelectionChange: (selection: { baselineRunId: string; comparisonRunId: string }) => void;
   sidebarSubtitle: string;
 }
+
+interface InlineInfoTipProps {
+  label: string;
+  description: string;
+}
+
+const KPI_DETAIL_ROWS = [
+  { key: 'cv', label: 'CV (month)', units: 'ratio' },
+  { key: 'annualisedTrend', label: 'Trend (annual)', units: 'dynamic' },
+  { key: 'range', label: 'Month Range (month)', units: 'dynamic' }
+] as const;
 
 function isProtectedResultsRun(runId: string): boolean {
   return PROTECTED_RESULTS_RUN_IDS.has(runId.trim());
@@ -65,6 +79,22 @@ function formatNumber(value: number | null, units: string): string {
     return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
   }
   return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
+}
+
+function formatSignedPercent(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) {
+    return 'n/a';
+  }
+
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function deltaClassName(value: number | null): string {
+  if (value === null || !Number.isFinite(value) || Math.abs(value) < 1e-12) {
+    return 'neutral';
+  }
+  return value > 0 ? 'positive' : 'negative';
 }
 
 function statusClass(status: ResultsRunStatus): string {
@@ -91,10 +121,40 @@ function coverageClass(status: ResultsFileManifestEntry['coverageStatus']): stri
   }
 }
 
-function buildOverlayOption(indicatorPayload: ResultsCompareIndicator): EChartsOption {
+function getRunRoleLabel(runId: string, baselineRunId: string, comparisonRunId: string): string {
+  if (runId === baselineRunId) {
+    return 'Baseline';
+  }
+  if (comparisonRunId && runId === comparisonRunId) {
+    return 'Comparison';
+  }
+  return runId;
+}
+
+function InlineInfoTip({ label, description }: InlineInfoTipProps) {
+  return (
+    <span className="manual-control-header">
+      <span>{label}</span>
+      <button type="button" className="manual-help-trigger" aria-label={`${label} help`}>
+        <span aria-hidden="true" className="manual-help-icon">
+          i
+        </span>
+        <span role="tooltip" className="manual-help-tooltip">
+          {description}
+        </span>
+      </button>
+    </span>
+  );
+}
+
+function buildOverlayOption(
+  indicatorPayload: ResultsCompareIndicator,
+  baselineRunId: string,
+  comparisonRunId: string
+): EChartsOption {
   const xValues = indicatorPayload.seriesByRun[0]?.points.map((point) => String(point.modelTime)) ?? [];
   const series = indicatorPayload.seriesByRun.map((runSeries) => ({
-    name: runSeries.runId,
+    name: getRunRoleLabel(runSeries.runId, baselineRunId, comparisonRunId),
     type: 'line' as const,
     showSymbol: false,
     smooth: false,
@@ -145,68 +205,93 @@ function buildOverlayOption(indicatorPayload: ResultsCompareIndicator): EChartsO
   };
 }
 
+function getMetricValue(
+  kpi: KpiMetricSummary | null,
+  key: (typeof KPI_DETAIL_ROWS)[number]['key']
+): number | null {
+  if (!kpi) {
+    return null;
+  }
+
+  switch (key) {
+    case 'cv':
+      return kpi.cv;
+    case 'annualisedTrend':
+      return kpi.annualisedTrend;
+    case 'range':
+      return kpi.range;
+  }
+}
+
 export function ManualResultsView({
   canWrite,
-  requestedRunId,
-  onFocusedRunIdChange,
+  requestedBaselineRunId,
+  requestedComparisonRunId,
+  onManualSelectionChange,
   sidebarSubtitle
 }: ManualResultsViewProps) {
   const [runs, setRuns] = useState<ResultsRunSummary[]>([]);
-  const [focusedRunId, setFocusedRunId] = useState<string>('');
-  const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
-  const [detail, setDetail] = useState<ResultsRunDetail | null>(null);
+  const [baselineDetail, setBaselineDetail] = useState<ResultsRunDetail | null>(null);
+  const [comparisonDetail, setComparisonDetail] = useState<ResultsRunDetail | null>(null);
   const [manifest, setManifest] = useState<ResultsFileManifestEntry[]>([]);
   const [selectedIndicatorIds, setSelectedIndicatorIds] = useState<string[]>([]);
   const [activeIndicatorId, setActiveIndicatorId] = useState<string>('');
   const [expandedKpiIds, setExpandedKpiIds] = useState<string[]>([]);
   const [comparePayload, setComparePayload] = useState<ResultsComparePayload | null>(null);
   const [compareWindow, setCompareWindow] = useState<CompareWindow>('post200');
-  const [smoothWindow, setSmoothWindow] = useState<SmoothWindow>(0);
+  const [smoothWindow, setSmoothWindow] = useState<SmoothWindow>(12);
   const [loadError, setLoadError] = useState<string>('');
-  const [selectionError, setSelectionError] = useState<string>('');
   const [isLoadingRuns, setIsLoadingRuns] = useState<boolean>(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false);
   const [isLoadingCompare, setIsLoadingCompare] = useState<boolean>(false);
+  const [isLoadingManifest, setIsLoadingManifest] = useState<boolean>(false);
   const [isDeletingRunId, setIsDeletingRunId] = useState<string>('');
-  const [storageSummary, setStorageSummary] = useState<ResultsStorageSummary | null>(null);
   const [isIndicatorSettingsOpen, setIsIndicatorSettingsOpen] = useState<boolean>(false);
+  const [manifestTarget, setManifestTarget] = useState<ManifestTarget>('baseline');
+
+  const resolvedSelection = useMemo(
+    () => resolveManualRunSelection(runs, requestedBaselineRunId, requestedComparisonRunId),
+    [requestedBaselineRunId, requestedComparisonRunId, runs]
+  );
+  const baselineRunId = resolvedSelection.baselineRunId;
+  const comparisonRunId = resolvedSelection.comparisonRunId;
+  const mode: ManualResultsMode = comparisonRunId ? 'compare' : 'single';
+  const selectedRunIds = useMemo(
+    () => (baselineRunId ? (comparisonRunId ? [baselineRunId, comparisonRunId] : [baselineRunId]) : []),
+    [baselineRunId, comparisonRunId]
+  );
+  const manifestRunId = manifestTarget === 'comparison' && comparisonRunId ? comparisonRunId : baselineRunId;
+  const manifestTargetLabel = manifestTarget === 'comparison' && comparisonRunId ? 'Comparison' : 'Baseline';
 
   useEffect(() => {
-    onFocusedRunIdChange(focusedRunId);
-  }, [focusedRunId, onFocusedRunIdChange]);
+    if (
+      requestedBaselineRunId === baselineRunId &&
+      requestedComparisonRunId === comparisonRunId
+    ) {
+      return;
+    }
+
+    onManualSelectionChange({
+      baselineRunId,
+      comparisonRunId
+    });
+  }, [
+    baselineRunId,
+    comparisonRunId,
+    onManualSelectionChange,
+    requestedBaselineRunId,
+    requestedComparisonRunId
+  ]);
 
   const loadRuns = useCallback(async () => {
     setLoadError('');
     setIsLoadingRuns(true);
 
     try {
-      const [runsPayload, storagePayload] = await Promise.all([fetchResultsRuns(), fetchResultsStorageSummary()]);
+      const runsPayload = await fetchResultsRuns();
       setRuns(runsPayload);
-      setStorageSummary(storagePayload);
-      const firstRun = runsPayload[0]?.runId ?? '';
-      setFocusedRunId((current) => (runsPayload.some((run) => run.runId === current) ? current : firstRun));
-      setSelectedRunIds((current) => {
-        if (current.length > 0) {
-          const filtered = current.filter((runId) => runsPayload.some((run) => run.runId === runId));
-          if (filtered.length > 0) {
-            return filtered;
-          }
-        }
-        return firstRun ? [firstRun] : [];
-      });
     } finally {
       setIsLoadingRuns(false);
-    }
-  }, []);
-
-  const refreshStorageSummary = useCallback(async () => {
-    try {
-      const payload = await fetchResultsStorageSummary();
-      setStorageSummary(payload);
-    } catch (error) {
-      if (!isRetryableApiError(error)) {
-        setLoadError((error as Error).message);
-      }
     }
   }, []);
 
@@ -242,32 +327,15 @@ export function ManualResultsView({
   }, [loadRuns]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      void refreshStorageSummary();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [refreshStorageSummary]);
+    if (!comparisonRunId && manifestTarget === 'comparison') {
+      setManifestTarget('baseline');
+    }
+  }, [comparisonRunId, manifestTarget]);
 
   useEffect(() => {
-    if (!requestedRunId || runs.length === 0) {
-      return;
-    }
-
-    if (!runs.some((run) => run.runId === requestedRunId)) {
-      return;
-    }
-
-    setFocusedRunId(requestedRunId);
-    setSelectedRunIds([requestedRunId]);
-  }, [requestedRunId, runs]);
-
-  useEffect(() => {
-    if (!focusedRunId) {
-      setDetail(null);
-      setManifest([]);
+    if (!baselineRunId) {
+      setBaselineDetail(null);
+      setComparisonDetail(null);
       return;
     }
 
@@ -275,13 +343,16 @@ export function ManualResultsView({
     setIsLoadingDetail(true);
     setLoadError('');
 
-    void Promise.all([fetchResultsRunDetail(focusedRunId), fetchResultsRunFiles(focusedRunId)])
-      .then(([runDetail, runFiles]) => {
+    void Promise.all([
+      fetchResultsRunDetail(baselineRunId),
+      comparisonRunId ? fetchResultsRunDetail(comparisonRunId) : Promise.resolve(null)
+    ])
+      .then(([baselinePayload, comparisonPayload]) => {
         if (cancelled) {
           return;
         }
-        setDetail(runDetail);
-        setManifest(runFiles);
+        setBaselineDetail(baselinePayload);
+        setComparisonDetail(comparisonPayload);
       })
       .catch((error) => {
         if (cancelled) {
@@ -298,20 +369,52 @@ export function ManualResultsView({
     return () => {
       cancelled = true;
     };
-  }, [focusedRunId]);
+  }, [baselineRunId, comparisonRunId]);
 
   useEffect(() => {
-    if (!detail) {
+    if (!manifestRunId) {
+      setManifest([]);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingManifest(true);
+    setLoadError('');
+
+    void fetchResultsRunFiles(manifestRunId)
+      .then((files) => {
+        if (!cancelled) {
+          setManifest(files);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setLoadError((error as Error).message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingManifest(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [manifestRunId]);
+
+  useEffect(() => {
+    if (!baselineDetail) {
       setSelectedIndicatorIds([]);
       setExpandedKpiIds([]);
       return;
     }
 
-    setSelectedIndicatorIds((current) => resolveSelectedIndicatorIds(detail.indicators, current));
+    setSelectedIndicatorIds((current) => resolveSelectedIndicatorIds(baselineDetail.indicators, current));
     setExpandedKpiIds((current) =>
-      current.filter((indicatorId) => detail.kpiSummary.some((kpi) => kpi.indicatorId === indicatorId))
+      current.filter((indicatorId) => baselineDetail.kpiSummary.some((kpi) => kpi.indicatorId === indicatorId))
     );
-  }, [detail]);
+  }, [baselineDetail]);
 
   useEffect(() => {
     if (selectedRunIds.length === 0 || selectedIndicatorIds.length === 0) {
@@ -325,16 +428,14 @@ export function ManualResultsView({
 
     void fetchResultsCompare(selectedRunIds, selectedIndicatorIds, compareWindow, smoothWindow)
       .then((payload) => {
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          setComparePayload(payload);
         }
-        setComparePayload(payload);
       })
       .catch((error) => {
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          setLoadError((error as Error).message);
         }
-        setLoadError((error as Error).message);
       })
       .finally(() => {
         if (!cancelled) {
@@ -345,11 +446,17 @@ export function ManualResultsView({
     return () => {
       cancelled = true;
     };
-  }, [selectedRunIds, selectedIndicatorIds, compareWindow, smoothWindow]);
+  }, [compareWindow, selectedIndicatorIds, selectedRunIds, smoothWindow]);
 
-  const availableIndicators = useMemo(() => detail?.indicators ?? [], [detail]);
-  const sortedKpis = useMemo(() => sortKpis(detail?.kpiSummary ?? []), [detail]);
-  const selectedRunSet = useMemo(() => new Set(selectedRunIds), [selectedRunIds]);
+  const runById = useMemo(() => new Map(runs.map((run) => [run.runId, run])), [runs]);
+  const baselineSummary = baselineRunId ? runById.get(baselineRunId) ?? null : null;
+  const comparisonSummary = comparisonRunId ? runById.get(comparisonRunId) ?? null : null;
+  const availableIndicators = useMemo(() => baselineDetail?.indicators ?? [], [baselineDetail]);
+  const sortedKpis = useMemo(() => sortKpis(baselineDetail?.kpiSummary ?? []), [baselineDetail]);
+  const comparisonKpiById = useMemo(
+    () => new Map((comparisonDetail?.kpiSummary ?? []).map((kpi) => [kpi.indicatorId, kpi])),
+    [comparisonDetail]
+  );
   const groupedIndicatorSections = useMemo(
     () =>
       groupIndicatorsBySource(availableIndicators).map((section) => ({
@@ -392,34 +499,37 @@ export function ManualResultsView({
   const showKpiRefreshing = isLoadingDetail && sortedKpis.length > 0;
   const showOverlaySkeleton = isLoadingCompare && overlayIndicators.length === 0 && selectedIndicatorIds.length > 0;
   const showOverlayRefreshing = isLoadingCompare && overlayIndicators.length > 0;
-  const showManifestSkeleton = isLoadingDetail && manifest.length === 0;
-  const showManifestRefreshing = isLoadingDetail && manifest.length > 0;
+  const showManifestSkeleton = isLoadingManifest && manifest.length === 0;
+  const showManifestRefreshing = isLoadingManifest && manifest.length > 0;
 
   useEffect(() => {
     setActiveIndicatorId((current) => resolveActiveIndicatorId(selectedIndicatorIds, overlayIndicators, current));
   }, [overlayIndicators, selectedIndicatorIds]);
 
-  const toggleRunSelection = (runId: string) => {
-    setSelectionError('');
-    setSelectedRunIds((current) => {
-      if (current.includes(runId)) {
-        if (current.length === 1) {
-          setSelectionError('At least one run must remain selected.');
-          return current;
-        }
-        return current.filter((id) => id !== runId);
-      }
+  const updateSelection = useCallback(
+    (nextBaselineRunId: string, nextComparisonRunId: string) => {
+      onManualSelectionChange({
+        baselineRunId: nextBaselineRunId,
+        comparisonRunId:
+          nextComparisonRunId && nextComparisonRunId !== nextBaselineRunId ? nextComparisonRunId : ''
+      });
+    },
+    [onManualSelectionChange]
+  );
 
-      if (current.length >= RUN_LIMIT) {
-        setSelectionError(`Overlay limit reached (${RUN_LIMIT} runs).`);
-        return current;
-      }
-      return [...current, runId];
-    });
+  const setBaselineSelection = (runId: string) => {
+    updateSelection(runId, comparisonRunId === runId ? '' : comparisonRunId);
+  };
+
+  const toggleComparisonSelection = (runId: string) => {
+    if (!baselineRunId || runId === baselineRunId) {
+      return;
+    }
+
+    updateSelection(baselineRunId, comparisonRunId === runId ? '' : runId);
   };
 
   const toggleIndicatorSelection = (indicatorId: string) => {
-    setSelectionError('');
     setSelectedIndicatorIds((current) =>
       current.includes(indicatorId) ? current.filter((id) => id !== indicatorId) : [...current, indicatorId]
     );
@@ -444,7 +554,6 @@ export function ManualResultsView({
       return;
     }
 
-    setSelectionError('');
     setLoadError('');
     setIsDeletingRunId(runId);
     try {
@@ -458,77 +567,103 @@ export function ManualResultsView({
   };
 
   return (
-    <section className="results-layout">
+    <section className="results-layout manual-results-layout">
       {loadError && <p className="error-banner">{loadError}</p>}
-      {selectionError && <p className="waiting-banner">{selectionError}</p>}
-      {storageSummary && <StorageUsageBar usedBytes={storageSummary.usedBytes} capBytes={storageSummary.capBytes} />}
 
       <div className="results-grid">
         <aside className="results-sidebar">
           <div className="results-panel">
-            <div className="results-panel-header">
-              <h2>Runs</h2>
+            <CollapsibleSection
+              title="Run Selection"
+              defaultOpen={false}
+              className="manual-results-disclosure"
+              bodyClassName="manual-results-disclosure-body"
+            >
               <p>{sidebarSubtitle}</p>
-            </div>
-            {showRunsRefreshing && (
-              <LoadingSkeleton
-                as="span"
-                className="loading-skeleton-pill section-loading-row"
-                ariaLabel="Refreshing runs"
-              />
-            )}
-            {showRunsSkeleton ? (
-              <LoadingSkeletonGroup
-                className="run-list-skeleton"
-                count={4}
-                itemClassName="loading-skeleton-card run-item-skeleton"
-                ariaLabel="Loading runs"
-              />
-            ) : (
-              <ul className="run-list">
-                {runs.map((run) => (
-                  <li key={run.runId} className={`run-item ${focusedRunId === run.runId ? 'focused' : ''}`}>
-                    <label className="run-select">
-                      <input
-                        type="checkbox"
-                        checked={selectedRunSet.has(run.runId)}
-                        onChange={() => toggleRunSelection(run.runId)}
-                      />
-                      <span>{run.runId}</span>
-                    </label>
-                    <button
-                      type="button"
-                      className="run-focus-btn"
-                      onClick={() => setFocusedRunId(run.runId)}
-                    >
-                      Focus
-                    </button>
-                    <div className="run-meta">
-                      <span className={statusClass(run.status)}>{run.status}</span>
-                      <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
-                    </div>
-                    <p>
-                      Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
-                    </p>
-                    {canWrite && (
-                      <button
-                        type="button"
-                        className="danger-button"
-                        disabled={isDeletingRunId === run.runId || isProtectedResultsRun(run.runId)}
-                        onClick={() => void deleteRun(run.runId)}
-                        title={isProtectedResultsRun(run.runId) ? 'Protected run cannot be deleted.' : undefined}
+              {showRunsRefreshing && (
+                <LoadingSkeleton
+                  as="span"
+                  className="loading-skeleton-pill section-loading-row"
+                  ariaLabel="Refreshing runs"
+                />
+              )}
+              {showRunsSkeleton ? (
+                <LoadingSkeletonGroup
+                  className="run-list-skeleton"
+                  count={4}
+                  itemClassName="loading-skeleton-card run-item-skeleton"
+                  ariaLabel="Loading runs"
+                />
+              ) : (
+                <ul className="run-list">
+                  {runs.map((run) => {
+                    const isBaselineSelected = baselineRunId === run.runId;
+                    const isComparisonSelected = comparisonRunId === run.runId;
+                    return (
+                      <li
+                        key={run.runId}
+                        className={[
+                          'run-item',
+                          isBaselineSelected ? 'selected-baseline' : '',
+                          isComparisonSelected ? 'selected-comparison' : ''
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
                       >
-                        {isProtectedResultsRun(run.runId)
-                          ? 'Protected'
-                          : isDeletingRunId === run.runId
-                            ? 'Deleting...'
-                            : 'Delete'}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+                        <div className="run-item-head">
+                          <strong>{run.runId}</strong>
+                          <div className="run-role-chips">
+                            {isBaselineSelected && <span className="run-role-chip">Baseline</span>}
+                            {isComparisonSelected && <span className="run-role-chip comparison">Comparison</span>}
+                          </div>
+                        </div>
+
+                        <div className="manual-run-action-row">
+                          <button
+                            type="button"
+                            className={`run-select-btn ${isBaselineSelected ? 'active' : ''}`}
+                            onClick={() => setBaselineSelection(run.runId)}
+                          >
+                            {isBaselineSelected ? 'Baseline selected' : 'Set baseline'}
+                          </button>
+                          <button
+                            type="button"
+                            className={`run-select-btn ${isComparisonSelected ? 'active' : ''}`}
+                            onClick={() => toggleComparisonSelection(run.runId)}
+                            disabled={!baselineRunId || isBaselineSelected}
+                          >
+                            {isComparisonSelected ? 'Clear comparison' : 'Set comparison'}
+                          </button>
+                        </div>
+
+                        <div className="run-meta">
+                          <span className={statusClass(run.status)}>{run.status}</span>
+                          <span>{(run.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+                        </div>
+                        <p>
+                          Coverage: {run.parseCoverage.supportedCount}/{run.parseCoverage.requiredCount} supported
+                        </p>
+                        {canWrite && (
+                          <button
+                            type="button"
+                            className="danger-button"
+                            disabled={isDeletingRunId === run.runId || isProtectedResultsRun(run.runId)}
+                            onClick={() => void deleteRun(run.runId)}
+                            title={isProtectedResultsRun(run.runId) ? 'Protected run cannot be deleted.' : undefined}
+                          >
+                            {isProtectedResultsRun(run.runId)
+                              ? 'Protected'
+                              : isDeletingRunId === run.runId
+                                ? 'Deleting...'
+                                : 'Delete'}
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CollapsibleSection>
           </div>
 
           <div className="results-panel">
@@ -538,7 +673,10 @@ export function ManualResultsView({
             </div>
             <div className="results-controls results-controls-sidebar">
               <label>
-                Window
+                <InlineInfoTip
+                  label="Window"
+                  description="post200 shows all months after the spin-up cutoff at month 200. tail120 shows only the latest 120 months. full shows the entire run including spin-up."
+                />
                 <select
                   value={compareWindow}
                   onChange={(event) => setCompareWindow(event.target.value as CompareWindow)}
@@ -549,7 +687,10 @@ export function ManualResultsView({
                 </select>
               </label>
               <label>
-                Smoothing
+                <InlineInfoTip
+                  label="Smoothing"
+                  description="off shows raw monthly values. 3 shows a trailing 3-month average. 12 shows a trailing 12-month average."
+                />
                 <select
                   value={String(smoothWindow)}
                   onChange={(event) => setSmoothWindow(Number.parseInt(event.target.value, 10) as SmoothWindow)}
@@ -606,25 +747,43 @@ export function ManualResultsView({
         <div className="results-main">
           <article className="results-card">
             <div className="results-card-head">
-              <h2>Run Explorer</h2>
-              {detail && <span className={statusClass(detail.status)}>{detail.status}</span>}
+              <h2>Manual Results</h2>
+              <span className="manual-results-mode-pill">{mode === 'compare' ? 'Compare mode' : 'Single mode'}</span>
             </div>
-            <Link
-              className="summary-link-inline"
-              to={buildExperimentsPath({
-                ...DEFAULT_EXPERIMENT_ROUTE_STATE,
-                type: 'sensitivity',
-                mode: 'view'
-              })}
-            >
-              Open Sensitivity Results
-            </Link>
-            <p>
-              Focused run: <strong>{focusedRunId || 'none'}</strong>
-            </p>
-            <p>
-              Selected runs: <strong>{selectedRunIds.join(', ') || 'none'}</strong>
-            </p>
+            <div className="summary-links">
+              <Link
+                className="summary-link-inline"
+                to={buildExperimentsPath({
+                  ...DEFAULT_EXPERIMENT_ROUTE_STATE,
+                  type: 'sensitivity',
+                  mode: 'view'
+                })}
+              >
+                Open Sensitivity Results
+              </Link>
+            </div>
+
+            <div className="manual-selection-summary">
+              <div className="manual-selection-summary-row">
+                <span className="manual-selection-summary-label">Baseline</span>
+                <strong>{baselineRunId || 'none'}</strong>
+                {baselineSummary && <span className={statusClass(baselineSummary.status)}>{baselineSummary.status}</span>}
+              </div>
+              <div className="manual-selection-summary-row">
+                <span className="manual-selection-summary-label">Comparison</span>
+                {comparisonRunId ? (
+                  <>
+                    <strong>{comparisonRunId}</strong>
+                    {comparisonSummary && (
+                      <span className={statusClass(comparisonSummary.status)}>{comparisonSummary.status}</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="manual-selection-empty">None selected</span>
+                )}
+              </div>
+            </div>
+
             <p>Compare window and indicator controls are available in the Settings panel.</p>
           </article>
 
@@ -649,10 +808,29 @@ export function ManualResultsView({
               <div className="kpi-grid">
                 {sortedKpis.map((kpi) => {
                   const isExpanded = expandedKpiIds.includes(kpi.indicatorId);
+                  const comparisonKpi = comparisonKpiById.get(kpi.indicatorId) ?? null;
+                  const meanDelta = computeKpiPercentDelta(kpi.mean, comparisonKpi?.mean ?? null);
                   return (
                     <div key={kpi.indicatorId} className="kpi-card">
                       <p className="kpi-title">{kpi.title}</p>
-                      <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
+                      {mode === 'single' ? (
+                        <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
+                      ) : (
+                        <div className="manual-kpi-compare-grid">
+                          <p>
+                            <span>Baseline</span>
+                            {formatNumber(kpi.mean, kpi.units)}
+                          </p>
+                          <p>
+                            <span>Comparison</span>
+                            {formatNumber(comparisonKpi?.mean ?? null, kpi.units)}
+                          </p>
+                          <p className={`manual-kpi-delta ${deltaClassName(meanDelta)}`}>
+                            <span>% delta</span>
+                            {formatSignedPercent(meanDelta)}
+                          </p>
+                        </div>
+                      )}
                       <button
                         type="button"
                         className="table-toggle"
@@ -660,13 +838,41 @@ export function ManualResultsView({
                       >
                         {isExpanded ? 'Hide details' : 'More details'}
                       </button>
-                      {isExpanded && (
-                        <div className="kpi-details">
-                          <p>CV (month): {formatNumber(kpi.cv, 'ratio')}</p>
-                          <p>Trend (annual): {formatNumber(kpi.annualisedTrend, kpi.units)}</p>
-                          <p>Month Range (month): {formatNumber(kpi.range, kpi.units)}</p>
-                        </div>
-                      )}
+                      {isExpanded &&
+                        (mode === 'single' ? (
+                          <div className="kpi-details">
+                            <p>CV (month): {formatNumber(kpi.cv, 'ratio')}</p>
+                            <p>Trend (annual): {formatNumber(kpi.annualisedTrend, kpi.units)}</p>
+                            <p>Month Range (month): {formatNumber(kpi.range, kpi.units)}</p>
+                          </div>
+                        ) : (
+                          <table className="manual-kpi-detail-table">
+                            <thead>
+                              <tr>
+                                <th>Metric</th>
+                                <th>Baseline</th>
+                                <th>Comparison</th>
+                                <th>% delta</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {KPI_DETAIL_ROWS.map((row) => {
+                                const baselineValue = getMetricValue(kpi, row.key);
+                                const comparisonValue = getMetricValue(comparisonKpi, row.key);
+                                const delta = computeKpiPercentDelta(baselineValue, comparisonValue);
+                                const units = row.units === 'dynamic' ? kpi.units : row.units;
+                                return (
+                                  <tr key={row.key}>
+                                    <td>{row.label}</td>
+                                    <td>{formatNumber(baselineValue, units)}</td>
+                                    <td>{formatNumber(comparisonValue, units)}</td>
+                                    <td className={deltaClassName(delta)}>{formatSignedPercent(delta)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        ))}
                     </div>
                   );
                 })}
@@ -692,6 +898,9 @@ export function ManualResultsView({
                 </select>
               </label>
             </div>
+            <p>
+              Overlay series are shown in raw units. {mode === 'compare' ? 'Baseline and comparison are labelled by role.' : 'Single-run view uses the baseline selection.'}
+            </p>
             {showOverlayRefreshing && (
               <LoadingSkeleton
                 as="span"
@@ -714,56 +923,87 @@ export function ManualResultsView({
               <div className="overlay-grid">
                 <div key={activeIndicatorPayload.indicator.id} className="overlay-card">
                   <h4>{activeIndicatorPayload.indicator.title}</h4>
-                  <EChart option={buildOverlayOption(activeIndicatorPayload)} className="chart" />
+                  <EChart
+                    option={buildOverlayOption(activeIndicatorPayload, baselineRunId, comparisonRunId)}
+                    className="chart"
+                  />
                 </div>
               </div>
             )}
           </article>
 
           <article className="results-card">
-            <h3>File Manifest ({focusedRunId || 'No run selected'})</h3>
-            {showManifestRefreshing && (
-              <LoadingSkeleton
-                as="span"
-                className="loading-skeleton-pill section-loading-row"
-                ariaLabel="Refreshing file manifest"
-              />
-            )}
-            {showManifestSkeleton ? (
-              <LoadingSkeletonGroup
-                className="manifest-skeleton"
-                count={6}
-                itemClassName="manifest-skeleton-row"
-                ariaLabel="Loading file manifest"
-              />
-            ) : (
-              <div className="manifest-table-wrap">
-                <table className="manifest-table">
-                  <thead>
-                    <tr>
-                      <th>File</th>
-                      <th>Type</th>
-                      <th>Size</th>
-                      <th>Coverage</th>
-                      <th>Note</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {manifest.map((file) => (
-                      <tr key={file.filePath}>
-                        <td>{file.fileName}</td>
-                        <td>{file.fileType}</td>
-                        <td>{(file.sizeBytes / 1024 / 1024).toFixed(2)} MB</td>
-                        <td>
-                          <span className={coverageClass(file.coverageStatus)}>{file.coverageStatus}</span>
-                        </td>
-                        <td>{file.note ?? '—'}</td>
+            <CollapsibleSection
+              title="File Manifest"
+              defaultOpen={false}
+              summary={`${manifestTargetLabel}${manifestRunId ? ` · ${manifestRunId}` : ''}`}
+              className="manual-results-disclosure"
+              bodyClassName="manual-results-disclosure-body"
+            >
+              {mode === 'compare' && comparisonRunId && (
+                <div className="manual-manifest-switcher">
+                  <button
+                    type="button"
+                    className={`filter-pill ${manifestTarget === 'baseline' ? 'active' : ''}`}
+                    onClick={() => setManifestTarget('baseline')}
+                  >
+                    Baseline
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-pill ${manifestTarget === 'comparison' ? 'active' : ''}`}
+                    onClick={() => setManifestTarget('comparison')}
+                  >
+                    Comparison
+                  </button>
+                </div>
+              )}
+              <p>
+                Showing {manifestTargetLabel.toLowerCase()} manifest for <strong>{manifestRunId || 'no run selected'}</strong>.
+              </p>
+              {showManifestRefreshing && (
+                <LoadingSkeleton
+                  as="span"
+                  className="loading-skeleton-pill section-loading-row"
+                  ariaLabel="Refreshing file manifest"
+                />
+              )}
+              {showManifestSkeleton ? (
+                <LoadingSkeletonGroup
+                  className="manifest-skeleton"
+                  count={6}
+                  itemClassName="manifest-skeleton-row"
+                  ariaLabel="Loading file manifest"
+                />
+              ) : (
+                <div className="manifest-table-wrap">
+                  <table className="manifest-table">
+                    <thead>
+                      <tr>
+                        <th>File</th>
+                        <th>Type</th>
+                        <th>Size</th>
+                        <th>Coverage</th>
+                        <th>Note</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {manifest.map((file) => (
+                        <tr key={file.filePath}>
+                          <td>{file.fileName}</td>
+                          <td>{file.fileType}</td>
+                          <td>{(file.sizeBytes / 1024 / 1024).toFixed(2)} MB</td>
+                          <td>
+                            <span className={coverageClass(file.coverageStatus)}>{file.coverageStatus}</span>
+                          </td>
+                          <td>{file.note ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CollapsibleSection>
           </article>
         </div>
       </div>

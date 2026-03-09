@@ -13,9 +13,10 @@ export interface ExperimentRunRendererProps {
 
 export interface ExperimentViewRendererProps {
   canWrite: boolean;
-  requestedRunId: string;
+  requestedBaselineRunId: string;
+  requestedComparisonRunId: string;
   requestedExperimentId: string;
-  onFocusedRunIdChange: (runId: string) => void;
+  onManualSelectionChange: (selection: { baselineRunId: string; comparisonRunId: string }) => void;
   onSelectedExperimentIdChange: (experimentId: string) => void;
   sidebarSubtitle: string;
 }
@@ -29,14 +30,16 @@ interface ExperimentTypeDefinition {
 
 const ManualViewRenderer: ComponentType<ExperimentViewRendererProps> = ({
   canWrite,
-  requestedRunId,
-  onFocusedRunIdChange,
+  requestedBaselineRunId,
+  requestedComparisonRunId,
+  onManualSelectionChange,
   sidebarSubtitle
 }) => (
   <ManualResultsView
     canWrite={canWrite}
-    requestedRunId={requestedRunId}
-    onFocusedRunIdChange={onFocusedRunIdChange}
+    requestedBaselineRunId={requestedBaselineRunId}
+    requestedComparisonRunId={requestedComparisonRunId}
+    onManualSelectionChange={onManualSelectionChange}
     sidebarSubtitle={sidebarSubtitle}
   />
 );
@@ -56,7 +59,7 @@ const SensitivityViewRenderer: ComponentType<ExperimentViewRendererProps> = ({
 export const experimentTypeRegistry: Record<ExperimentType, ExperimentTypeDefinition> = {
   manual: {
     label: 'Manual Parameters',
-    viewSidebarSubtitle: 'Model Runs',
+    viewSidebarSubtitle: 'Baseline required, comparison optional.',
     RunSetupComponent: ManualRunSetupPanel,
     ViewComponent: ManualViewRenderer
   },

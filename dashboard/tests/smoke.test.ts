@@ -55,8 +55,10 @@ import {
   parseExperimentRouteState
 } from '../src/pages/experiments/routeState.js';
 import {
+  computeKpiPercentDelta,
   groupIndicatorsBySource,
   resolveActiveIndicatorId,
+  resolveManualRunSelection,
   resolveSelectedIndicatorIds
 } from '../src/lib/manualResultsView.js';
 import { buildVersionLabelState, formatVersionOptionLabel, getLatestStableVersion } from '../src/lib/versionLabels.js';
@@ -227,17 +229,105 @@ assert.equal(
   'Expected active overlay selection to fall back when the previous indicator is no longer enabled'
 );
 
+const manualSelectionRuns = [
+  {
+    runId: 'v4.1-output',
+    path: 'Results/v4.1-output',
+    modifiedAt: '2026-03-09T00:00:00.000Z',
+    createdAt: '2026-03-09T00:00:00.000Z',
+    sizeBytes: 1,
+    fileCount: 1,
+    status: 'complete' as const,
+    configAvailable: true,
+    parseCoverage: {
+      requiredCount: 1,
+      supportedCount: 1,
+      emptyCount: 0,
+      errorCount: 0
+    }
+  },
+  {
+    runId: 'v4.0-output',
+    path: 'Results/v4.0-output',
+    modifiedAt: '2026-03-08T00:00:00.000Z',
+    createdAt: '2026-03-08T00:00:00.000Z',
+    sizeBytes: 1,
+    fileCount: 1,
+    status: 'complete' as const,
+    configAvailable: true,
+    parseCoverage: {
+      requiredCount: 1,
+      supportedCount: 1,
+      emptyCount: 0,
+      errorCount: 0
+    }
+  },
+  {
+    runId: 'v0-output',
+    path: 'Results/v0-output',
+    modifiedAt: '2026-03-07T00:00:00.000Z',
+    createdAt: '2026-03-07T00:00:00.000Z',
+    sizeBytes: 1,
+    fileCount: 1,
+    status: 'complete' as const,
+    configAvailable: true,
+    parseCoverage: {
+      requiredCount: 1,
+      supportedCount: 1,
+      emptyCount: 0,
+      errorCount: 0
+    }
+  }
+];
+
+assert.deepEqual(
+  resolveManualRunSelection(manualSelectionRuns, '', ''),
+  {
+    baselineRunId: 'v0-output',
+    comparisonRunId: 'v4.0-output'
+  },
+  'Expected manual results default selection to prefer v0-output baseline and v4.0-output comparison'
+);
+
+assert.deepEqual(
+  resolveManualRunSelection(manualSelectionRuns, 'missing-run', 'v4.1-output'),
+  {
+    baselineRunId: 'v0-output',
+    comparisonRunId: ''
+  },
+  'Expected invalid explicit baseline selection to fall back to the preferred baseline and clear comparison'
+);
+
+assert.equal(
+  computeKpiPercentDelta(100, 125),
+  25,
+  'Expected KPI percent deltas to compute relative to the baseline run'
+);
+
+assert.equal(
+  computeKpiPercentDelta(0, 125),
+  null,
+  'Expected KPI percent deltas to be null when the baseline magnitude is too small'
+);
+
+assert.equal(
+  computeKpiPercentDelta(100, null),
+  null,
+  'Expected KPI percent deltas to be null when either side is missing'
+);
+
 const defaultExperimentRouteState = parseExperimentRouteState(new URLSearchParams(''));
 assert.deepEqual(
   defaultExperimentRouteState,
   {
     type: 'manual',
-    mode: 'run',
-    runId: '',
+    mode: 'view',
+    baselineRunId: '',
+    comparisonRunId: '',
     experimentId: '',
     jobRef: ''
   },
-  'Expected empty experiment query params to default to manual run mode.'
+  'Expected empty experiment query params to default to manual results view.'
 );
 
 const invalidExperimentRouteState = parseExperimentRouteState(
@@ -247,18 +337,20 @@ assert.deepEqual(
   invalidExperimentRouteState,
   {
     type: 'manual',
-    mode: 'run',
-    runId: '',
+    mode: 'view',
+    baselineRunId: 'abc',
+    comparisonRunId: '',
     experimentId: '',
-    jobRef: 'manual:job-1'
+    jobRef: ''
   },
-  'Expected invalid route selectors to fall back and clean incompatible params.'
+  'Expected invalid route selectors to fall back to manual results view and clean incompatible params.'
 );
 
 const cleanedViewState = normaliseExperimentRouteState({
   type: 'sensitivity',
   mode: 'view',
-  runId: 'run-1',
+  baselineRunId: 'run-1',
+  comparisonRunId: 'run-2',
   experimentId: 'exp:42',
   jobRef: 'sensitivity:exp:42'
 });
@@ -267,11 +359,33 @@ assert.deepEqual(
   {
     type: 'sensitivity',
     mode: 'view',
-    runId: '',
+    baselineRunId: '',
+    comparisonRunId: '',
     experimentId: 'exp:42',
     jobRef: ''
   },
   'Expected sensitivity view state to keep only experimentId.'
+);
+
+const cleanedManualViewState = normaliseExperimentRouteState({
+  type: 'manual',
+  mode: 'view',
+  baselineRunId: 'v0-output',
+  comparisonRunId: 'v0-output',
+  experimentId: 'exp:42',
+  jobRef: 'manual:job-1'
+});
+assert.deepEqual(
+  cleanedManualViewState,
+  {
+    type: 'manual',
+    mode: 'view',
+    baselineRunId: 'v0-output',
+    comparisonRunId: '',
+    experimentId: '',
+    jobRef: ''
+  },
+  'Expected manual view state to drop duplicate comparison ids and incompatible params.'
 );
 
 const encodedExperimentQuery = buildExperimentSearchParams(cleanedViewState).toString();
@@ -279,6 +393,20 @@ assert.equal(
   encodedExperimentQuery,
   'type=sensitivity&mode=view&experimentId=exp%3A42',
   'Expected deterministic encoding for experiment route deep links.'
+);
+
+const encodedManualExperimentQuery = buildExperimentSearchParams({
+  type: 'manual',
+  mode: 'view',
+  baselineRunId: 'v0-output',
+  comparisonRunId: 'v4.0-output',
+  experimentId: '',
+  jobRef: ''
+}).toString();
+assert.equal(
+  encodedManualExperimentQuery,
+  'type=manual&mode=view&baselineRunId=v0-output&comparisonRunId=v4.0-output',
+  'Expected deterministic encoding for manual baseline/comparison deep links.'
 );
 
 function writeSizedFile(filePath: string, sizeBytes: number): void {
@@ -1378,6 +1506,20 @@ try {
     'Expected smoothing to modify at least one time point'
   );
 
+  const singleRunCompare = getResultsCompare(
+    fixture.root,
+    [fixture.runIds.complete],
+    ['core_mortgageApprovals'],
+    'tail120',
+    0
+  );
+  assert.equal(singleRunCompare.runIds.length, 1, 'Expected compare payload to support single-run manual mode');
+  assert.equal(
+    singleRunCompare.indicators[0]?.seriesByRun.length,
+    1,
+    'Expected single-run compare payload to include exactly one aligned series'
+  );
+
   const overlayCompare = getResultsCompare(
     fixture.root,
     [fixture.runIds.complete, fixture.runIds.sparseCore],
@@ -1419,13 +1561,13 @@ try {
     () =>
       getResultsCompare(
         fixture.root,
-        ['r1', 'r2', 'r3', 'r4', 'r5', 'r6'],
+        ['r1', 'r2', 'r3'],
         ['core_mortgageApprovals'],
         'tail120',
         0
       ),
-    /maximum of 5 runIds/,
-    'Expected compare endpoint guardrail for >5 runs'
+    /maximum of 2 runIds/,
+    'Expected compare endpoint guardrail for more than two selected runs'
   );
 
   assert.throws(
