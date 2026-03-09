@@ -26,7 +26,10 @@ from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was import derived_columns as was_derived
 from scripts.python.helpers.was.dataset import reload_was_modules
 from scripts.python.helpers.was.statistics import weighted_mean_variance_skew, weighted_stats_by_bins
-from scripts.python.helpers.common.paths import resolve_output_path
+from scripts.python.helpers.common.paths import (
+    default_was_output_dir,
+    resolve_output_path,
+)
 
 INCOME_TRIM_PERCENTILE = DEFAULT_INCOME_TRIM_PERCENTILE
 ROUND8_OUTPUT_AGE_MAX = 95.0
@@ -182,7 +185,11 @@ def run_income_age_joint_prob_dist(
 
     output_files = {}
     gross_filename = "AgeGrossIncomeJointDist.csv"
-    gross_output_path = resolve_output_path(gross_filename, output_dir)
+    gross_output_path = resolve_output_path(
+        gross_filename,
+        output_dir,
+        default_dir=default_was_output_dir(),
+    )
     write_joint_distribution(
         gross_output_path,
         "Age",
@@ -195,7 +202,11 @@ def run_income_age_joint_prob_dist(
     )
     output_files["gross"] = gross_output_path
     net_filename = "AgeNetIncomeJointDist.csv"
-    net_output_path = resolve_output_path(net_filename, output_dir)
+    net_output_path = resolve_output_path(
+        net_filename,
+        output_dir,
+        default_dir=default_was_output_dir(),
+    )
     write_joint_distribution(
         net_output_path,
         "Age",
@@ -236,7 +247,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Optional directory for output files. Defaults to current working directory.",
+        help="Optional directory for output files. Defaults to repo-local tmp/was/.",
     )
     args = parser.parse_args()
     run_income_age_joint_prob_dist(args.dataset, output_dir=args.output_dir)

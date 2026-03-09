@@ -21,7 +21,10 @@ from scripts.python.helpers.was.timing import start_timer, end_timer
 from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was import derived_columns as was_derived
 from scripts.python.helpers.was.dataset import reload_was_modules
-from scripts.python.helpers.common.paths import resolve_output_path
+from scripts.python.helpers.common.paths import (
+    default_was_output_dir,
+    resolve_output_path,
+)
 
 GROSS_NON_RENT_INCOME_PERCENTILE = "GrossNonRentIncomePercentile"
 
@@ -85,7 +88,11 @@ def run_btl_probability_per_income_percentile_bin(
         rows.append((percentile / 100, (percentile + 1) / 100, n_btl / n_total))
 
     output_filename = "BTLProbabilityPerIncomePercentileBin.csv"
-    output_path = resolve_output_path(output_filename, output_dir)
+    output_path = resolve_output_path(
+        output_filename,
+        output_dir,
+        default_dir=default_was_output_dir(),
+    )
     write_rows(
         output_path,
         "# Gross non-rental income percentile (lower edge), "
@@ -110,7 +117,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Optional directory for output files. Defaults to current working directory.",
+        help="Optional directory for output files. Defaults to repo-local tmp/was/.",
     )
     args = parser.parse_args()
     run_btl_probability_per_income_percentile_bin(

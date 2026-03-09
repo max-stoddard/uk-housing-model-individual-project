@@ -19,7 +19,10 @@ from scripts.python.helpers.was.row_filters import drop_missing_rows, filter_pos
 from scripts.python.helpers.was.timing import start_timer, end_timer
 from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was.dataset import reload_was_modules
-from scripts.python.helpers.common.paths import resolve_output_path
+from scripts.python.helpers.common.paths import (
+    default_was_output_dir,
+    resolve_output_path,
+)
 
 ROUND8_OUTPUT_AGE_MAX = 95.0
 
@@ -79,7 +82,11 @@ def run_age_distribution(
 
         # Write weighted age distribution for calibration.
         output_filename = f"{age_column}-{config.WAS_DATASET}-Weighted.csv"
-        output_path = resolve_output_path(output_filename, output_dir)
+        output_path = resolve_output_path(
+            output_filename,
+            output_dir,
+            default_dir=default_was_output_dir(),
+        )
         rows = []
         for element, lower_edge, upper_edge in zip(
             frequency, histogram_bin_edges[:-1], histogram_bin_edges[1:]
@@ -109,7 +116,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Optional directory for output files. Defaults to current working directory.",
+        help="Optional directory for output files. Defaults to repo-local tmp/was/.",
     )
     args = parser.parse_args()
     run_age_distribution(args.dataset, output_dir=args.output_dir)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import tempfile
 import unittest
 from pathlib import Path
@@ -92,6 +93,36 @@ class TestWasAgeDist(unittest.TestCase):
             ]
             self.assertAlmostEqual(lower_edge, 75.0)
             self.assertAlmostEqual(upper_edge, 95.0)
+
+    def test_run_age_distribution_without_output_dir_uses_repo_tmp_was(self) -> None:
+        unique_constants = copy.deepcopy(_DummyConstants())
+        unique_constants.WAS_DATASET_AGE_BAND_MAPS = {
+            "AgeDefaultPathTest": unique_constants.WAS_DATASET_AGE_BAND_MAPS["Age8"]
+        }
+        expected_dir = Path(__file__).resolve().parents[3] / "tmp" / "was"
+
+        class _UniqueDummyIoModule:
+            @staticmethod
+            def read_was_data(_data_root: str, _columns: list[str]) -> pd.DataFrame:
+                return pd.DataFrame(
+                    {
+                        "AgeDefaultPathTest": [1, 2, 3, 4, 5, 6, 7, 8],
+                        "weight": [1.0] * 8,
+                    }
+                )
+
+        with patch(
+            "scripts.python.calibration.was.age_dist.reload_was_modules",
+            return_value=(_DummyConfig(), unique_constants, _UniqueDummyIoModule()),
+        ):
+            outputs = run_age_distribution(
+                dataset=was_config.ROUND_8_DATA,
+                output_dir=None,
+            )
+
+        output_path = Path(outputs["output_files"]["AgeDefaultPathTest"])
+        self.assertEqual(output_path.parent, expected_dir)
+        self.assertTrue(output_path.exists())
 
 
 if __name__ == "__main__":

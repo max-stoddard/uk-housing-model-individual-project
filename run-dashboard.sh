@@ -16,7 +16,7 @@ if [[ ! -d node_modules ]]; then
   npm install
 fi
 
-echo "[dashboard] UI:  http://localhost:5173"
+echo "[dashboard] UI:  http://localhost:5421"
 echo "[dashboard] API: http://localhost:8787/api/versions"
 echo "[dashboard] Starting API + React dev server..."
 

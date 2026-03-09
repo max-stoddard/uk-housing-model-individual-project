@@ -20,7 +20,10 @@ from scripts.python.helpers.was import config as was_config
 from scripts.python.helpers.was import derived_columns as was_derived
 from scripts.python.helpers.was.dataset import reload_was_modules
 from scripts.python.helpers.was.statistics import log_binned_mean_variance_skew
-from scripts.python.helpers.common.paths import resolve_output_path
+from scripts.python.helpers.common.paths import (
+    default_was_output_dir,
+    resolve_output_path,
+)
 
 
 def run_total_wealth_distribution(
@@ -118,7 +121,11 @@ def run_total_wealth_distribution(
             output_filename = (
                 f"{financial_wealth_measure}-{housing_wealth_measure}-Weighted.csv"
             )
-            output_path = resolve_output_path(output_filename, output_dir)
+            output_path = resolve_output_path(
+                output_filename,
+                output_dir,
+                default_dir=default_was_output_dir(),
+            )
             write_1d_distribution(
                 output_path,
                 label,
@@ -154,7 +161,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Optional directory for output files. Defaults to current working directory.",
+        help="Optional directory for output files. Defaults to repo-local tmp/was/.",
     )
     args = parser.parse_args()
     run_total_wealth_distribution(args.dataset, output_dir=args.output_dir)
