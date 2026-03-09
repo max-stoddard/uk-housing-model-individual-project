@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { CompareResponse, ParameterCardMeta, ParameterGroup } from '../../shared/types';
 import { API_RETRY_DELAY_MS, fetchCatalog, fetchCompare, fetchVersions, isRetryableApiError } from '../lib/api';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 import { CompareCard } from '../components/CompareCard';
 import { GroupedCheckboxSections } from '../components/GroupedCheckboxSections';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../components/LoadingSkeleton';
@@ -26,6 +27,10 @@ type ViewMode = 'single' | 'compare';
 
 function getDefaultDisplayVersion(versions: string[], inProgressVersions: string[]): string {
   return getLatestStableVersion(versions, inProgressVersions) || (versions[versions.length - 1] ?? '');
+}
+
+function getOriginalDisplayVersion(versions: string[]): string {
+  return versions.includes('v0') ? 'v0' : (versions[0] ?? '');
 }
 
 function getVersionTagClassName(kind: VersionLabelKind): string {
@@ -106,7 +111,7 @@ export function ComparePage() {
   const [isBootstrapReady, setIsBootstrapReady] = useState<boolean>(false);
   const [isWaitingForApi, setIsWaitingForApi] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSetupOpen, setIsSetupOpen] = useState<boolean>(true);
+  const [isSetupOpen, setIsSetupOpen] = useState<boolean>(false);
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>('all');
   const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({});
   const defaultOpenGroup = GROUP_ORDER[0];
@@ -130,10 +135,17 @@ export function ComparePage() {
         const defaultDisplayVersion = getDefaultDisplayVersion(versionList, versionsPayload.inProgressVersions);
         const currentParams = new URLSearchParams(searchParamsKey);
         const requestedModeRaw = currentParams.get('mode')?.trim() ?? '';
-        const requestedMode: ViewMode = requestedModeRaw === 'compare' ? 'compare' : 'single';
+        const hasRequestedMode = requestedModeRaw.length > 0;
+        const requestedMode: ViewMode = hasRequestedMode
+          ? requestedModeRaw === 'compare'
+            ? 'compare'
+            : 'single'
+          : 'compare';
         const requestedVersionRaw = currentParams.get('version')?.trim() ?? '';
         const requestedVersion = versionList.includes(requestedVersionRaw) ? requestedVersionRaw : '';
         const singleVersion = requestedVersion || defaultDisplayVersion;
+        const defaultCompareLeftVersion = getOriginalDisplayVersion(versionList);
+        const compareLeftVersion = hasRequestedMode ? (versionList[0] ?? '') : defaultCompareLeftVersion;
         const compareRightVersion = requestedVersion || defaultDisplayVersion;
 
         setVersions(versionList);
@@ -142,7 +154,7 @@ export function ComparePage() {
         setSelectedIds(catalogList.map((item) => item.id));
         setMode(requestedMode);
         setSelectedVersion(singleVersion);
-        setLeft(versionList[0] ?? '');
+        setLeft(compareLeftVersion);
         setRight(compareRightVersion);
         setIsBootstrapReady(true);
         setIsBootstrapping(false);
@@ -488,21 +500,34 @@ export function ComparePage() {
             onChange={(event) => setSearch(event.target.value)}
           />
 
-          <button type="button" className="secondary-button" onClick={toggleAll}>
-            {selectedIds.length === catalog.length ? 'Clear all' : 'Select all'}
-          </button>
+          <CollapsibleSection
+            title="Parameter filters"
+            defaultOpen={false}
+            summary={`${selectedIds.length} selected`}
+            className="compare-filter-disclosure"
+            bodyClassName="compare-filter-disclosure-body"
+          >
+            <button type="button" className="secondary-button" onClick={toggleAll}>
+              {selectedIds.length === catalog.length ? 'Clear all' : 'Select all'}
+            </button>
 
-          <GroupedCheckboxSections sections={setupSections} onToggle={toggleId} />
+            <GroupedCheckboxSections sections={setupSections} onToggle={toggleId} />
+          </CollapsibleSection>
         </aside>
       ) : (
         <button
           type="button"
           className="setup-rail-toggle"
           onClick={() => setIsSetupOpen(true)}
-          aria-label="Open setup panel"
-          title="Open setup"
+          aria-label="Open workspace setup"
+          title="Open workspace setup"
         >
-          ☰
+          <svg viewBox="0 0 20 20" role="img" aria-hidden="true">
+            <path
+              d="M11.85 2.36a.75.75 0 0 0-1.47 0l-.22 1.18a6.71 6.71 0 0 0-1.72.71l-1.01-.64a.75.75 0 0 0-.98.12L5.4 4.78a.75.75 0 0 0-.12.98l.64 1.01c-.3.54-.54 1.11-.71 1.72l-1.18.22a.75.75 0 0 0 0 1.47l1.18.22c.17.61.41 1.18.71 1.72l-.64 1.01a.75.75 0 0 0 .12.98l1.05 1.05a.75.75 0 0 0 .98.12l1.01-.64c.54.3 1.11.54 1.72.71l.22 1.18a.75.75 0 0 0 1.47 0l.22-1.18c.61-.17 1.18-.41 1.72-.71l1.01.64a.75.75 0 0 0 .98-.12l1.05-1.05a.75.75 0 0 0 .12-.98l-.64-1.01c.3-.54.54-1.11.71-1.72l1.18-.22a.75.75 0 0 0 0-1.47l-1.18-.22a6.71 6.71 0 0 0-.71-1.72l.64-1.01a.75.75 0 0 0-.12-.98l-1.05-1.05a.75.75 0 0 0-.98-.12l-1.01.64a6.71 6.71 0 0 0-1.72-.71l-.22-1.18ZM10 7.25a2.75 2.75 0 1 1 0 5.5a2.75 2.75 0 0 1 0-5.5Z"
+              fill="currentColor"
+            />
+          </svg>
         </button>
       )}
 
