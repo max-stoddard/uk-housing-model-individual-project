@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { CompareResponse, ParameterCardMeta, ParameterGroup } from '../../shared/types';
 import { API_RETRY_DELAY_MS, fetchCatalog, fetchCompare, fetchVersions, isRetryableApiError } from '../lib/api';
 import { CompareCard } from '../components/CompareCard';
+import { GroupedCheckboxSections } from '../components/GroupedCheckboxSections';
 import { LoadingSkeleton, LoadingSkeletonGroup } from '../components/LoadingSkeleton';
 import {
   buildVersionLabelState,
@@ -299,6 +300,19 @@ export function ComparePage() {
   }, [catalog, search]);
 
   const setupGrouped = useMemo(() => groupCatalog(filteredCatalog), [filteredCatalog]);
+  const setupSections = useMemo(
+    () =>
+      [...setupGrouped.entries()].map(([groupName, entries]) => ({
+        id: groupName,
+        title: groupName,
+        items: entries.map((entry) => ({
+          id: entry.id,
+          label: entry.title,
+          checked: selectedIds.includes(entry.id)
+        }))
+      })),
+    [selectedIds, setupGrouped]
+  );
 
   const groupedResults = useMemo(() => groupCompareItems(compareData, changeFilter, mode), [compareData, changeFilter, mode]);
 
@@ -478,23 +492,7 @@ export function ComparePage() {
             {selectedIds.length === catalog.length ? 'Clear all' : 'Select all'}
           </button>
 
-          <div className="param-groups">
-            {[...setupGrouped.entries()].map(([groupName, entries]) => (
-              <div key={groupName}>
-                <h3>{groupName}</h3>
-                {entries.map((entry) => (
-                  <label key={entry.id} className="checkbox-row">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(entry.id)}
-                      onChange={() => toggleId(entry.id)}
-                    />
-                    <span>{entry.title}</span>
-                  </label>
-                ))}
-              </div>
-            ))}
-          </div>
+          <GroupedCheckboxSections sections={setupSections} onToggle={toggleId} />
         </aside>
       ) : (
         <button
