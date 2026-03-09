@@ -54,6 +54,11 @@ import {
   normaliseExperimentRouteState,
   parseExperimentRouteState
 } from '../src/pages/experiments/routeState.js';
+import {
+  groupIndicatorsBySource,
+  resolveActiveIndicatorId,
+  resolveSelectedIndicatorIds
+} from '../src/lib/manualResultsView.js';
 import { buildVersionLabelState, formatVersionOptionLabel, getLatestStableVersion } from '../src/lib/versionLabels.js';
 import { computeKpiFromValues } from '../server/lib/stats/kpi.js';
 
@@ -102,6 +107,125 @@ assert.equal(kpiZeroMean.cv, null, 'Expected KPI CV to be null when mean is near
 
 const kpiSmallWindow = computeKpiFromValues([1, 2]);
 assertClose(kpiSmallWindow.range ?? NaN, 0.9, 1e-9, 'Expected KPI percentile interpolation for small window');
+
+const groupedIndicators = groupIndicatorsBySource([
+  {
+    id: 'core-price',
+    title: 'Core price',
+    units: 'GBP',
+    description: '',
+    source: 'core_indicator',
+    available: true,
+    coverageStatus: 'supported'
+  },
+  {
+    id: 'output-sales',
+    title: 'Output sales',
+    units: 'count',
+    description: '',
+    source: 'output',
+    available: true,
+    coverageStatus: 'supported'
+  }
+]);
+assert.deepEqual(
+  groupedIndicators.map((group) => ({ id: group.id, ids: group.items.map((item) => item.id) })),
+  [
+    { id: 'core_indicator', ids: ['core-price'] },
+    { id: 'output', ids: ['output-sales'] }
+  ],
+  'Expected manual results indicators to group by core_indicator and output'
+);
+
+const resolvedDefaultIndicators = resolveSelectedIndicatorIds(
+  [
+    {
+      id: 'core-price',
+      title: 'Core price',
+      units: 'GBP',
+      description: '',
+      source: 'core_indicator',
+      available: true,
+      coverageStatus: 'supported'
+    },
+    {
+      id: 'output-sales',
+      title: 'Output sales',
+      units: 'count',
+      description: '',
+      source: 'output',
+      available: true,
+      coverageStatus: 'supported'
+    },
+    {
+      id: 'hidden',
+      title: 'Hidden',
+      units: 'count',
+      description: '',
+      source: 'output',
+      available: false,
+      coverageStatus: 'unsupported'
+    }
+  ],
+  []
+);
+assert.deepEqual(
+  resolvedDefaultIndicators,
+  ['core-price', 'output-sales'],
+  'Expected manual results to default-select all available indicators'
+);
+
+assert.equal(
+  resolveActiveIndicatorId(
+    ['core-price', 'output-sales'],
+    [
+      {
+        indicator: {
+          id: 'core-price',
+          title: 'Core price',
+          units: 'GBP',
+          description: '',
+          source: 'core_indicator'
+        },
+        seriesByRun: []
+      },
+      {
+        indicator: {
+          id: 'output-sales',
+          title: 'Output sales',
+          units: 'count',
+          description: '',
+          source: 'output'
+        },
+        seriesByRun: []
+      }
+    ],
+    ''
+  ),
+  'core-price',
+  'Expected manual results to default the active overlay indicator to the first available comparison series'
+);
+
+assert.equal(
+  resolveActiveIndicatorId(
+    ['output-sales'],
+    [
+      {
+        indicator: {
+          id: 'output-sales',
+          title: 'Output sales',
+          units: 'count',
+          description: '',
+          source: 'output'
+        },
+        seriesByRun: []
+      }
+    ],
+    'core-price'
+  ),
+  'output-sales',
+  'Expected active overlay selection to fall back when the previous indicator is no longer enabled'
+);
 
 const defaultExperimentRouteState = parseExperimentRouteState(new URLSearchParams(''));
 assert.deepEqual(
