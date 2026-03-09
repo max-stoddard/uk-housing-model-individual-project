@@ -38,7 +38,7 @@ import {
 import { buildExperimentsPath } from '../routeState';
 import { DEFAULT_EXPERIMENT_ROUTE_STATE } from '../types';
 
-const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v1.0-output', 'v2.0-output', 'v3.0-output', 'v4.0-output']);
+const PROTECTED_RESULTS_RUN_IDS = new Set(['v0-output', 'v4.0-output']);
 
 type CompareWindow = 'post200' | 'tail120' | 'full';
 type SmoothWindow = 0 | 3 | 12;

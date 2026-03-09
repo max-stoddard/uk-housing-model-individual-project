@@ -1655,7 +1655,7 @@ try {
     /Unknown run: \.\./,
     'Expected traversal-style run ids to be rejected for run deletion'
   );
-  for (const protectedRunId of ['v0-output', 'v1.0-output', 'v2.0-output', 'v3.0-output', 'v4.0-output']) {
+  for (const protectedRunId of ['v0-output', 'v4.0-output']) {
     assert.throws(
       () => deleteResultsRun(fixture.root, protectedRunId),
       /protected/,
