@@ -56,8 +56,12 @@ import {
 } from '../src/pages/experiments/routeState.js';
 import {
   KPI_DETAIL_ROWS,
+  computeKpiDeltaValue,
   computeKpiPercentDelta,
+  formatKpiDeltaValue,
+  formatKpiValue,
   getKpiMetricValue,
+  getKpiDeltaLabel,
   groupIndicatorsBySource,
   resolveActiveIndicatorId,
   resolveManualRunSelection,
@@ -340,6 +344,39 @@ assert.equal(
   ),
   200000,
   'Expected KPI metric lookup to expose mean values for the manual results detail tables'
+);
+
+assert.equal(formatKpiValue(1.33, '%'), '1.33%', 'Expected percent KPI values to show an explicit percent suffix');
+
+assert.equal(formatKpiValue(4.5, 'ratio'), '4.5x', 'Expected ratio KPI values to show an x suffix');
+
+assert.equal(formatKpiValue(0.035, 'rate'), '3.5%', 'Expected rate KPI values to render as human percentages');
+
+assert.equal(getKpiDeltaLabel('%'), 'pp delta', 'Expected percent-like KPI rows to use percentage-point delta labels');
+
+assertClose(
+  computeKpiDeltaValue(-0.96, 1.33, '%') ?? NaN,
+  2.29,
+  1e-9,
+  'Expected House Price Growth deltas to be computed in percentage points'
+);
+
+assert.equal(
+  formatKpiDeltaValue(computeKpiDeltaValue(-0.96, 1.33, '%'), '%'),
+  '+2.29 pp',
+  'Expected percent-like KPI deltas to render in percentage points'
+);
+
+assert.equal(
+  computeKpiDeltaValue(100, 125, 'count'),
+  25,
+  'Expected non-percent KPI deltas to remain relative percent changes'
+);
+
+assert.equal(
+  formatKpiDeltaValue(computeKpiDeltaValue(100, 125, 'count'), 'count'),
+  '+25.00%',
+  'Expected non-percent KPI deltas to keep percent formatting'
 );
 
 const defaultExperimentRouteState = parseExperimentRouteState(new URLSearchParams(''));
@@ -1464,7 +1501,7 @@ try {
   assert.equal(sparseRun?.status, 'partial', 'Expected sparse-core fixture run to be classified as partial');
 
   const runDetail = getResultsRunDetail(fixture.root, fixture.runIds.complete);
-  assert.equal(runDetail.kpiSummary.length, 15, 'Expected 15 core KPI summary metrics');
+  assert.equal(runDetail.kpiSummary.length, 27, 'Expected KPI summary metrics for all 27 indicators');
   assert.equal(runDetail.indicators.length, 27, 'Expected 27 total indicator definitions (15 core + 12 output)');
   assert.ok(runDetail.configAvailable, 'Expected complete fixture run to report config.properties availability');
   const firstKpi = runDetail.kpiSummary[0];
@@ -1485,6 +1522,10 @@ try {
   assert.ok(
     runDetail.indicators.some((indicator) => indicator.id === 'output_interestRate' && indicator.available),
     'Expected output interest rate indicator to be available on complete fixture run'
+  );
+  assert.ok(
+    runDetail.kpiSummary.some((kpi) => kpi.indicatorId === 'output_interestRate'),
+    'Expected KPI summary to include output indicators such as output interest rate'
   );
 
   const scenarioDetail = getResultsRunDetail(fixture.root, fixture.runIds.noConfig);

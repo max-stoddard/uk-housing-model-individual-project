@@ -9,6 +9,7 @@ import type {
 export const DEFAULT_MANUAL_BASELINE_RUN_ID = 'v0-output';
 export const DEFAULT_MANUAL_COMPARISON_RUN_ID = 'v4.0-output';
 const KPI_BASELINE_EPSILON = 1e-12;
+const KPI_DELTA_DECIMALS = 2;
 
 export interface GroupedIndicatorSection {
   id: 'core_indicator' | 'output';
@@ -156,4 +157,78 @@ export function computeKpiPercentDelta(
 
 export function getKpiMetricValue(kpi: KpiMetricSummary | null, key: KpiMetricKey): number | null {
   return kpi ? kpi[key] : null;
+}
+
+function isPointDeltaUnit(units: string): boolean {
+  return units === '%' || units === 'rate';
+}
+
+function formatSignedFixed(value: number, suffix: string): string {
+  const normalizedValue = Math.abs(value) < KPI_BASELINE_EPSILON ? 0 : value;
+  const sign = normalizedValue >= 0 ? '+' : '';
+  return `${sign}${normalizedValue.toLocaleString('en-GB', {
+    minimumFractionDigits: KPI_DELTA_DECIMALS,
+    maximumFractionDigits: KPI_DELTA_DECIMALS
+  })}${suffix}`;
+}
+
+export function formatKpiValue(value: number | null, units: string): string {
+  if (value === null || !Number.isFinite(value)) {
+    return 'n/a';
+  }
+
+  if (units === 'GBP') {
+    return `£${value.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
+  }
+  if (units === '%') {
+    return `${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`;
+  }
+  if (units === 'rate') {
+    return `${(value * 100).toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`;
+  }
+  if (units === 'ratio') {
+    return `${value.toLocaleString('en-GB', { maximumFractionDigits: 3 })}x`;
+  }
+  if (units === 'count' || units === 'count/month') {
+    return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+  }
+  return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
+}
+
+export function computeKpiDeltaValue(
+  baselineValue: number | null,
+  comparisonValue: number | null,
+  units: string
+): number | null {
+  if (
+    baselineValue === null ||
+    comparisonValue === null ||
+    !Number.isFinite(baselineValue) ||
+    !Number.isFinite(comparisonValue)
+  ) {
+    return null;
+  }
+
+  if (units === '%') {
+    return comparisonValue - baselineValue;
+  }
+  if (units === 'rate') {
+    return (comparisonValue - baselineValue) * 100;
+  }
+  return computeKpiPercentDelta(baselineValue, comparisonValue);
+}
+
+export function getKpiDeltaLabel(units: string): string {
+  return isPointDeltaUnit(units) ? 'pp delta' : '% delta';
+}
+
+export function formatKpiDeltaValue(value: number | null, units: string): string {
+  if (value === null || !Number.isFinite(value)) {
+    return 'n/a';
+  }
+
+  if (isPointDeltaUnit(units)) {
+    return formatSignedFixed(value, ' pp');
+  }
+  return formatSignedFixed(value, '%');
 }

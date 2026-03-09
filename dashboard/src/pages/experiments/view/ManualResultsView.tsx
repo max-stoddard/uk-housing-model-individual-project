@@ -24,8 +24,11 @@ import {
 } from '../../../lib/api';
 import {
   KPI_DETAIL_ROWS,
-  computeKpiPercentDelta,
+  computeKpiDeltaValue,
+  formatKpiDeltaValue,
+  formatKpiValue,
   getKpiMetricValue,
+  getKpiDeltaLabel,
   groupIndicatorsBySource,
   resolveActiveIndicatorId,
   resolveManualRunSelection,
@@ -57,32 +60,6 @@ interface InlineInfoTipProps {
 
 function isProtectedResultsRun(runId: string): boolean {
   return PROTECTED_RESULTS_RUN_IDS.has(runId.trim());
-}
-
-function formatNumber(value: number | null, units: string): string {
-  if (value === null) {
-    return 'n/a';
-  }
-
-  if (units === 'GBP') {
-    return `£${value.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
-  }
-  if (units === '%' || units === 'rate') {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
-  }
-  if (units === 'count' || units === 'count/month') {
-    return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
-  }
-  return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
-}
-
-function formatSignedPercent(value: number | null): string {
-  if (value === null || !Number.isFinite(value)) {
-    return 'n/a';
-  }
-
-  const sign = value >= 0 ? '+' : '';
-  return `${sign}${value.toFixed(2)}%`;
 }
 
 function deltaClassName(value: number | null): string {
@@ -165,7 +142,16 @@ function buildOverlayOption(
         if (typeof value !== 'number' || Number.isNaN(value)) {
           return 'n/a';
         }
-        return formatNumber(value, indicatorPayload.indicator.units);
+        if (indicatorPayload.indicator.units === 'GBP') {
+          return `£${value.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
+        }
+        if (indicatorPayload.indicator.units === '%' || indicatorPayload.indicator.units === 'rate') {
+          return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+        }
+        if (indicatorPayload.indicator.units === 'count' || indicatorPayload.indicator.units === 'count/month') {
+          return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+        }
+        return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
       }
     },
     legend: {
@@ -794,26 +780,26 @@ export function ManualResultsView({
               >
                 {sortedKpis.map((kpi) => {
                   const comparisonKpi = comparisonKpiById.get(kpi.indicatorId) ?? null;
-                  const meanDelta = computeKpiPercentDelta(kpi.mean, comparisonKpi?.mean ?? null);
+                  const meanDelta = computeKpiDeltaValue(kpi.mean, comparisonKpi?.mean ?? null, kpi.units);
                   return (
                     <div key={kpi.indicatorId} className="kpi-card">
                       <p className="kpi-title">{kpi.title}</p>
                       {!showAllKpiDetails ? (
                         mode === 'single' ? (
-                          <p className="kpi-value">Mean (month): {formatNumber(kpi.mean, kpi.units)}</p>
+                          <p className="kpi-value">Mean (month): {formatKpiValue(kpi.mean, kpi.units)}</p>
                         ) : (
                           <div className="manual-kpi-compare-grid">
                             <p>
                               <span>Baseline</span>
-                              {formatNumber(kpi.mean, kpi.units)}
+                              {formatKpiValue(kpi.mean, kpi.units)}
                             </p>
                             <p>
                               <span>Comparison</span>
-                              {formatNumber(comparisonKpi?.mean ?? null, kpi.units)}
+                              {formatKpiValue(comparisonKpi?.mean ?? null, kpi.units)}
                             </p>
                             <p className={`manual-kpi-delta ${deltaClassName(meanDelta)}`}>
-                              <span>% delta</span>
-                              {formatSignedPercent(meanDelta)}
+                              <span>{getKpiDeltaLabel(kpi.units)}</span>
+                              {formatKpiDeltaValue(meanDelta, kpi.units)}
                             </p>
                           </div>
                         )
@@ -834,7 +820,7 @@ export function ManualResultsView({
                                   return (
                                     <tr key={row.key}>
                                       <td>{row.label}</td>
-                                      <td>{formatNumber(value, units)}</td>
+                                      <td>{formatKpiValue(value, units)}</td>
                                     </tr>
                                   );
                                 })}
@@ -847,21 +833,21 @@ export function ManualResultsView({
                                   <th>Metric</th>
                                   <th>Baseline</th>
                                   <th>Comparison</th>
-                                  <th>% delta</th>
+                                  <th>Delta</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {KPI_DETAIL_ROWS.map((row) => {
                                   const baselineValue = getKpiMetricValue(kpi, row.key);
                                   const comparisonValue = getKpiMetricValue(comparisonKpi, row.key);
-                                  const delta = computeKpiPercentDelta(baselineValue, comparisonValue);
                                   const units = row.units === 'dynamic' ? kpi.units : row.units;
+                                  const delta = computeKpiDeltaValue(baselineValue, comparisonValue, units);
                                   return (
                                     <tr key={row.key}>
                                       <td>{row.label}</td>
-                                      <td>{formatNumber(baselineValue, units)}</td>
-                                      <td>{formatNumber(comparisonValue, units)}</td>
-                                      <td className={deltaClassName(delta)}>{formatSignedPercent(delta)}</td>
+                                      <td>{formatKpiValue(baselineValue, units)}</td>
+                                      <td>{formatKpiValue(comparisonValue, units)}</td>
+                                      <td className={deltaClassName(delta)}>{formatKpiDeltaValue(delta, units)}</td>
                                     </tr>
                                   );
                                 })}
