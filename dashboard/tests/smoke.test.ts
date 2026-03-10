@@ -70,6 +70,7 @@ import {
   resolveSelectedIndicatorIds
 } from '../src/lib/manualResultsView.js';
 import { ManualSelectionStatusPills } from '../src/components/ManualSelectionStatusPills.js';
+import { buildManualOverlayOption } from '../src/lib/manualOverlayChartOption.js';
 import {
   buildResultsRunVersionLabelState,
   buildVersionLabelState,
@@ -194,8 +195,18 @@ assert.deepEqual(
 
 assert.equal(
   resolveActiveIndicatorId(
-    ['core-price', 'output-sales'],
+    ['core_ooLTI', 'core-price', 'output-sales'],
     [
+      {
+        indicator: {
+          id: 'core_ooLTI',
+          title: 'Owner-Occupier LTI (Mean Above Median)',
+          units: 'ratio',
+          description: '',
+          source: 'core_indicator'
+        },
+        seriesByRun: []
+      },
       {
         indicator: {
           id: 'core-price',
@@ -219,8 +230,39 @@ assert.equal(
     ],
     ''
   ),
-  'core-price',
-  'Expected manual results to default the active overlay indicator to the first available comparison series'
+  'core_ooLTI',
+  'Expected manual results to default the active overlay indicator to owner-occupier LTI when available'
+);
+
+assert.equal(
+  resolveActiveIndicatorId(
+    ['core_ooLTI', 'output-sales'],
+    [
+      {
+        indicator: {
+          id: 'core_ooLTI',
+          title: 'Owner-Occupier LTI (Mean Above Median)',
+          units: 'ratio',
+          description: '',
+          source: 'core_indicator'
+        },
+        seriesByRun: []
+      },
+      {
+        indicator: {
+          id: 'output-sales',
+          title: 'Output sales',
+          units: 'count',
+          description: '',
+          source: 'output'
+        },
+        seriesByRun: []
+      }
+    ],
+    'output-sales'
+  ),
+  'output-sales',
+  'Expected active overlay selection to preserve the current indicator when it remains enabled'
 );
 
 assert.equal(
@@ -242,6 +284,12 @@ assert.equal(
   ),
   'output-sales',
   'Expected active overlay selection to fall back when the previous indicator is no longer enabled'
+);
+
+assert.equal(
+  resolveActiveIndicatorId([], [], ''),
+  '',
+  'Expected active overlay selection to return an empty value when no indicators are selectable'
 );
 
 const manualSelectionRuns = [
@@ -362,6 +410,116 @@ assert.equal(
   null,
   'Expected custom run ids not to render Original/Latest labels'
 );
+
+const singleOverlayOption = buildManualOverlayOption(
+  {
+    indicator: {
+      id: 'core_housePrice',
+      title: 'House price',
+      units: 'GBP',
+      description: '',
+      source: 'core_indicator'
+    },
+    seriesByRun: [
+      {
+        runId: 'v0-output',
+        points: [
+          { modelTime: 200, value: 100 },
+          { modelTime: 201, value: 200 },
+          { modelTime: 202, value: null },
+          { modelTime: 203, value: 300 }
+        ]
+      }
+    ]
+  },
+  'v0-output',
+  ''
+);
+const singleOverlaySeries = (singleOverlayOption.series as Array<Record<string, any>>) ?? [];
+assert.equal(singleOverlaySeries.length, 1, 'Expected single-run overlay to include one plotted series');
+assert.equal(singleOverlaySeries[0]?.lineStyle?.color, '#0b7285', 'Expected baseline overlay series to use the baseline color');
+assert.equal(
+  singleOverlaySeries[0]?.markLine?.data?.[0]?.yAxis,
+  200,
+  'Expected overlay mean lines to average only the visible non-null points'
+);
+assert.equal(
+  singleOverlaySeries[0]?.markLine?.lineStyle?.type,
+  'dotted',
+  'Expected overlay mean reference lines to use a dotted style'
+);
+
+const compareOverlayOption = buildManualOverlayOption(
+  {
+    indicator: {
+      id: 'core_mortgageApprovals',
+      title: 'Mortgage approvals',
+      units: 'count/month',
+      description: '',
+      source: 'core_indicator'
+    },
+    seriesByRun: [
+      {
+        runId: 'v0-output',
+        points: [
+          { modelTime: 200, value: 10 },
+          { modelTime: 201, value: 20 }
+        ]
+      },
+      {
+        runId: 'v4.0-output',
+        points: [
+          { modelTime: 200, value: 30 },
+          { modelTime: 201, value: 40 }
+        ]
+      }
+    ]
+  },
+  'v0-output',
+  'v4.0-output'
+);
+const compareOverlaySeries = (compareOverlayOption.series as Array<Record<string, any>>) ?? [];
+assert.equal(compareOverlaySeries.length, 2, 'Expected compare overlay to include both plotted series');
+assert.equal(compareOverlaySeries[0]?.name, 'Baseline', 'Expected baseline overlay series to use the baseline role label');
+assert.equal(compareOverlaySeries[1]?.name, 'Comparison', 'Expected comparison overlay series to use the comparison role label');
+assert.equal(compareOverlaySeries[1]?.lineStyle?.color, '#18958b', 'Expected comparison overlay series to use the comparison color');
+assert.equal(compareOverlaySeries[0]?.markLine?.data?.[0]?.yAxis, 15, 'Expected baseline overlay mean to be computed from displayed data');
+assert.equal(compareOverlaySeries[1]?.markLine?.data?.[0]?.yAxis, 35, 'Expected comparison overlay mean to be computed from displayed data');
+assert.equal(compareOverlaySeries[1]?.markLine?.lineStyle?.type, 'dotted', 'Expected comparison overlay mean line to use the dotted style');
+
+const gapOnlyOverlayOption = buildManualOverlayOption(
+  {
+    indicator: {
+      id: 'core_mortgageApprovals',
+      title: 'Mortgage approvals',
+      units: 'count/month',
+      description: '',
+      source: 'core_indicator'
+    },
+    seriesByRun: [
+      {
+        runId: 'v0-output',
+        points: [
+          { modelTime: 200, value: 10 },
+          { modelTime: 201, value: 20 }
+        ]
+      },
+      {
+        runId: 'v4.0-output',
+        points: [
+          { modelTime: 200, value: null },
+          { modelTime: 201, value: null }
+        ]
+      }
+    ]
+  },
+  'v0-output',
+  'v4.0-output'
+);
+const gapOnlyOverlaySeries = (gapOnlyOverlayOption.series as Array<Record<string, any>>) ?? [];
+assert.equal(gapOnlyOverlaySeries.length, 2, 'Expected gap-only overlay payload to still include both plotted series');
+assert.equal(gapOnlyOverlaySeries[0]?.markLine?.data?.[0]?.yAxis, 15, 'Expected gap-only overlay baseline mean to still render');
+assert.equal(gapOnlyOverlaySeries[1]?.markLine, undefined, 'Expected gap-only overlay series not to render a mean line');
 
 const latestManualStatusMarkup = renderToStaticMarkup(
   createElement(ManualSelectionStatusPills, {
@@ -1061,8 +1219,8 @@ assert.ok(validationTrend.points.length > 0, 'Validation trend should include po
 assert.equal(validationTrend.points[0]?.version, 'v0', 'Validation trend should start at v0');
 assert.equal(
   validationTrend.points[validationTrend.points.length - 1]?.version,
-  'v4.0',
-  'Validation trend should end at v4.0'
+  'v4.1',
+  'Validation trend should end at v4.1 when in-progress validation metrics are numeric'
 );
 
 const versionOrder = new Map(versions.map((version, index) => [version, index]));
@@ -1080,7 +1238,6 @@ const expectedTrendCount = new Set(
     .filter(
       (entry) =>
         entry.validation_dataset.toLowerCase() === 'r8' &&
-        entry.validation.status === 'complete' &&
         typeof entry.validation.income_diff_pct === 'number' &&
         Number.isFinite(entry.validation.income_diff_pct) &&
         typeof entry.validation.housing_wealth_diff_pct === 'number' &&
@@ -1099,6 +1256,7 @@ assert.equal(
 
 const v40Point = validationTrend.points.find((point) => point.version === 'v4.0');
 assert.ok(v40Point, 'Validation trend should include v4.0 point');
+assert.equal(v40Point?.status, 'complete', 'v4.0 trend point should remain complete');
 assert.equal(v40Point?.incomeDiffPct, 7.192856, 'v4.0 trend point should match income diff');
 assert.equal(v40Point?.housingWealthDiffPct, 12.534289, 'v4.0 trend point should match housing wealth diff');
 assert.equal(v40Point?.financialWealthDiffPct, 13.438086, 'v4.0 trend point should match financial wealth diff');
@@ -1107,6 +1265,24 @@ assertClose(
   (Math.abs(7.192856) + Math.abs(12.534289) + Math.abs(13.438086)) / 3,
   1e-12,
   'v4.0 trend point should compute average absolute diff correctly'
+);
+
+const v41Point = validationTrend.points.find((point) => point.version === 'v4.1');
+assert.ok(v41Point, 'Validation trend should include v4.1 point when validation is in progress with numeric values');
+assert.equal(v41Point?.status, 'in_progress', 'v4.1 trend point should preserve the in-progress status');
+assert.equal(v41Point?.incomeDiffPct, 6.526575, 'v4.1 trend point should match income diff');
+assert.equal(v41Point?.housingWealthDiffPct, 14.523047, 'v4.1 trend point should match housing wealth diff');
+assert.equal(v41Point?.financialWealthDiffPct, 12.933264, 'v4.1 trend point should match financial wealth diff');
+assert.equal(
+  v41Point?.note,
+  'Forked from v4.0 with bank and central-bank hard LTV caps aligned by default: FTB 0.95, HM 0.95, BTL 0.85.',
+  'v4.1 trend point should expose the in-progress validation note'
+);
+assertClose(
+  Number(v41Point?.averageAbsDiffPct),
+  (Math.abs(6.526575) + Math.abs(14.523047) + Math.abs(12.933264)) / 3,
+  1e-12,
+  'v4.1 trend point should compute average absolute diff correctly'
 );
 
 const rangeAtSameVersion = compareParameters(repoRoot, 'v4.0', 'v4.0', ['national_insurance_rates'], 'range');
@@ -2616,53 +2792,13 @@ assert.ok(
   'Compare card should not render Validation dataset field'
 );
 
-const validationPageSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/pages/ValidationPage.tsx'), 'utf-8');
-assert.ok(
-  validationPageSource.includes("const [mode, setMode] = useState<ValidationMode>('average');"),
-  'Validation page should default to the average view'
+const manualResultsViewSource = fs.readFileSync(
+  path.resolve(repoRoot, 'dashboard/src/pages/experiments/view/ManualResultsView.tsx'),
+  'utf-8'
 );
 assert.ok(
-  validationPageSource.includes('const ORIGINAL_MODEL_LOSS = 11.83;'),
-  'Validation page should define the original model loss benchmark'
-);
-assert.ok(
-  validationPageSource.includes('<span>Original model loss</span>'),
-  'Validation page should render a visible Original model loss reference label above the chart'
-);
-assert.ok(
-  !validationPageSource.includes("color: '#c92a2a'"),
-  'Validation page benchmark should no longer use the old red error colour'
-);
-assert.ok(
-  validationPageSource.includes('markLine: averageReferenceMarkLine'),
-  'Validation page should apply the original-model benchmark on the average chart'
-);
-assert.ok(
-  validationPageSource.includes("label: { show: false }"),
-  'Validation page should hide the in-chart benchmark label after moving it into a dedicated reference row'
-);
-assert.ok(
-  validationPageSource.includes("grid: { left: 84, right: 34, top: 18, bottom: 86, containLabel: true }"),
-  'Validation page should reduce excess top spacing above the average chart'
-);
-assert.ok(
-  !validationPageSource.includes('Validation trends from <code>input-data-versions/version-notes.json</code> using dataset <code>r8</code>.'),
-  'Validation page should not use the old technical intro copy'
-);
-assert.ok(
-  validationPageSource.includes('This view tracks validation performance across successive calibration versions.'),
-  'Validation page should describe validation performance across calibration versions'
-);
-assert.ok(
-  validationPageSource.includes('Lower loss indicates closer') &&
-    validationPageSource.includes('agreement with observed data'),
-  'Validation page should explain that lower loss means better agreement with observed data'
-);
-assert.ok(
-  validationPageSource.includes('providing clear evidence') &&
-    validationPageSource.includes('improving model fit over') &&
-    validationPageSource.includes('time.'),
-  'Validation page should frame the trend as evidence of improving model fit over time'
+  manualResultsViewSource.includes("dotted lines show each selected run&apos;s mean over the"),
+  'Manual results overlay help copy should explain the dotted mean reference lines'
 );
 
 const appSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/App.tsx'), 'utf-8');
@@ -2671,12 +2807,16 @@ assert.ok(
   'App should gate experiments behind the dev-only visibility condition'
 );
 assert.ok(
-  appSource.includes('const validationVisible = !isDevEnv || isProdPreviewEnabled;'),
-  'App should gate validation behind non-dev visibility or preview mode'
+  appSource.includes("from './pages/ValidationPage'"),
+  'App should import the validation page when dev-only validation is available'
+);
+assert.ok(
+  appSource.includes('const validationVisible = isDevEnv && !isProdPreviewEnabled;'),
+  'App should gate validation behind the same true-dev visibility condition'
 );
 assert.ok(
   appSource.includes('{validationVisible && <NavLink to="/validation">Validation</NavLink>}'),
-  'App should hide the validation nav in dev mode'
+  'App should only render the validation nav item when validation is visible'
 );
 assert.ok(
   appSource.includes('{validationVisible && <Route path="/validation" element={<ValidationPage />} />}'),
@@ -2689,6 +2829,40 @@ assert.ok(
 assert.ok(
   appSource.includes("{experimentsVisible && (\n              <Route\n                path=\"/experiments\""),
   'App should only register the experiments route when experiments are visible'
+);
+
+const validationPageSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/pages/ValidationPage.tsx'), 'utf-8');
+assert.ok(
+  !validationPageSource.includes('three_lines'),
+  'Validation page should no longer support the three-line mode'
+);
+assert.ok(
+  !validationPageSource.includes('validation-mode-row'),
+  'Validation page should no longer render the validation mode toggle'
+);
+assert.ok(
+  validationPageSource.includes("name: 'Average absolute diff'"),
+  'Validation page should render the average absolute diff series'
+);
+assert.ok(
+  validationPageSource.includes('Original model loss'),
+  'Validation page should keep the original model loss reference badge'
+);
+assert.ok(
+  validationPageSource.includes("name: 'In progress'"),
+  'Validation page should render a dedicated in-progress marker overlay'
+);
+assert.ok(
+  validationPageSource.includes("Status: ${point.status === 'in_progress' ? 'In progress' : 'Complete'}"),
+  'Validation page tooltip should show the validation status'
+);
+assert.ok(
+  validationPageSource.includes('if (point.note)'),
+  'Validation page tooltip should append the validation note when present'
+);
+assert.ok(
+  validationPageSource.includes('In progress version'),
+  'Validation page should explain the in-progress marker in the reference row'
 );
 assert.ok(
   appSource.includes("{experimentsVisible && (\n              <Route\n                path=\"/login\""),
