@@ -8,6 +8,7 @@ import type {
 
 export const DEFAULT_MANUAL_BASELINE_RUN_ID = 'v0-output';
 export const DEFAULT_MANUAL_COMPARISON_RUN_ID = 'v4.0-output';
+const DEFAULT_MANUAL_OVERLAY_INDICATOR_ID = 'core_ooLTI';
 const KPI_BASELINE_EPSILON = 1e-12;
 const KPI_DELTA_DECIMALS = 2;
 
@@ -73,7 +74,13 @@ export function resolveActiveIndicatorId(
   if (selectableIds.length === 0) {
     return '';
   }
-  return selectableIds.includes(current) ? current : selectableIds[0];
+  if (selectableIds.includes(current)) {
+    return current;
+  }
+  if (selectableIds.includes(DEFAULT_MANUAL_OVERLAY_INDICATOR_ID)) {
+    return DEFAULT_MANUAL_OVERLAY_INDICATOR_ID;
+  }
+  return selectableIds[0];
 }
 
 export function sortKpis(kpis: KpiMetricSummary[]): KpiMetricSummary[] {

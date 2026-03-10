@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
-  ResultsCompareIndicator,
   ResultsComparePayload,
   ResultsFileManifestEntry,
   ResultsRunDetail,
   ResultsRunStatus,
   ResultsRunSummary
 } from '../../../../shared/types';
-import type { EChartsOption } from 'echarts';
 import { CollapsibleSection } from '../../../components/CollapsibleSection';
 import { EChart } from '../../../components/EChart';
 import { GroupedCheckboxSections } from '../../../components/GroupedCheckboxSections';
@@ -37,6 +35,7 @@ import {
   resolveSelectedIndicatorIds,
   sortKpis
 } from '../../../lib/manualResultsView';
+import { buildManualOverlayOption } from '../../../lib/manualOverlayChartOption';
 import { buildResultsRunVersionLabelState } from '../../../lib/versionLabels';
 import { buildExperimentsPath } from '../routeState';
 import { DEFAULT_EXPERIMENT_ROUTE_STATE } from '../types';
@@ -96,16 +95,6 @@ function coverageClass(status: ResultsFileManifestEntry['coverageStatus']): stri
   }
 }
 
-function getRunRoleLabel(runId: string, baselineRunId: string, comparisonRunId: string): string {
-  if (runId === baselineRunId) {
-    return 'Baseline';
-  }
-  if (comparisonRunId && runId === comparisonRunId) {
-    return 'Comparison';
-  }
-  return runId;
-}
-
 function InlineInfoTip({ label, description }: InlineInfoTipProps) {
   return (
     <span className="manual-control-header">
@@ -120,73 +109,6 @@ function InlineInfoTip({ label, description }: InlineInfoTipProps) {
       </button>
     </span>
   );
-}
-
-function buildOverlayOption(
-  indicatorPayload: ResultsCompareIndicator,
-  baselineRunId: string,
-  comparisonRunId: string
-): EChartsOption {
-  const xValues = indicatorPayload.seriesByRun[0]?.points.map((point) => String(point.modelTime)) ?? [];
-  const series = indicatorPayload.seriesByRun.map((runSeries) => ({
-    name: getRunRoleLabel(runSeries.runId, baselineRunId, comparisonRunId),
-    type: 'line' as const,
-    showSymbol: false,
-    smooth: false,
-    connectNulls: false,
-    data: runSeries.points.map((point) => point.value)
-  }));
-
-  return {
-    animation: false,
-    tooltip: {
-      trigger: 'axis',
-      valueFormatter: (value: unknown) => {
-        if (typeof value !== 'number' || Number.isNaN(value)) {
-          return 'n/a';
-        }
-        if (indicatorPayload.indicator.units === 'GBP') {
-          return `£${value.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
-        }
-        if (indicatorPayload.indicator.units === '%' || indicatorPayload.indicator.units === 'rate') {
-          return value.toLocaleString('en-GB', { maximumFractionDigits: 2 });
-        }
-        if (indicatorPayload.indicator.units === 'count' || indicatorPayload.indicator.units === 'count/month') {
-          return value.toLocaleString('en-GB', { maximumFractionDigits: 0 });
-        }
-        return value.toLocaleString('en-GB', { maximumFractionDigits: 3 });
-      }
-    },
-    legend: {
-      top: 4
-    },
-    grid: {
-      left: 72,
-      right: 20,
-      top: 48,
-      bottom: 42
-    },
-    xAxis: {
-      type: 'category',
-      data: xValues,
-      name: 'Model Time (months)',
-      nameLocation: 'middle',
-      nameGap: 30,
-      axisLabel: {
-        formatter: (value: string, index: number) => {
-          return index % 120 === 0 ? value : '';
-        }
-      }
-    },
-    yAxis: {
-      type: 'value',
-      name: indicatorPayload.indicator.units,
-      nameLocation: 'middle',
-      nameGap: 52,
-      scale: true
-    },
-    series
-  };
 }
 
 export function ManualResultsView({
@@ -937,7 +859,8 @@ export function ManualResultsView({
               </label>
             </div>
             <p>
-              Overlay series are shown in raw units. {mode === 'compare' ? 'Baseline and comparison are labelled by role.' : 'Single-run view uses the baseline selection.'}
+              Overlay series are shown in raw units, and dotted lines show each selected run&apos;s mean over the
+              currently displayed data. {mode === 'compare' ? 'Baseline and comparison are labelled by role.' : 'Single-run view uses the baseline selection.'}
             </p>
             {showOverlayRefreshing && (
               <LoadingSkeleton
@@ -962,7 +885,7 @@ export function ManualResultsView({
                 <div key={activeIndicatorPayload.indicator.id} className="overlay-card">
                   <h4>{activeIndicatorPayload.indicator.title}</h4>
                   <EChart
-                    option={buildOverlayOption(activeIndicatorPayload, baselineRunId, comparisonRunId)}
+                    option={buildManualOverlayOption(activeIndicatorPayload, baselineRunId, comparisonRunId)}
                     className="chart"
                   />
                 </div>
