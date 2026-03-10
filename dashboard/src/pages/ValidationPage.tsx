@@ -9,27 +9,23 @@ import {
   isRetryableApiError
 } from '../lib/api';
 
-type ValidationMode = 'three_lines' | 'average';
 const ORIGINAL_MODEL_LOSS = 11.83;
 
 function formatPercent(value: number): string {
   return `${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`;
 }
 
-function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode): EChartsOption {
+function buildChartOption(payload: ValidationTrendPayload): EChartsOption {
+  const pointByVersion = new Map(payload.points.map((point) => [point.version, point]));
   const versions = payload.points.map((point) => point.version);
-  const incomeValues = payload.points.map((point) => point.incomeDiffPct);
-  const housingValues = payload.points.map((point) => point.housingWealthDiffPct);
-  const financialValues = payload.points.map((point) => point.financialWealthDiffPct);
   const averageValues = payload.points.map((point) => point.averageAbsDiffPct);
+  const inProgressValues = payload.points
+    .filter((point) => point.status === 'in_progress')
+    .map((point) => ({
+      name: point.version,
+      value: [point.version, point.averageAbsDiffPct]
+    }));
 
-  const baselineMarkLine = {
-    symbol: 'none',
-    silent: true,
-    lineStyle: { type: 'dashed' as const, width: 1.4, color: '#868e96' },
-    label: { formatter: '0%', color: '#6c757d' },
-    data: [{ yAxis: 0 }]
-  };
   const averageReferenceMarkLine = {
     symbol: 'none',
     silent: true,
@@ -50,60 +46,24 @@ function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode)
   const tooltipFormatter = (rawParams: unknown) => {
     const rows = Array.isArray(rawParams) ? rawParams : [rawParams];
     const axisValue = String((rows[0] as { axisValueLabel?: string; axisValue?: string })?.axisValueLabel ?? (rows[0] as { axisValue?: string })?.axisValue ?? '');
-    const detail = rows
-      .map((row) => {
-        const typed = row as { seriesName?: string; data?: number };
-        const value = typeof typed.data === 'number' ? typed.data : 0;
-        return `${typed.seriesName ?? ''}: ${formatPercent(value)}`;
-      })
-      .join('<br/>');
-    return `${axisValue}<br/>${detail}`;
-  };
+    const point = pointByVersion.get(axisValue);
+    if (!point) {
+      return axisValue;
+    }
 
-  if (mode === 'average') {
-    return {
-      tooltip: { trigger: 'axis', formatter: tooltipFormatter },
-      grid: { left: 84, right: 34, top: 18, bottom: 86, containLabel: true },
-      xAxis: {
-        type: 'category',
-        data: versions,
-        name: 'Version',
-        nameLocation: 'middle',
-        nameGap: 54,
-        nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' }
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Diff percentile (%)',
-        nameLocation: 'middle',
-        nameGap: 64,
-        nameTextStyle: { fontSize: 12, fontWeight: 600, color: '#495057' },
-        axisLabel: {
-          formatter: (rawValue: number) => `${Number(rawValue).toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`
-        },
-        min: (extent: { min: number }) => Math.min(0, extent.min),
-        max: (extent: { max: number }) => Math.max(0, extent.max)
-      },
-      series: [
-        {
-          name: 'Average absolute diff',
-          type: 'line',
-          smooth: true,
-          showSymbol: true,
-          symbolSize: 6,
-          data: averageValues,
-          lineStyle: { color: '#0b7285', width: 2.2 },
-          itemStyle: { color: '#0b7285' },
-          markLine: averageReferenceMarkLine
-        }
-      ]
-    };
-  }
+    const detail = [
+      `Average absolute diff: ${formatPercent(point.averageAbsDiffPct)}`,
+      `Status: ${point.status === 'in_progress' ? 'In progress' : 'Complete'}`
+    ];
+    if (point.note) {
+      detail.push(point.note);
+    }
+    return `${axisValue}<br/>${detail.join('<br/>')}`;
+  };
 
   return {
     tooltip: { trigger: 'axis', formatter: tooltipFormatter },
-    legend: { top: 0, data: ['Income diff', 'Housing wealth diff', 'Financial wealth diff'] },
-    grid: { left: 84, right: 34, top: 44, bottom: 86, containLabel: true },
+    grid: { left: 84, right: 34, top: 18, bottom: 86, containLabel: true },
     xAxis: {
       type: 'category',
       data: versions,
@@ -126,42 +86,31 @@ function buildChartOption(payload: ValidationTrendPayload, mode: ValidationMode)
     },
     series: [
       {
-        name: 'Income diff',
+        name: 'Average absolute diff',
         type: 'line',
         smooth: true,
         showSymbol: true,
         symbolSize: 6,
-        data: incomeValues,
+        data: averageValues,
         lineStyle: { color: '#0b7285', width: 2.2 },
         itemStyle: { color: '#0b7285' },
-        markLine: baselineMarkLine
+        markLine: averageReferenceMarkLine
       },
       {
-        name: 'Housing wealth diff',
-        type: 'line',
-        smooth: true,
-        showSymbol: true,
-        symbolSize: 6,
-        data: housingValues,
-        lineStyle: { color: '#2f9e44', width: 2.2 },
-        itemStyle: { color: '#2f9e44' }
-      },
-      {
-        name: 'Financial wealth diff',
-        type: 'line',
-        smooth: true,
-        showSymbol: true,
-        symbolSize: 6,
-        data: financialValues,
-        lineStyle: { color: '#1971c2', width: 2.2 },
-        itemStyle: { color: '#1971c2' }
+        name: 'In progress',
+        type: 'scatter',
+        data: inProgressValues,
+        symbol: 'diamond',
+        symbolSize: 11,
+        itemStyle: { color: '#f08c00', borderColor: '#fff4e6', borderWidth: 1.2 },
+        emphasis: { scale: true },
+        z: 4
       }
     ]
   };
 }
 
 export function ValidationPage() {
-  const [mode, setMode] = useState<ValidationMode>('average');
   const [payload, setPayload] = useState<ValidationTrendPayload | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isWaitingForApi, setIsWaitingForApi] = useState<boolean>(false);
@@ -215,8 +164,8 @@ export function ValidationPage() {
     if (!payload || payload.points.length === 0) {
       return null;
     }
-    return buildChartOption(payload, mode);
-  }, [payload, mode]);
+    return buildChartOption(payload);
+  }, [payload]);
 
   return (
     <section className="validation-layout">
@@ -235,39 +184,24 @@ export function ValidationPage() {
       )}
 
       <article className="results-card">
-        <div className="validation-mode-row">
-          <button
-            type="button"
-            className={`filter-pill ${mode === 'three_lines' ? 'active' : ''}`}
-            onClick={() => setMode('three_lines')}
-          >
-            Three lines
-          </button>
-          <button
-            type="button"
-            className={`filter-pill ${mode === 'average' ? 'active' : ''}`}
-            onClick={() => setMode('average')}
-          >
-            Average
-          </button>
+        <div className="validation-reference-row" aria-label="Validation benchmark reference">
+          <span className="validation-reference-item">
+            <span className="validation-reference-line validation-reference-line-original" aria-hidden="true" />
+            <span>Original model loss</span>
+            <strong>{formatPercent(ORIGINAL_MODEL_LOSS)}</strong>
+          </span>
+          <span className="validation-reference-item">
+            <span className="validation-reference-dot validation-reference-dot-in-progress" aria-hidden="true" />
+            <span>In progress version</span>
+          </span>
         </div>
-
-        {mode === 'average' && (
-          <div className="validation-reference-row" aria-label="Validation benchmark reference">
-            <span className="validation-reference-item">
-              <span className="validation-reference-line validation-reference-line-original" aria-hidden="true" />
-              <span>Original model loss</span>
-              <strong>{formatPercent(ORIGINAL_MODEL_LOSS)}</strong>
-            </span>
-          </div>
-        )}
 
         {isLoading ? (
           <p className="loading-banner">Loading validation trend...</p>
         ) : option ? (
           <EChart option={option} className="chart validation-chart" />
         ) : (
-          <p className="info-banner">No complete R8 validation points are available to plot.</p>
+          <p className="info-banner">No numeric R8 validation points are available to plot.</p>
         )}
       </article>
     </section>

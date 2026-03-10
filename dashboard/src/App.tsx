@@ -75,7 +75,7 @@ export function App() {
   const [authLoaded, setAuthLoaded] = useState(false);
   const [authError, setAuthError] = useState('');
   const experimentsVisible = isDevEnv && !isProdPreviewEnabled;
-  const validationVisible = !isDevEnv || isProdPreviewEnabled;
+  const validationVisible = isDevEnv && !isProdPreviewEnabled;
 
   const loginPath = `/login?next=${encodeURIComponent(EXPERIMENTS_VIEW_PATH)}`;
 

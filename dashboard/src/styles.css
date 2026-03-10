@@ -1019,13 +1019,6 @@ code {
   gap: 0.8rem;
 }
 
-.validation-mode-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-bottom: 0.4rem;
-}
-
 .validation-reference-row {
   display: flex;
   flex-wrap: wrap;
@@ -1058,6 +1051,20 @@ code {
 
 .validation-reference-line-original {
   border-top-color: #5f6b76;
+}
+
+.validation-reference-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: inline-block;
+  flex: 0 0 auto;
+  transform: rotate(45deg);
+}
+
+.validation-reference-dot-in-progress {
+  background: #f08c00;
+  border: 1px solid #fff4e6;
+  border-radius: 0.1rem;
 }
 
 .validation-chart {

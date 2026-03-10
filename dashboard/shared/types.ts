@@ -229,10 +229,12 @@ export interface HomePreviewPayload {
 
 export interface ValidationTrendPoint {
   version: string;
+  status: ValidationStatus;
   incomeDiffPct: number;
   housingWealthDiffPct: number;
   financialWealthDiffPct: number;
   averageAbsDiffPct: number;
+  note?: string;
 }
 
 export interface ValidationTrendPayload {

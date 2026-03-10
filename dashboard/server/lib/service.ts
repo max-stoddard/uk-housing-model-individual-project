@@ -1054,9 +1054,6 @@ export function getValidationTrend(repoRoot: string): ValidationTrendPayload {
     if (entry.validation_dataset.toLowerCase() !== 'r8') {
       continue;
     }
-    if (entry.validation.status !== 'complete') {
-      continue;
-    }
 
     const income = entry.validation.income_diff_pct;
     const housing = entry.validation.housing_wealth_diff_pct;
@@ -1067,10 +1064,12 @@ export function getValidationTrend(repoRoot: string): ValidationTrendPayload {
 
     pointsByVersion.set(entry.snapshot_folder, {
       version: entry.snapshot_folder,
+      status: entry.validation.status,
       incomeDiffPct: income,
       housingWealthDiffPct: housing,
       financialWealthDiffPct: financial,
-      averageAbsDiffPct: (Math.abs(income) + Math.abs(housing) + Math.abs(financial)) / 3
+      averageAbsDiffPct: (Math.abs(income) + Math.abs(housing) + Math.abs(financial)) / 3,
+      note: entry.validation.note
     });
   }
 
