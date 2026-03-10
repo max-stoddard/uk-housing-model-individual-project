@@ -2864,6 +2864,31 @@ assert.ok(
   validationPageSource.includes('In progress version'),
   'Validation page should explain the in-progress marker in the reference row'
 );
+
+const comparePageSource = fs.readFileSync(path.resolve(repoRoot, 'dashboard/src/pages/ComparePage.tsx'), 'utf-8');
+assert.ok(
+  comparePageSource.includes("const DEFAULT_OPEN_COMPARE_CARD_IDS = new Set<string>([") &&
+    comparePageSource.includes("'house_price_lognormal'") &&
+    comparePageSource.includes("'wealth_given_income_joint'") &&
+    comparePageSource.includes("'downpayment_ftb_lognormal'"),
+  'Compare page should default-open the requested house price, wealth, and FTB down-payment cards'
+);
+assert.ok(
+  comparePageSource.includes("const DEFAULT_OPEN_COMPARE_GROUPS = new Set<ParameterGroup>([") &&
+    comparePageSource.includes("'Housing & Rental Market'") &&
+    comparePageSource.includes("'Household Demographics & Wealth'") &&
+    comparePageSource.includes("'Purchase & Mortgage'"),
+  'Compare page should open the groups containing the requested default cards'
+);
+assert.ok(
+  comparePageSource.includes('defaultExpanded={DEFAULT_OPEN_COMPARE_CARD_IDS.has(item.id)}'),
+  'Compare page should drive default card expansion from the configured default-open ids'
+);
+
+assert.ok(
+  compareCardSource.includes('const [isMoreInfoOpen, setIsMoreInfoOpen] = useState<boolean>(false);'),
+  'Compare card should keep provenance and sources collapsed by default'
+);
 assert.ok(
   appSource.includes("{experimentsVisible && (\n              <Route\n                path=\"/login\""),
   'App should only register the experiments login route when experiments are visible'

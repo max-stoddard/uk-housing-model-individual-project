@@ -21,6 +21,16 @@ const GROUP_ORDER: ParameterGroup[] = [
   'Bank & Credit Policy',
   'BTL & Investor Behavior'
 ];
+const DEFAULT_OPEN_COMPARE_CARD_IDS = new Set<string>([
+  'house_price_lognormal',
+  'wealth_given_income_joint',
+  'downpayment_ftb_lognormal'
+]);
+const DEFAULT_OPEN_COMPARE_GROUPS = new Set<ParameterGroup>([
+  'Housing & Rental Market',
+  'Household Demographics & Wealth',
+  'Purchase & Mortgage'
+]);
 
 type ChangeFilter = 'all' | 'updated' | 'unchanged';
 type ViewMode = 'single' | 'compare';
@@ -114,7 +124,6 @@ export function ComparePage() {
   const [isSetupOpen, setIsSetupOpen] = useState<boolean>(false);
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>('all');
   const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({});
-  const defaultOpenGroup = GROUP_ORDER[0];
 
   useEffect(() => {
     let cancelled = false;
@@ -354,7 +363,7 @@ export function ComparePage() {
       if (Object.keys(current).length === 0) {
         const seeded: Record<string, boolean> = {};
         for (const groupName of GROUP_ORDER) {
-          seeded[groupName] = groupName === defaultOpenGroup;
+          seeded[groupName] = DEFAULT_OPEN_COMPARE_GROUPS.has(groupName);
         }
         return seeded;
       }
@@ -369,7 +378,7 @@ export function ComparePage() {
       }
       return changed ? nextState : current;
     });
-  }, [compareData, defaultOpenGroup]);
+  }, [compareData]);
 
   const toggleId = (id: string) => {
     setSelectedIds((current) => {
@@ -648,13 +657,13 @@ export function ComparePage() {
 
                   {open && (
                     <div className="result-group-body">
-                      {items.map((item, index) => (
+                      {items.map((item) => (
                         <CompareCard
                           key={item.id}
                           item={item}
                           mode={mode}
                           inProgressVersions={inProgressVersions}
-                          defaultExpanded={groupName === defaultOpenGroup && index === 0}
+                          defaultExpanded={DEFAULT_OPEN_COMPARE_CARD_IDS.has(item.id)}
                         />
                       ))}
                     </div>
